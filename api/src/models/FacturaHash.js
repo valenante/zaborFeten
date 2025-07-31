@@ -16,11 +16,11 @@ const facturaHashSchema = new Schema(
     fechaExpedicion: { type: Date, required: true },
     clienteNombre: { type: String },
     clienteNIF: { type: String },
-    productos: { type: [productoSchema], required: true }, // 🔹 Nuevo campo para los productos
+    productos: { type: [productoSchema], required: true },
     importeTotal: { type: Number, required: true },
     hash: { type: String, required: true },
     hashAnterior: { type: String, required: true },
-    firmaDigital: { type: String },
+    xmlFirmado: { type: String, required: true },  // <-- aquí guardas el XML firmado completo
     rectificada: {
       type: Boolean,
       default: false,

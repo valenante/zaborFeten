@@ -2,8 +2,8 @@ import axios from 'axios';
 import { Parser } from 'json2csv';
 import FacturaHash from '../models/FacturaHash.js';
 import EventoFactura from '../models/EventosFactura.js';
-import { generarHashFactura } from '../../utils/hashFactura.js';
-import { enviarFacturaAEAT } from '../../utils/enviarAEAT.js';
+import { emitirFacturaBase } from '../../utils/emitirFactura.js';
+import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
 
 
 export const listarFacturasEncadenadas = async (req, res) => {
@@ -62,48 +62,26 @@ export const rectificarFactura = async (req, res) => {
     const facturaOriginal = await FacturaHash.findById(id);
     if (!facturaOriginal)
       return res.status(404).json({ error: 'Factura original no encontrada.' });
+
     if (facturaOriginal.rectificada)
-      return res.status(400).json({ error: 'Ya fue rectificada.' });
+      return res.status(400).json({ error: 'La factura ya fue rectificada.' });
 
-    const ultima = await FacturaHash.findOne().sort({ numeroFactura: -1 });
-    const nuevoNum = ultima
-      ? (parseInt(ultima.numeroFactura.split('-')[1]) + 1)
-          .toString()
-          .padStart(4, '0')
-      : '0001';
-    const numeroFactura = `${new Date().getFullYear()}-${nuevoNum}`;
-
-    const existente = await FacturaHash.findOne({ numeroFactura });
-    if (existente)
-      return res.status(400).json({ error: 'Número de factura ya existe.' });
-
-    const nuevaFactura = new FacturaHash({
-      numeroFactura,
-      fechaExpedicion: new Date(),
+    const { facturaGuardada: nuevaFactura, numeroFactura } = await emitirFacturaBase({
       clienteNombre,
       clienteNIF,
+      productos: [], // Se puede ajustar si se desea detallar la rectificación
       importeTotal,
       hashAnterior: facturaOriginal.hash,
-      hash: generarHashFactura(
-        {
-          numeroFactura,
-          fechaExpedicion: new Date(),
-          clienteNombre,
-          clienteNIF,
-          importeTotal,
-        },
-        facturaOriginal.hash
-      ),
+      descripcionFactura: motivo || 'Rectificación de factura',
+      tipoComunicacion: 'A0', // Alta
     });
 
-    await nuevaFactura.save();
-
-    await enviarFacturaAEAT(nuevaFactura);
-
+    // Marcar la original como rectificada
     facturaOriginal.rectificada = true;
     facturaOriginal.facturaRectificativaId = nuevaFactura._id;
     await facturaOriginal.save();
 
+    // Registrar el evento
     await new EventoFactura({
       tipoEvento: 'rectificación',
       numeroFactura,
@@ -116,18 +94,16 @@ export const rectificarFactura = async (req, res) => {
       facturaRectificativaId: nuevaFactura._id,
     }).save();
 
-    await axios.post(
-      'http://100.91.21.52:4000/imprimir-factura-rectificativa',
-      {
-        numeroFactura,
-        fechaExpedicion: nuevaFactura.fechaExpedicion,
-        clienteNombre,
-        clienteNIF,
-        importeTotal,
-        motivo,
-        hash: nuevaFactura.hash,
-      }
-    );
+    // Imprimir en impresora local
+    await axios.post('http://100.91.21.52:4000/imprimir-factura-rectificativa', {
+      numeroFactura,
+      fechaExpedicion: nuevaFactura.fechaExpedicion,
+      clienteNombre,
+      clienteNIF,
+      importeTotal,
+      motivo,
+      hash: nuevaFactura.hash,
+    });
 
     res.json({
       message: 'Factura rectificativa generada correctamente.',

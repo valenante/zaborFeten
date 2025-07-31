@@ -19,8 +19,9 @@ export const generarFacturaXML = (factura) => {
     <Fabricante>ALEF</Fabricante>
   </Software>`;
 
-  const firmaXML = `
-  <Firma>${factura.firmaDigital}</Firma>`;
+  // Eliminamos la etiqueta Firma para que no aparezca en el XML sin firmar
+  // const firmaXML = `
+  // <Firma>${factura.firmaDigital}</Firma>`;
 
   return `
 <?xml version="1.0" encoding="UTF-8"?>
@@ -37,7 +38,6 @@ export const generarFacturaXML = (factura) => {
     ${productosXML}
   </Productos>
   ${softwareXML}
-  ${firmaXML}
 </Factura>`.trim();
 };
 

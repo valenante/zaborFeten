@@ -65,11 +65,14 @@ export const imprimirFactura = async (req, res) => {
   } = req.body;
 
   try {
+    // Buscar mesa en BD
     const mesa = await Mesa.findById(mesaId).lean();
     if (!mesa) return res.status(404).json({ error: 'Mesa no encontrada' });
 
+    // Calcular total
     const total = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
 
+    // Datos para impresión
     const datosImpresion = {
       mesaNumero: mesa.numero,
       comensales: mesa.comensales || 0,
@@ -82,14 +85,27 @@ export const imprimirFactura = async (req, res) => {
       numeroFactura,
     };
 
-    const response = await enviarAImpresion('imprimir-factura', datosImpresion);
-    res.json({
-      message: 'Factura enviada a impresión correctamente',
-      data: response.data,
+    try {
+      // Intentar enviar a impresión
+      const response = await enviarAImpresion('imprimir-factura', datosImpresion);
+      // Opcional: puedes hacer algo con response si quieres
+    } catch (error) {
+      // Loguear el error pero NO detener el flujo
+      logger.warn('Error al enviar factura a impresión, pero se continúa flujo:', error.message);
+    }
+
+    // Responder éxito aunque haya fallado impresión
+    return res.json({
+      message: 'Factura procesada correctamente (la impresión pudo fallar)',
+      data: {
+        mesaId,
+        numeroFactura,
+      },
     });
   } catch (error) {
-    logger.error('Error al imprimir factura:', error.message);
-    res.status(500).json({ error: 'Error al imprimir factura' });
+    // Error crítico: responder con error 500
+    logger.error('Error general al imprimir factura:', error.message);
+    return res.status(500).json({ error: 'Error general al procesar factura' });
   }
 };
 

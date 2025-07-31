@@ -2,11 +2,26 @@ import FacturaHash from '../models/FacturaHash.js';
 import { generarHashFactura } from '../../utils/hashFactura.js';
 import { firmarHashFactura as firmarReal } from '../../utils/firmarFactura.js';
 import { firmarFacturaMock as firmarMock } from '../../utils/firmarFacturaMock.js';
-import logger from '../../utils/logger.js'; // Si tienes uno configurado
+import logger from '../../utils/logger.js'; // si tienes un sistema de logs
 
 const esProduccion = process.env.NODE_ENV === 'production';
-const firmar = esProduccion ? firmarReal : firmarMock;
+const rutaCert = './certificados/mi_certificado.p12';
+const certPassword = 'MIKHAILTAL1!';
 
+/**
+ * Firma el hash dependiendo del entorno.
+ */
+const firmar = async (hash) => {
+  if (esProduccion) {
+    return firmarReal(hash, rutaCert, certPassword);
+  } else {
+    return firmarMock(hash);
+  }
+};
+
+/**
+ * Registra una factura con hash y firma digital.
+ */
 export const registrarFacturaConHash = async (datosFactura) => {
   const {
     numeroFactura,
@@ -18,7 +33,7 @@ export const registrarFacturaConHash = async (datosFactura) => {
   } = datosFactura;
 
   try {
-    // Verificar si ya existe una factura con ese número
+    // Verificar duplicado
     const existente = await FacturaHash.findOne({ numeroFactura });
     if (existente) {
       throw new Error(`Ya existe una factura con número ${numeroFactura}`);
@@ -26,9 +41,9 @@ export const registrarFacturaConHash = async (datosFactura) => {
 
     // Obtener hash anterior
     const ultimaFactura = await FacturaHash.findOne().sort({ createdAt: -1 });
-    const hashAnterior = ultimaFactura ? ultimaFactura.hash : 'INICIO';
+    const hashAnterior = ultimaFactura?.hash || 'INICIO';
 
-    // Generar nuevo hash
+    // Generar hash nuevo
     const datosParaHash = {
       numeroFactura,
       fechaExpedicion,
@@ -41,7 +56,7 @@ export const registrarFacturaConHash = async (datosFactura) => {
     // Firmar el hash
     const firmaDigital = await firmar(nuevoHash);
 
-    // Crear y guardar la nueva factura
+    // Guardar factura
     const nuevaFactura = new FacturaHash({
       numeroFactura,
       fechaExpedicion,
