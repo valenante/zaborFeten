@@ -3,6 +3,7 @@ import { Parser } from 'json2csv';
 import FacturaHash from '../models/FacturaHash.js';
 import EventoFactura from '../models/EventosFactura.js';
 import { emitirFacturaBase } from '../../utils/emitirFactura.js';
+import { generarNumeroFacturaRectificativa } from '../../utils/numeracionRectificativas.js';
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
 
 
@@ -66,10 +67,15 @@ export const rectificarFactura = async (req, res) => {
     if (facturaOriginal.rectificada)
       return res.status(400).json({ error: 'La factura ya fue rectificada.' });
 
-    const { facturaGuardada: nuevaFactura, numeroFactura } = await emitirFacturaBase({
+    // Generar nuevo número para la factura rectificativa
+    const nuevoNumeroFactura = await generarNumeroFacturaRectificativa();
+
+    const nuevaFactura = await emitirFacturaBase({
+      numeroFactura: nuevoNumeroFactura,
+      fechaExpedicion: new Date(), // Fecha actual
       clienteNombre,
       clienteNIF,
-      productos: [], // Se puede ajustar si se desea detallar la rectificación
+      productos: [], // o con detalles si lo deseas
       importeTotal,
       hashAnterior: facturaOriginal.hash,
       descripcionFactura: motivo || 'Rectificación de factura',
@@ -81,10 +87,10 @@ export const rectificarFactura = async (req, res) => {
     facturaOriginal.facturaRectificativaId = nuevaFactura._id;
     await facturaOriginal.save();
 
-    // Registrar el evento
+    // Registrar evento (ajusta si tienes modelo EventoFactura)
     await new EventoFactura({
       tipoEvento: 'rectificación',
-      numeroFactura,
+      numeroFactura: nuevoNumeroFactura,
       clienteNombre,
       clienteNIF,
       motivo,
@@ -94,17 +100,20 @@ export const rectificarFactura = async (req, res) => {
       facturaRectificativaId: nuevaFactura._id,
     }).save();
 
-    // Imprimir en impresora local
-    await axios.post('http://100.91.21.52:4000/imprimir-factura-rectificativa', {
-      numeroFactura,
-      fechaExpedicion: nuevaFactura.fechaExpedicion,
-      clienteNombre,
-      clienteNIF,
-      importeTotal,
-      motivo,
-      hash: nuevaFactura.hash,
-    });
-
+    try {
+      await axios.post('http://100.91.21.52:4000/imprimir-factura-rectificativa', {
+        numeroFactura: nuevoNumeroFactura,
+        fechaExpedicion: nuevaFactura.fechaExpedicion,
+        clienteNombre,
+        clienteNIF,
+        importeTotal,
+        motivo,
+        hash: nuevaFactura.hash,
+      });
+    } catch (printError) {
+      logger.warn('⚠️ No se pudo imprimir la factura rectificativa:', printError.message);
+      // No interrumpir el flujo, sólo loguear
+    }
     res.json({
       message: 'Factura rectificativa generada correctamente.',
       facturaOriginal,

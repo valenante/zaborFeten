@@ -125,9 +125,11 @@ const FacturasPage = () => {
                 fechaExpedicion: new Date(f.fechaExpedicion).toLocaleString(),
                 clienteNombre: f.clienteNombre,
                 clienteNIF: f.clienteNIF,
+                productos: JSON.stringify(f.productos),  // Incluido JSON string de productos
                 importeTotal: f.importeTotal,
                 hash: f.hash,
                 hashAnterior: f.hashAnterior,
+                xmlFirmado: f.xmlFirmado ? f.xmlFirmado.replace(/\n/g, ' ') : '',
             }))
         );
 
@@ -140,38 +142,38 @@ const FacturasPage = () => {
     };
 
     const exportarPDF = () => {
-        const doc = new jsPDF({ orientation: "landscape" });
-        doc.text("Facturas Encadenadas", 14, 20);
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.text("Facturas Encadenadas", 14, 20);
 
+    facturasFiltradas.forEach((f, index) => {
+        const startY = 30 + index * 60; // Ajusta según contenido y espacio
+        doc.text(`Número: ${f.numeroFactura}`, 14, startY);
+        doc.text(`Fecha: ${new Date(f.fechaExpedicion).toLocaleString()}`, 14, startY + 6);
+        doc.text(`Cliente: ${f.clienteNombre || "-"}`, 14, startY + 12);
+        doc.text(`NIF: ${f.clienteNIF || "-"}`, 14, startY + 18);
+        doc.text(`Importe: ${f.importeTotal} €`, 14, startY + 24);
+        doc.text(`Hash: ${f.hash}`, 14, startY + 30);
+
+        // Tabla productos
         autoTable(doc, {
-            startY: 30,
-            head: [["Número", "Fecha", "Cliente", "NIF", "Importe", "Hash", "Hash Anterior"]],
-            body: facturasFiltradas.map(f => [
-                f.numeroFactura,
-                new Date(f.fechaExpedicion).toLocaleString(),
-                f.clienteNombre || "-",
-                f.clienteNIF || "-",
-                `${f.importeTotal} €`,
-                f.hash,
-                f.hashAnterior
-            ]),
-            styles: {
-                fontSize: 7,
-                cellWidth: 'wrap',
-                overflow: 'linebreak',
-                halign: 'left',
-                valign: 'middle'
-            },
-            columnStyles: {
-                5: { cellWidth: 70 },
-                6: { cellWidth: 70 }
-            },
-            headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-            theme: 'grid',
+            startY: startY + 36,
+            head: [["Producto", "Cantidad", "Precio"]],
+            body: f.productos.map(p => [p.nombre, p.cantidad.toString(), p.precio.toFixed(2)]),
+            styles: { fontSize: 7 },
+            margin: { left: 14, right: 14 }
         });
 
-        doc.save("facturas.pdf");
-    };
+        // Opcional: agregar XML firmado al final de la última factura
+        if(index === facturasFiltradas.length - 1 && f.xmlFirmado){
+            doc.addPage();
+            doc.text("XML Firmado:", 14, 20);
+            doc.setFontSize(5);
+            doc.text(f.xmlFirmado, 14, 26, { maxWidth: 280 });
+        }
+    });
+
+    doc.save("facturas.pdf");
+};
 
     return (
         <div className="facturas-page">

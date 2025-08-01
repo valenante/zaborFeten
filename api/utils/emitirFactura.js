@@ -22,50 +22,48 @@ export async function emitirFacturaBase({
   productos,
   importeTotal,
 }) {
-  const ultimaFactura = await FacturaHash.findOne().sort({ createdAt: -1 });
-  const hashAnterior = ultimaFactura?.hash || '0000';
-  const hash = generarHashFactura(
-    { numeroFactura, fechaExpedicion, clienteNombre, clienteNIF, importeTotal },
-    hashAnterior
-  );
+  try {
+    fechaExpedicion = fechaExpedicion ? new Date(fechaExpedicion) : new Date();
 
-  const datosFactura = {
-    numeroFactura,
-    fechaExpedicion,
-    clienteNombre,
-    clienteNIF,
-    productos,
-    importeTotal,
-    hash,
-    hashAnterior,
-  };
-
-  let xmlFirmado = null;
-
-  if (!modoVerifactu) {
-    // Firmar con java
-    const xml = generarFacturaXML(datosFactura);
-    xmlFirmado = await firmarFacturaConJava(
-      xml,
-      rutaCertificado,
-      'MIKHAILTAL1!'
+    const ultimaFactura = await FacturaHash.findOne().sort({ createdAt: -1 });
+    const hashAnterior = ultimaFactura?.hash || '0000';
+    const hash = generarHashFactura(
+      { numeroFactura, fechaExpedicion, clienteNombre, clienteNIF, importeTotal },
+      hashAnterior
     );
 
-    datosFactura.xmlFirmado = xmlFirmado;
+    const datosFactura = {
+      numeroFactura,
+      fechaExpedicion,
+      clienteNombre,
+      clienteNIF,
+      productos,
+      importeTotal,
+      hash,
+      hashAnterior,
+    };
 
-    // Guardar XML firmado en archivo (opcional)
-    const carpetaFacturas = path.resolve('facturas_emitidas');
-    if (!fs.existsSync(carpetaFacturas)) fs.mkdirSync(carpetaFacturas);
-    const ruta = path.join(carpetaFacturas, `${numeroFactura}.xml`);
-    fs.writeFileSync(ruta, xmlFirmado);
-  } else {
-    // Enviar a AEAT si está en modo VERI*FACTU
-    await enviarFacturaAEAT(datosFactura);
+    let xmlFirmado = null;
+
+    if (!modoVerifactu) {
+      const xml = generarFacturaXML(datosFactura);
+      xmlFirmado = await firmarFacturaConJava(xml, rutaCertificado, 'MIKHAILTAL1!');
+      datosFactura.xmlFirmado = xmlFirmado;
+
+      const carpetaFacturas = path.resolve('facturas_emitidas');
+      if (!fs.existsSync(carpetaFacturas)) fs.mkdirSync(carpetaFacturas);
+      const ruta = path.join(carpetaFacturas, `${numeroFactura}.xml`);
+      fs.writeFileSync(ruta, xmlFirmado);
+    } else {
+      await enviarFacturaAEAT(datosFactura);
+    }
+
+    const nuevaFactura = new FacturaHash(datosFactura);
+    await nuevaFactura.save();
+
+    return nuevaFactura;
+  } catch (error) {
+    console.error('Error en emitirFacturaBase:', error);
+    throw error;
   }
-
-  // Guardar factura en DB (con el xml firmado si aplica)
-  const nuevaFactura = new FacturaHash(datosFactura);
-  await nuevaFactura.save();
-
-  return nuevaFactura;
 }

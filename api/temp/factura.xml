@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Factura xmlns="http://www.facturae.gob.es/formato">
   <Cabecera>
-    <Numero>2025-0010</Numero>
+    <Numero>R-2025-0002</Numero>
     <Fecha>2025-07-31</Fecha>
-    <ClienteNombre>Valen</ClienteNombre>
-    <ClienteNIF>6666666666</ClienteNIF>
-    <ImporteTotal>4.07</ImporteTotal>
-    <Hash>MhTZu31h43ODfKjJiMDqpepe1tbsnb+FOflgaHLiiJg=</Hash>
+    <ClienteNombre>bae</ClienteNombre>
+    <ClienteNIF>123</ClienteNIF>
+    <ImporteTotal>1.00</ImporteTotal>
+    <Hash>4s83E5iGV21hMildbWe656HYiTcdfiPlSFMXG3SDvlY=</Hash>
   </Cabecera>
   <Productos>
     
-    <Producto>
-      <Nombre>Ensalada César 49</Nombre>
-      <Cantidad>1</Cantidad>
-      <Precio>4.07</Precio>
-    </Producto>
   </Productos>
   
   <Software>
