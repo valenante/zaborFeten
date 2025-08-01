@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Factura xmlns="http://www.facturae.gob.es/formato">
   <Cabecera>
-    <Numero>R-2025-0002</Numero>
-    <Fecha>2025-07-31</Fecha>
-    <ClienteNombre>bae</ClienteNombre>
-    <ClienteNIF>123</ClienteNIF>
-    <ImporteTotal>1.00</ImporteTotal>
-    <Hash>4s83E5iGV21hMildbWe656HYiTcdfiPlSFMXG3SDvlY=</Hash>
+    <Numero>2025-0007</Numero>
+    <Fecha>2025-08-01</Fecha>
+    <ClienteNombre>Consumidor Final</ClienteNombre>
+    <ClienteNIF>N/A</ClienteNIF>
+    <ImporteTotal>64.48</ImporteTotal>
+    <Hash>ICshsLiAfBhdprJKhKijYXHv6pwzVYeDQAGDe7VzYvE=</Hash>
   </Cabecera>
   <Productos>
     
+    <Producto>
+      <Nombre>Helado de vainilla 30</Nombre>
+      <Cantidad>1</Cantidad>
+      <Precio>11.61</Precio>
+    </Producto>
+    <Producto>
+      <Nombre>Pollo al Curry 8</Nombre>
+      <Cantidad>1</Cantidad>
+      <Precio>4.22</Precio>
+    </Producto>
   </Productos>
   
   <Software>

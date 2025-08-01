@@ -1,20 +1,31 @@
 import axios from 'axios';
 import https from 'https';
 import fs from 'fs';
+import path from 'path';
 import { mapFacturaToVerifactu } from './verifactuMapper.js';
 
-const CERT_PATH = './certificados/certificado.pem';
-const KEY_PATH = './certificados/clave.key';
-const CERT_PASSPHRASE = 'MIKHAILTAL1!';
-
-const httpsAgent = new https.Agent({
-  cert: fs.readFileSync(CERT_PATH),
-  key: fs.readFileSync(KEY_PATH),
-  passphrase: CERT_PASSPHRASE,
-  rejectUnauthorized: false
-});
+const basePath = path.join(process.cwd(), 'certificados');
 
 export async function enviarFacturaAEAT(factura) {
+  const CERT_PATH = path.join(basePath, 'certificado.pem');
+  const KEY_PATH = path.join(basePath, 'certificado.key');
+  const PASS_PATH = path.join(basePath, 'certificado.p12.pass');
+
+  if (!fs.existsSync(CERT_PATH) || !fs.existsSync(KEY_PATH) || !fs.existsSync(PASS_PATH)) {
+    throw new Error('❌ No se encontraron certificado, clave o contraseña en la carpeta certificados');
+  }
+
+  const cert = fs.readFileSync(CERT_PATH);
+  const key = fs.readFileSync(KEY_PATH);
+  const passphrase = fs.readFileSync(PASS_PATH, 'utf-8').trim();
+
+  const httpsAgent = new https.Agent({
+    cert,
+    key,
+    passphrase,
+    rejectUnauthorized: false,
+  });
+
   const json = mapFacturaToVerifactu(factura);
 
   try {

@@ -15,6 +15,7 @@ import Usuarios from "./pages/Usuarios";
 import Facturas from "./components/Facturas/FacturasPage";
 import Eliminacion from "./pages/Eliminaciones/Eliminaciones";
 import CajaDiaria from "./components/CajaDiaria/CajaDiaria";
+import Admin from "./components/Admin/Admin";
 import MesasCerradas from "./components/MesasCerradas/MesasCerradas";
 import { SocketProvider } from "./utils/socket";
 import CuentaPopup from "./components/CuentaPopUp/CuentaPopUp";
@@ -132,6 +133,14 @@ const AppContent = () => {
           element={
             <RutaProtegida rolesPermitidos={["admin"]}>
               <Usuarios />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RutaProtegida rolesPermitidos={["admin"]}>
+              <Admin />
             </RutaProtegida>
           }
         />

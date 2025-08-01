@@ -70,6 +70,9 @@ const Navbar = () => {
         <li className="navbar-item--navbar only-desktop">
           <Link className="navbar-link--navbar" to="/facturas">Facturas</Link>
         </li>
+        <li className="navbar-item--navbar only-desktop">
+          <Link className="navbar-link--navbar" to="/admin">Admin</Link>
+        </li>
         {mostrarBarra && (
           <li className="navbar-item--navbar only-desktop">
             <Link className="navbar-link--navbar" to="/barra">Barra</Link>
@@ -92,6 +95,7 @@ const Navbar = () => {
             <option value="/tpv/products">Productos</option>
             <option value="/tpv/reservas">Reservas</option>
             <option value="/tpv/facturas">Facturas</option>
+            <option value="/tpv/admin">Admin</option>
             {mostrarBarra && <option value="/tpv/barra">Barra</option>}
             {mostrarCocina && <option value="/tpv/cocina">Cocina</option>}
           </select>

@@ -1,0 +1,78 @@
+.admin-container {
+  background-color: var(--blanco);
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 3rem;
+  border-radius: var(--borde-redondeado);
+  box-shadow: var(--sombra-suave);
+}
+
+.admin-titulo {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.admin-formulario {
+  margin-bottom: 1.5rem;
+}
+
+.admin-campo {
+  margin-bottom: 1rem;
+}
+
+.admin-boton-primario {
+  background-color: var(--color-principal);
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--borde-redondeado);
+  cursor: pointer;
+}
+
+.admin-boton-primario:hover {
+  background-color: var(--color-principal-hover);
+}
+
+.admin-boton-secundario {
+  background-color: var(--color-secundario);
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--borde-redondeado);
+  cursor: pointer;
+}
+
+.admin-boton-secundario:hover {
+  background-color: var(--color-secundario-hover);
+}
+
+.admin-mensaje {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.admin-separador {
+  margin: 2rem 0;
+}
+
+.admin-boton-contenedor {
+  text-align: center;
+}
+
+/* 🔽 Responsive design para pantallas pequeñas */
+@media (max-width: 480px) {
+  .admin-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .admin-titulo {
+    font-size: 1.2rem;
+  }
+
+  .admin-boton-primario,
+  .admin-boton-secundario {
+    width: 100%;
+    max-width: 100%;
+  }
+}

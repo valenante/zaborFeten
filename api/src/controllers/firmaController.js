@@ -1,0 +1,63 @@
+// controllers/firmaController.js
+
+import path from 'path';
+import fs from 'fs';
+import PDFDocument from 'pdfkit';
+import { execSync } from 'child_process';
+
+const CERT_FOLDER = path.join(process.cwd(), 'certificados');
+
+export const subirCertificado = (req, res) => {
+  const archivo = req.file;
+  const { password } = req.body;
+
+  if (!archivo || !password) return res.status(400).send('Faltan datos');
+
+  if (!fs.existsSync(CERT_FOLDER)) fs.mkdirSync(CERT_FOLDER);
+
+  const nombreBase = path.parse(archivo.originalname).name;
+  const rutaP12 = path.join(CERT_FOLDER, `${nombreBase}.p12`);
+  const rutaPem = path.join(CERT_FOLDER, `${nombreBase}.pem`);
+  const rutaKey = path.join(CERT_FOLDER, `${nombreBase}.key`);
+  const rutaPass = path.join(CERT_FOLDER, `${nombreBase}.pass`);
+
+  // Guardar .p12 y .pass
+  fs.renameSync(archivo.path, rutaP12);
+  fs.writeFileSync(rutaPass, password);
+
+  try {
+    // Extraer .pem (certificado público)
+    execSync(`openssl pkcs12 -in "${rutaP12}" -clcerts -nokeys -out "${rutaPem}" -passin pass:${password}`);
+
+    // Extraer .key (clave privada)
+    execSync(`openssl pkcs12 -in "${rutaP12}" -nocerts -nodes -out "${rutaKey}" -passin pass:${password}`);
+  } catch (error) {
+    return res.status(500).send('Error al convertir el certificado: ' + error.message);
+  }
+
+  res.send('Certificado subido y convertido correctamente');
+};
+
+export const descargarDeclaracionResponsable = (req, res) => {
+  const restaurante = {
+    nombre: 'Mi Restaurante',
+    cif: 'X12345678',
+    direccion: 'Calle Ejemplo 123',
+  };
+
+  const doc = new PDFDocument();
+  res.setHeader('Content-Disposition', 'attachment; filename=declaracion-responsable.pdf');
+  res.setHeader('Content-Type', 'application/pdf');
+  doc.pipe(res);
+
+  doc.fontSize(16).text('Declaración Responsable', { align: 'center' });
+  doc.moveDown();
+  doc.fontSize(12).text(`Nombre del restaurante: ${restaurante.nombre}`);
+  doc.text(`CIF: ${restaurante.cif}`);
+  doc.text(`Dirección: ${restaurante.direccion}`);
+  doc.text(`Fecha: ${new Date().toLocaleDateString()}`);
+  doc.moveDown();
+  doc.text('Declaro que el software cumple con la Ley 11/2021 y que todas las emisiones de factura se registran de forma inalterable con firma digital.');
+
+  doc.end();
+};
