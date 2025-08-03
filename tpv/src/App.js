@@ -20,6 +20,7 @@ import MesasCerradas from "./components/MesasCerradas/MesasCerradas";
 import { SocketProvider } from "./utils/socket";
 import CuentaPopup from "./components/CuentaPopUp/CuentaPopUp";
 import Navbar from "./components/Navbar/Navbar";
+import VerificarFacturaPage from "./components/Facturas/VerificarFacturas";
 import { AuthProvider } from "./context/AuthContext";
 import { ImagesProvider } from "./context/ImagesContext";
 import ReservasPage from "./pages/Reservas";
@@ -28,15 +29,15 @@ const AppContent = () => {
   const location = useLocation();
 
   // Define the routes where the Navbar should not appear
-  const rutasSinNavbar = ["/barra", "/cocina", "/login", "/register"];
-  const mostrarNavbar = !rutasSinNavbar.includes(location.pathname);
-
+  const rutasSinNavbar = ["/barra", "/cocina", "/login", "/register", "/verificar-factura/:hash"];
+  const mostrarNavbar = !rutasSinNavbar.some(r => location.pathname.startsWith(r)) &&
+    !location.pathname.startsWith("/verificar-factura/");
   return (
     <>
       <CuentaPopup />
       {mostrarNavbar && <Navbar />}
       <Routes>
-      {/* Rutas públicas */}
+        {/* Rutas públicas */}
         <Route
           path="/"
           element={
@@ -144,9 +145,10 @@ const AppContent = () => {
             </RutaProtegida>
           }
         />
+        <Route path="/verificar-factura/:hash" element={<VerificarFacturaPage />} />
         <Route path="/reservas" element={<ReservasPage />} />
-        </Routes>
-      </>
+      </Routes>
+    </>
   );
 };
 

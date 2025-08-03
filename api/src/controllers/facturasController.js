@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import { Parser } from 'json2csv';
 import FacturaHash from '../models/FacturaHash.js';
 import EventoFactura from '../models/EventosFactura.js';
@@ -123,4 +124,34 @@ export const rectificarFactura = async (req, res) => {
     logger.error('❌ Error al rectificar factura:', error);
     res.status(500).json({ error: 'Error al rectificar la factura.' });
   }
+};
+export const verificarFactura = async (req, res) => {
+  const { hash } = req.params;
+
+  const factura = await FacturaHash.findOne({ hash }).lean();
+  if (!factura) return res.status(404).json({ error: 'Factura no encontrada' });
+
+  const fecha = new Date(factura.fechaExpedicion).toISOString().slice(0, 10);
+  const datosOriginales = [
+    factura.numeroFactura,
+    fecha,
+    factura.clienteNombre, // ✅ Agregado aquí
+    factura.clienteNIF,
+    Number(factura.importeTotal).toFixed(2),
+    factura.hashAnterior || ''
+  ].join('');
+
+  const hashCalculado = crypto.createHash('sha256').update(datosOriginales).digest('base64');
+
+  res.json({
+    numeroFactura: factura.numeroFactura,
+    fecha,
+    cliente: factura.clienteNombre,
+    clienteNIF: factura.clienteNIF,
+    total: Number(factura.importeTotal).toFixed(2),
+    hash: factura.hash,
+    hashCalculado,
+    hashAnterior: factura.hashAnterior,
+    valido: hashCalculado === factura.hash
+  });
 };

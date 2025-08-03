@@ -169,13 +169,31 @@ export const agregarProductoAlPedido = async (req, res) => {
     }
 
     // 💥 Recalcular total completo (evita errores por concurrencia)
+    // ...
+    // 💥 Recalcular total completo (evita errores por concurrencia)
     const pedidos = await Pedido.find({ mesa: mesa._id });
+    logger.info(`🔁 ${pedidos.length} pedidos encontrados para mesa ${mesa.numero}`);
+
     const pedidosBebidas = await PedidoBebida.find({ mesa: mesa._id });
+    logger.info(`🥤 ${pedidosBebidas.length} pedidos de bebidas encontrados para mesa ${mesa.numero}`);
 
-    const totalPedidos = pedidos.reduce((sum, p) => sum + p.total, 0);
-    const totalBebidas = pedidosBebidas.reduce((sum, p) => sum + p.total, 0);
+    const totalPedidos = pedidos.reduce((sum, p) => {
+      logger.debug(`📦 Pedido normal: total = ${p.total}`);
+      return sum + p.total;
+    }, 0);
 
-    mesa.total = totalPedidos + totalBebidas;
+    const totalBebidas = pedidosBebidas.reduce((sum, p) => {
+      logger.debug(`🍹 Pedido bebida: total = ${p.total}`);
+      return sum + p.total;
+    }, 0);
+
+    const totalMesa = totalPedidos + totalBebidas;
+    logger.info(`🧮 Total recalculado para mesa ${mesa.numero}: ${totalPedidos} + ${totalBebidas} = ${totalMesa}`);
+
+    mesa.total = totalMesa;
+    await mesa.save();
+    logger.info(`💾 Total de la mesa ${mesa.numero} guardado: ${mesa.total}`);
+
 
     await mesa.save();
 

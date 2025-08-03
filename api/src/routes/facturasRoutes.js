@@ -3,6 +3,7 @@ import {
   listarFacturasEncadenadas,
   exportarFacturasCSV,
   rectificarFactura,
+  verificarFactura
 } from '../controllers/facturasController.js';
 
 const router = express.Router();
@@ -74,5 +75,30 @@ router.get('/exportar-csv', exportarFacturasCSV);
  *         description: Error en la rectificación
  */
 router.post('/rectificar/:id', rectificarFactura);
+
+/**
+ * @swagger
+ * /facturas/verificar/{hash}:
+ *   get:
+ *     summary: Verificar una factura por su hash
+ *     tags: [Facturas]
+ *     parameters:
+ *       - in: path
+ *         name: hash
+ *         required: true
+ *         description: Hash de la factura a verificar
+ *         schema:
+ *           type: string
+ *           example: abc123
+ *     responses:
+ *       200:
+ *         description: Datos de la factura verificada
+ *       404:
+ *         description: Factura no encontrada
+ *       500:
+ *         description: Error interno del servidor
+ */
+
+router.get('/verificar-factura/:hash', verificarFactura);
 
 export default router;

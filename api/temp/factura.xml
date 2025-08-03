@@ -1,24 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Factura xmlns="http://www.facturae.gob.es/formato">
   <Cabecera>
-    <Numero>2025-0007</Numero>
-    <Fecha>2025-08-01</Fecha>
-    <ClienteNombre>Consumidor Final</ClienteNombre>
-    <ClienteNIF>N/A</ClienteNIF>
-    <ImporteTotal>64.48</ImporteTotal>
-    <Hash>ICshsLiAfBhdprJKhKijYXHv6pwzVYeDQAGDe7VzYvE=</Hash>
+    <Numero>2025-0001</Numero>
+    <Fecha>2025-08-03</Fecha>
+    <ClienteNombre>Valen</ClienteNombre>
+    <ClienteNIF>666</ClienteNIF>
+    <ImporteTotal>3.46</ImporteTotal>
+    <Hash>yxAuSx8sz8bcfMFvjTh66cU5bojUmvKSmozFiiQjHLw=</Hash>
   </Cabecera>
   <Productos>
     
     <Producto>
-      <Nombre>Helado de vainilla 30</Nombre>
+      <Nombre>Croquetas de Jamón 22</Nombre>
       <Cantidad>1</Cantidad>
-      <Precio>11.61</Precio>
-    </Producto>
-    <Producto>
-      <Nombre>Pollo al Curry 8</Nombre>
-      <Cantidad>1</Cantidad>
-      <Precio>4.22</Precio>
+      <Precio>3.46</Precio>
     </Producto>
   </Productos>
   

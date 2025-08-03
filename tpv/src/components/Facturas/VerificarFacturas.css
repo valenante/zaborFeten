@@ -1,0 +1,70 @@
+
+.verificar-container {
+  padding: calc(var(--espaciado-base) * 2);
+  max-width: 600px;
+  margin: 2rem auto;
+  background-color: var(--blanco);
+  border-radius: var(--borde-redondeado);
+  box-shadow: var(--sombra-suave);
+  font-family: var(--fuente-principal);
+}
+
+.verificar-title {
+  text-align: center;
+  color: var(--color-principal);
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.verificar-info {
+  margin-bottom: 0.8rem;
+  font-size: 1.05rem;
+}
+
+.verificar-info strong {
+  color: var(--gris-oscuro);
+}
+
+.verificar-validacion {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.verificar-validacion.verificar-valido {
+  color: green;
+}
+
+.verificar-validacion.verificar-no-valido {
+  color: red;
+}
+
+.verificar-hash {
+  word-break: break-all;
+  overflow-wrap: break-word;
+  font-size: 0.9rem;
+  background-color: var(--gris-claro);
+  padding: 0.5rem;
+  border-radius: var(--borde-redondeado);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  line-height: 1.4; /* 👈 Añadimos espacio entre líneas */
+  display: block;   /* 👈 Asegura que ocupe todo el ancho */
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .verificar-container {
+    padding: var(--espaciado-base);
+    margin: 2rem ;
+  }
+
+  .verificar-title {
+    font-size: 1.5rem;
+  }
+
+  .verificar-info {
+    font-size: 0.95rem;
+  }
+}
