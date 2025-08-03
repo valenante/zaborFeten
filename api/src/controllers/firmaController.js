@@ -39,25 +39,18 @@ export const subirCertificado = (req, res) => {
 };
 
 export const descargarDeclaracionResponsable = (req, res) => {
-  const restaurante = {
-    nombre: 'Mi Restaurante',
-    cif: 'X12345678',
-    direccion: 'Calle Ejemplo 123',
-  };
+  // Ruta absoluta al archivo
+  const filePath = path.join(process.cwd(), 'public/docs', 'declaracion-responsable.pdf');
 
-  const doc = new PDFDocument();
+  // Verificar si el archivo existe
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send('Archivo no encontrado');
+  }
+
+  // Configurar headers para descarga
   res.setHeader('Content-Disposition', 'attachment; filename=declaracion-responsable.pdf');
   res.setHeader('Content-Type', 'application/pdf');
-  doc.pipe(res);
 
-  doc.fontSize(16).text('Declaración Responsable', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text(`Nombre del restaurante: ${restaurante.nombre}`);
-  doc.text(`CIF: ${restaurante.cif}`);
-  doc.text(`Dirección: ${restaurante.direccion}`);
-  doc.text(`Fecha: ${new Date().toLocaleDateString()}`);
-  doc.moveDown();
-  doc.text('Declaro que el software cumple con la Ley 11/2021 y que todas las emisiones de factura se registran de forma inalterable con firma digital.');
-
-  doc.end();
+  // Enviar archivo
+  res.sendFile(filePath);
 };
