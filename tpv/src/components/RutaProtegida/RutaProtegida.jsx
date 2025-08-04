@@ -2,25 +2,36 @@ import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import renovarToken from '../../utils/RenovarToken';
+import './RutaProtegida.css';
 
-const RutaProtegida = ({ children }) => {
-  const { accessToken, setAccessToken, loading } = useAuth();
+const RutaProtegida = ({ children, rolesPermitidos }) => {
+  const { accessToken, setAccessToken, user, loading } = useAuth();
 
-  // Mover el useEffect fuera del condicional
   useEffect(() => {
     if (!accessToken) {
       renovarToken(setAccessToken);
     }
   }, [accessToken, setAccessToken]);
 
-  // Manejar el estado de carga al principio del renderizado
   if (loading) {
-    return <div>Cargando...</div>; // Mostrar indicador de carga mientras espera
+    return <div className="protegida-cargando">Cargando...</div>;
   }
 
-  // Verificar si el usuario está autenticado
   if (!accessToken) {
     return <Navigate to="/login" />;
+  }
+
+  console.log("Ruta protegida renderizada", { accessToken, user });
+
+  if (rolesPermitidos && user && !rolesPermitidos.includes(user.role)) {
+    return (
+      <div className="protegida-denegado">
+        <div className="protegida-cartel">
+          <h2>Acceso denegado</h2>
+          <p>Permisos insuficientes para acceder a esta sección.</p>
+        </div>
+      </div>
+    );
   }
 
   return children;

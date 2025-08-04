@@ -51,7 +51,7 @@ const Login = () => {
           navigate("/cocina");
           break;
         case "camarero":
-          navigate("/mesas");
+          navigate("/");
           break;
         default:
           throw new Error("Rol de usuario desconocido");
