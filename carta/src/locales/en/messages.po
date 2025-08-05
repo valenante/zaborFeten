@@ -14,6 +14,13 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:154
+#: src/components/Navbar/Navbar.js:234
+#: src/components/Navbar/Navbar.js:264
+msgid "mi-pedido"
+msgstr "My order"
+
+#. js-lingui-explicit-id
 #: src/pages/Valoraciones.js:106
 msgid "valora-experiencia"
 msgstr "Rate your experience"
@@ -44,62 +51,62 @@ msgid "Configuración Inicial"
 msgstr "Initial Configuration"
 
 #. js-lingui-explicit-id
-#: src/components/PreMenu/PreMenu.jsx:193
+#: src/components/PreMenu/PreMenu.jsx:199
 msgid "Nombre"
 msgstr "Name"
 
 #. js-lingui-explicit-id
-#: src/components/PreMenu/PreMenu.jsx:206
+#: src/components/PreMenu/PreMenu.jsx:212
 msgid "Alergias"
 msgstr "Allergies"
 
 #. js-lingui-explicit-id
-#: src/components/PreMenu/PreMenu.jsx:220
+#: src/components/PreMenu/PreMenu.jsx:226
 msgid "Número de comensales"
 msgstr "Number of guests"
 
 #. js-lingui-explicit-id
-#: src/components/PreMenu/PreMenu.jsx:230
+#: src/components/PreMenu/PreMenu.jsx:236
 msgid "Contraseña"
 msgstr "Password"
 
 #. js-lingui-explicit-id
-#: src/components/PreMenu/PreMenu.jsx:240
+#: src/components/PreMenu/PreMenu.jsx:246
 msgid "Procesando..."
 msgstr "Processing..."
 
 #. js-lingui-explicit-id
-#: src/components/PreMenu/PreMenu.jsx:242
+#: src/components/PreMenu/PreMenu.jsx:248
 msgid "Continuar"
 msgstr "Continue"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:104
-#: src/components/Navbar/Navbar.js:187
+#: src/components/Navbar/Navbar.js:134
+#: src/components/Navbar/Navbar.js:222
 msgid "todas-categorias"
 msgstr "categories"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:114
-#: src/components/Navbar/Navbar.js:197
+#: src/components/Navbar/Navbar.js:144
+#: src/components/Navbar/Navbar.js:232
 msgid "platos"
 msgstr "Dishes"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:114
-#: src/components/Navbar/Navbar.js:197
+#: src/components/Navbar/Navbar.js:144
+#: src/components/Navbar/Navbar.js:232
 msgid "bebidas"
 msgstr "Drinks"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:119
-#: src/components/Navbar/Navbar.js:211
+#: src/components/Navbar/Navbar.js:149
+#: src/components/Navbar/Navbar.js:248
 msgid "cuenta"
 msgstr "Bill"
 
 #. js-lingui-explicit-id
-#: src/components/Carta/ProductoCard.js:130
-#: src/components/Carta/ProductoCard.js:144
+#: src/components/Carta/ProductoCard.js:115
+#: src/components/Carta/ProductoCard.js:129
 msgid "agregar-carrito"
 msgstr "Add to cart"
 

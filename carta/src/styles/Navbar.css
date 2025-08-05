@@ -26,6 +26,7 @@
   padding: 0.5rem 1.2rem;
   font-size: 1rem;
   font-weight: 600;
+  
   border: none;
   border-radius: var(--borde-redondeado);
   cursor: pointer;
@@ -99,6 +100,109 @@
 .navbar-fila-opciones,
 .navbar-fila-cuenta {
   width: 100%;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-pedido {
+  background: white;
+  padding: 25px 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.3s ease-in-out;
+  text-align: center;
+}
+
+.modal-pedido h2 {
+  margin-bottom: 20px;
+  color: var(--color-principal);
+  font-size: 1.5rem;
+}
+
+.modal-vacio {
+  font-style: italic;
+  color: #666;
+}
+
+.modal-lista-productos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.modal-pedido-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.modal-pedido-item .cantidad {
+  font-weight: bold;
+  color: var(--color-secundario);
+}
+
+.modal-pedido-item .nombre {
+  flex: 1;
+  margin: 0 10px;
+  text-align: left;
+}
+
+.modal-pedido-item .precio {
+  font-weight: 500;
+}
+
+.modal-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-top: 2px solid var(--color-principal);
+  padding-top: 10px;
+}
+
+.btn-cerrar-modal {
+  margin-top: 25px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-secundario);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.btn-cerrar-modal:hover {
+  background-color: #e05a00;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media screen and (max-width: 768px) {

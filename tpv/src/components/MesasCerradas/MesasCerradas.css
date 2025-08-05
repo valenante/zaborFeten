@@ -218,6 +218,8 @@
 
 .tabla-container--mesas-cerradas {
   overflow-x: auto;
+  max-height: 60vh;
+  overflow-y: auto;
   background-color: var(--blanco);
   padding: var(--espaciado-base);
   border-radius: var(--borde-redondeado);

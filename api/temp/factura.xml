@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Factura xmlns="http://www.facturae.gob.es/formato">
   <Cabecera>
-    <Numero>2025-0019</Numero>
-    <Fecha>2025-08-04</Fecha>
+    <Numero>2025-0020</Numero>
+    <Fecha>2025-08-05</Fecha>
     <ClienteNombre>Consumidor Final</ClienteNombre>
     <ClienteNIF>N/A</ClienteNIF>
-    <ImporteTotal>0.00</ImporteTotal>
-    <Hash>VNOqdh+KfcJcagb9qDTY1z5w6AB72FHDc7irU40OJdk=</Hash>
+    <ImporteTotal>22.90</ImporteTotal>
+    <Hash>MnkPWw1e7GOdW5hqPCq0BuKze5Cq0lYYsKnoXDHSECg=</Hash>
   </Cabecera>
   <Productos>
     
+    <Producto>
+      <Nombre>Vino Rioja 1</Nombre>
+      <Cantidad>1</Cantidad>
+      <Precio>9.69</Precio>
+    </Producto>
+    <Producto>
+      <Nombre>Cerveza Artesanal 12</Nombre>
+      <Cantidad>1</Cantidad>
+      <Precio>8.85</Precio>
+    </Producto>
   </Productos>
   
   <Software>

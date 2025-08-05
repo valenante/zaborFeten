@@ -9,7 +9,6 @@ import Producto from '../models/Producto.js';
 import SesionMesa from '../models/SesionMesa.js';
 
 const IMPRESION_SERVER = process.env.IMPRESION_SERVER
-
 export const crearPedido = async (req, res) => {
   try {
     const {
@@ -28,6 +27,17 @@ export const crearPedido = async (req, res) => {
       return res.status(404).json({ error: 'Mesa no encontrada' });
     }
 
+    // 🔒 Buscar sesión activa
+    const sesionActiva = await SesionMesa.findOne({
+      mesa: mesaExistente._id,
+      estado: 'activa',
+    });
+
+    if (!sesionActiva) {
+      return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
+    }
+
+    // 🧾 Crear nuevo pedido de bebida
     const nuevoPedido = new PedidoBebida({
       productos,
       total: parseFloat(total.toFixed(2)),
@@ -35,6 +45,7 @@ export const crearPedido = async (req, res) => {
       alergias,
       mesa: mesaExistente._id,
       precioSeleccionado,
+      sesionId: sesionActiva._id, // 📌 Asociar a la sesión activa
     });
 
     await nuevoPedido.save();
@@ -61,13 +72,8 @@ export const crearPedido = async (req, res) => {
         productoEnDB.stock -= producto.cantidad;
         await productoEnDB.save();
       } else {
-        logger.error(
-          'Producto no encontrado en la base de datos:',
-          producto.producto
-        );
-        return res
-          .status(400)
-          .json({ error: 'Producto no encontrado en la base de datos' });
+        logger.error('Producto no encontrado en la base de datos:', producto.producto);
+        return res.status(400).json({ error: 'Producto no encontrado en la base de datos' });
       }
     }
 
@@ -77,8 +83,6 @@ export const crearPedido = async (req, res) => {
 
     // Emitir evento para actualizar en tiempo real
     req.io.emit('nuevoPedido', nuevoPedido);
-
-    // ✅ No se envía nada a impresión aquí
 
     res.status(201).json({
       message: 'Pedido creado con éxito',

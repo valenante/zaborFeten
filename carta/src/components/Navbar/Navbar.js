@@ -6,6 +6,7 @@ import CarritoModal from "../Cart/CarritoModal";
 import { ProductosContext } from "../../context/ProductosContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
+import { useMesas } from "../../context/MesasContext";
 import * as logger from '../../utils/logger';
 import "../../styles/Navbar.css";
 import { useSearchParams } from 'react-router-dom';
@@ -14,13 +15,16 @@ import socket from "../../utils/socket";
 
 const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
   const [searchParams] = useSearchParams();
-  const numeroMesa = searchParams.get("mesa");
+  const { mesaId, numeroMesa } = useMesas();
+
   const { productos, categoriaSeleccionada, setCategoriaSeleccionada } =
     useContext(ProductosContext);
   const [pantallaPequena, setPantallaPequena] = useState(window.innerWidth <= 768);
   const [mostrarModal, setMostrarModal] = useState(false);
   const { cargarCarrito } = useContext(ProductosContext);
   const [pedidosListos, setPedidosListos] = useState(false);
+  const [mostrarMiPedido, setMostrarMiPedido] = useState(false);
+  const [pedidosMesa, setPedidosMesa] = useState([]);
   const navigate = useNavigate();
   const { locale, cambiarIdioma } = useContext(LanguageContext); // 👈 Obtenemos idioma y función para cambiarlo
 
@@ -36,6 +40,10 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
   useEffect(() => {
     cargarCarrito();
   }, [cargarCarrito]);
+
+  useEffect(() => {
+    cargarPedidosMesa();
+  }, [mesaId]);
 
   useEffect(() => {
     const verificarPedidosListos = async () => {
@@ -59,12 +67,33 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
           setPedidosListos(data.todosListos);
         }
       });
-  
+
       return () => {
         socket.off("pedidosActualizados");
       };
     }
-  }, [socket, numeroMesa]);  
+  }, [socket, numeroMesa]);
+
+  const cargarPedidosMesa = async () => {
+    try {
+      if (!mesaId) return;
+      const resPlatos = await api.get(`/pedidos/mesa/${mesaId}`);
+
+      // Combinar pedidos y bebidas
+      const pedidosCombinados = [...resPlatos.data];
+      setPedidosMesa(pedidosCombinados);
+    } catch (error) {
+      logger.error("Error al cargar pedidos de la mesa:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (socket) {
+      socket.on("nuevoPedido", cargarPedidosMesa);
+      return () => socket.off("nuevoPedido", cargarPedidosMesa);
+    }
+  }, [socket]);
+
 
   const handleCategoriaChange = (event) => {
     setCategoriaSeleccionada(event.target.value);
@@ -91,37 +120,77 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
     .filter((categoria, index, self) => self.indexOf(categoria) === index);
 
   return (
-      <nav className="navbar-navbar-custom">
-        {/* 📌 PANTALLAS GRANDES: Estructura normal */}
-        {!pantallaPequena ? (
-          <div className="row w-100 align-items-center">
-            <div className="col-12 d-flex justify-content-left align-items-center p-3">
-              <select
-                value={categoriaSeleccionada}
-                onChange={handleCategoriaChange}
-                className="navbar-select me-3"
-              >
-                <option value="">
-                  <Trans id="todas-categorias">Categorías</Trans>
+    <nav className="navbar-navbar-custom">
+      {/* 📌 PANTALLAS GRANDES: Estructura normal */}
+      {!pantallaPequena ? (
+        <div className="row w-100 align-items-center">
+          <div className="col-12 d-flex justify-content-left align-items-center p-3">
+            <select
+              value={categoriaSeleccionada}
+              onChange={handleCategoriaChange}
+              className="navbar-select me-3"
+            >
+              <option value="">
+                <Trans id="todas-categorias">Categorías</Trans>
+              </option>
+              {categoriasFiltradas.map((categoria) => (
+                <option key={categoria} value={categoria}>
+                  {categoria}
                 </option>
-                {categoriasFiltradas.map((categoria) => (
-                  <option key={categoria} value={categoria}>
-                    {categoria}
-                  </option>
-                ))}
-              </select>
+              ))}
+            </select>
 
-              <button className="navbar-btn me-3" onClick={mostrarBebidas}>
-                {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
+            <button className="navbar-btn me-3" onClick={mostrarBebidas}>
+              {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
+            </button>
+
+            {pedidosListos && (
+              <button className="navbar-check" onClick={manejarPedirCuenta}>
+                <Trans id="cuenta">Cuenta</Trans>
               </button>
+            )}
 
-              {pedidosListos && (
-                <button className="navbar-check" onClick={manejarPedirCuenta}>
-                  <Trans id="cuenta">Cuenta</Trans>
-                </button>
-              )}
+            <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
+              <Trans id="mi-pedido">Mi pedido</Trans>
+            </button>
 
-              <div className="idiomas-navbar ms-auto">
+
+            <div className="idiomas-navbar ms-auto">
+              <button
+                className={`btn-idioma ${locale === "es" ? "activo" : ""}`}
+                onClick={() => cambiarIdioma("es")}
+              >
+                Español
+              </button>
+              <button
+                className={`btn-idioma ${locale === "en" ? "activo" : ""}`}
+                onClick={() => cambiarIdioma("en")}
+              >
+                English
+              </button>
+              <button
+                className={`btn-idioma ${locale === "fr" ? "activo" : ""}`}
+                onClick={() => cambiarIdioma("fr")}
+              >
+                Français
+              </button>
+            </div>
+
+            {numeroMesa && (
+              <div className="carrito-icono">
+                <CarritoIcono abrirModal={() => setMostrarModal(true)} />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* 📌 PANTALLAS PEQUEÑAS: Dos filas */
+        <>
+          {/* Contenedor padre para asegurar que las filas se apilen correctamente */}
+          <div className="navbar-contenedor">
+            {/* Fila 1: Idiomas (centrado) */}
+            <div className="navbar-fila navbar-fila-idiomas">
+              <div className="idiomas-navbar">
                 <button
                   className={`btn-idioma ${locale === "es" ? "activo" : ""}`}
                   onClick={() => cambiarIdioma("es")}
@@ -141,6 +210,29 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
                   Français
                 </button>
               </div>
+            </div>
+
+            <div className="navbar-fila navbar-fila-opciones">
+              <select
+                value={categoriaSeleccionada}
+                onChange={handleCategoriaChange}
+                className="navbar-select"
+              >
+                <option value="">
+                  <Trans id="todas-categorias">Categorías</Trans>
+                </option>
+                {categoriasFiltradas.map((categoria) => (
+                  <option key={categoria} value={categoria}>
+                    {categoria}
+                  </option>
+                ))}
+              </select>
+
+              <button className="navbar-btn" onClick={mostrarBebidas}>
+                {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
+              </button> <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
+                <Trans id="mi-pedido">Mi pedido</Trans>
+              </button>
 
               {numeroMesa && (
                 <div className="carrito-icono">
@@ -148,79 +240,64 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
                 </div>
               )}
             </div>
-          </div>
-        ) : (
-          /* 📌 PANTALLAS PEQUEÑAS: Dos filas */
-          <>
-            {/* Contenedor padre para asegurar que las filas se apilen correctamente */}
-            <div className="navbar-contenedor">
-              {/* Fila 1: Idiomas (centrado) */}
-              <div className="navbar-fila navbar-fila-idiomas">
-                <div className="idiomas-navbar">
-                  <button
-                    className={`btn-idioma ${locale === "es" ? "activo" : ""}`}
-                    onClick={() => cambiarIdioma("es")}
-                  >
-                    Español
-                  </button>
-                  <button
-                    className={`btn-idioma ${locale === "en" ? "activo" : ""}`}
-                    onClick={() => cambiarIdioma("en")}
-                  >
-                    English
-                  </button>
-                  <button
-                    className={`btn-idioma ${locale === "fr" ? "activo" : ""}`}
-                    onClick={() => cambiarIdioma("fr")}
-                  >
-                    Français
-                  </button> 
-                </div>
-              </div>
 
-              <div className="navbar-fila navbar-fila-opciones">
-                <select
-                  value={categoriaSeleccionada}
-                  onChange={handleCategoriaChange}
-                  className="navbar-select"
-                >
-                  <option value="">
-                    <Trans id="todas-categorias">Categorías</Trans>
-                  </option>
-                  {categoriasFiltradas.map((categoria) => (
-                    <option key={categoria} value={categoria}>
-                      {categoria}
-                    </option>
-                  ))}
-                </select>
-
-                <button className="navbar-btn" onClick={mostrarBebidas}>
-                  {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
+            {/* Fila 3: Botón de Cuenta (centrado) */}
+            {pedidosListos && (
+              <div className="navbar-fila navbar-fila-cuenta">
+                <button className="navbar-check" onClick={manejarPedirCuenta}>
+                  <Trans id="cuenta">Cuenta</Trans>
                 </button>
-
-                {numeroMesa && (
-                  <div className="carrito-icono">
-                    <CarritoIcono abrirModal={() => setMostrarModal(true)} />
-                  </div>
-                )}
               </div>
+            )}
 
-              {/* Fila 3: Botón de Cuenta (centrado) */}
-              {pedidosListos && (
-                <div className="navbar-fila navbar-fila-cuenta">
-                  <button className="navbar-check" onClick={manejarPedirCuenta}>
-                    <Trans id="cuenta">Cuenta</Trans>
-                  </button>
+
+          </div>
+        </>
+      )}
+
+      {mostrarModal && (
+        <CarritoModal cerrarModal={() => setMostrarModal(false)} />
+      )}
+      {mostrarMiPedido && (
+        <div className="modal-overlay">
+          <div className="modal-pedido">
+            <h2><Trans id="mi-pedido">🧾 Mi pedido</Trans></h2>
+
+            {pedidosMesa.length === 0 ? (
+              <p className="modal-vacio">No hay productos todavía.</p>
+            ) : (
+              <>
+                <ul className="modal-lista-productos">
+                  {pedidosMesa.map((producto, index) => (
+                    <li key={producto._id || index} className="modal-pedido-item">
+                      <span className="cantidad">{producto.cantidad}x</span>
+                      <span className="nombre">{producto.producto?.nombre || 'Producto'}</span>
+                      <span className="precio">
+                        {(producto.precioFinal || producto.precioSeleccionado || producto.total || 0).toFixed(2)} €
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="modal-total">
+                  <span><strong>Total:</strong></span>
+                  <span>
+                    {pedidosMesa.reduce((acc, p) => {
+                      const precio = p.precioFinal || p.precioSeleccionado || p.total || 0;
+                      return acc + precio * p.cantidad;
+                    }, 0).toFixed(2)} €
+                  </span>
                 </div>
-              )}
-            </div>
-          </>
-        )}
+              </>
+            )}
 
-        {mostrarModal && (
-          <CarritoModal cerrarModal={() => setMostrarModal(false)} />
-        )}
-      </nav>
+            <button className="btn-cerrar-modal" onClick={() => setMostrarMiPedido(false)}>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 };
 

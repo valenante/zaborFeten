@@ -266,6 +266,7 @@
   .modal-contenido,
   .modal-contenido-detalle {
     padding: 1rem;
+    max-height: 65vh;
   }
   .cantidad-btn {
     font-size: 1rem;
