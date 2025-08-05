@@ -99,7 +99,7 @@ const AppContent = () => {
         <Route
           path="/cocina"
           element={
-            <RutaProtegida rolesPermitidos={["admin", "cocinero"]}>
+            <RutaProtegida rolesPermitidos={["admin", "cocinero", "camarero"]}>
               <Cocina />
             </RutaProtegida>
           }
@@ -107,7 +107,7 @@ const AppContent = () => {
         <Route
           path="/barra"
           element={
-            <RutaProtegida rolesPermitidos={["admin", "bartender"]}>
+            <RutaProtegida rolesPermitidos={["admin", "camarero"]}>
               <Barra />
             </RutaProtegida>
           }

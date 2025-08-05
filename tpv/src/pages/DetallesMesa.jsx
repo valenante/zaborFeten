@@ -6,6 +6,7 @@ import { SocketContext } from "../utils/socket";
 import useMesa from "../hooks/useMesa";
 import usePedidos from "../hooks/usePedidos";
 import useAccionesMesa from "../hooks/useAccionesMesa";
+import { useAuth } from "../context/AuthContext";
 import "../styles/DetallesMesa.css";
 import AlertaMensaje from "../components/AlertaMensaje/AlertaMensaje";
 import ModalTransferencia from "../components/Modal/ModalTransferencia";
@@ -14,6 +15,7 @@ import ListaBebidas from "../components/DetallesMesa/ListaBebidas";
 
 const DetalleMesa = () => {
   const { id } = useParams(); // Obtener el `id` de la mesa desde la URL  
+  const { user } = useAuth()
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
   const { mesa, setMesa, productosDetalles, fetchMesa } = useMesa(id, socket);
@@ -74,97 +76,101 @@ const DetalleMesa = () => {
                   emitirFactura(metodoPagoFactura, {
                     nombre: datosFactura.nombre,
                     nif: datosFactura.nif,
-                  })
+                  }, user?.name)
                 }
               >
-                Emitir Factura
-              </button>
-              <button onClick={() => setMostrarFacturaModal(false)}>
-                Cancelar
-              </button>
-            </div>
+              Emitir Factura
+            </button>
+            <button onClick={() => setMostrarFacturaModal(false)}>
+              Cancelar
+            </button>
+          </div>
           </div>
         )}
-        <h1 className="titulo-mesa--mesadetalles">Mesa {mesa.numero}</h1>
-        <p className="total-mesa--mesadetalles">Total: {mesa.total} €</p>
-        <ListaPedidos
-          pedidos={mesa.pedidos || []}
-          productosDetalles={productosDetalles}
-          eliminarProducto={eliminarProducto}
-        />
+      <h1 className="titulo-mesa--mesadetalles">Mesa {mesa.numero}</h1>
+      <p className="total-mesa--mesadetalles">Total: {mesa.total} €</p>
+      <ListaPedidos
+        pedidos={mesa.pedidos || []}
+        productosDetalles={productosDetalles}
+        eliminarProducto={eliminarProducto}
+      />
 
-        <ListaBebidas
-          pedidosBebidas={mesa.pedidosBebidas || []}
-          eliminarProducto={eliminarProducto}
-        />
+      <ListaBebidas
+        pedidosBebidas={mesa.pedidosBebidas || []}
+        eliminarProducto={eliminarProducto}
+      />
 
 
-        {mesa.estado === "abierta" && (
+      {mesa.estado === "abierta" && (
+        <button
+          onClick={() => setShowModal("cierre")}
+          className="boton-cerrar--mesadetalles"
+        >
+          Cerrar Mesa
+        </button>
+      )}
+      {mesa.estado === "abierta" && (
+        <div className="contenedor-botones--mesadetalles">
           <button
-            onClick={() => setShowModal("cierre")}
-            className="boton-cerrar--mesadetalles"
+            onClick={imprimirCuenta}
+            className="boton-imprimir--mesadetalles"
           >
-            Cerrar Mesa
+            Cuenta
           </button>
-        )}
-        {mesa.estado === "abierta" && (
-          <div className="contenedor-botones--mesadetalles">
-            <button
-              onClick={imprimirCuenta}
-              className="boton-imprimir--mesadetalles"
-            >
-              Cuenta
-            </button>
-            <button
-              onClick={() => setShowModal("factura")}
-              className="boton-factura--mesadetalles"
-            >
-              Factura
-            </button>
-            <button
-              onClick={() => setMostrarModalTransferir(true)}
-              className="boton-factura--mesadetalles"
-            >
-              Transferir Artículos
-            </button>
-          </div>
-        )}
-
-        {(showModal === "cierre" || showModal === "factura") && (
-          <MetodoPago
-            total={mesa.total}
-            onClose={() => setShowModal(false)}
-            onConfirm={(metodoPago) => {
-              if (showModal === "factura") {
-                setMetodoPagoFactura(metodoPago);
-                setShowModal(false);
-                setMostrarFacturaModal(true); // Abre el modal de datos fiscales
-              } else {
-                cerrarMesa(metodoPago, "simplificada"); // Cierra sin factura
-              }
-            }}
-          />
-        )}
-      </div>
-      {mensajeAlerta && (
-        <AlertaMensaje
-          tipo={mensajeAlerta.tipo}
-          mensaje={mensajeAlerta.mensaje}
-          onClose={() => setMensajeAlerta(null)}
-        />
+          <button
+            onClick={() => setShowModal("factura")}
+            className="boton-factura--mesadetalles"
+          >
+            Factura
+          </button>
+          <button
+            onClick={() => setMostrarModalTransferir(true)}
+            className="boton-factura--mesadetalles"
+          >
+            Transferir Artículos
+          </button>
+        </div>
       )}
 
-      {mostrarModalTransferir && (
-        <ModalTransferencia
-          mesaOrigen={mesa}
-          onClose={() => setMostrarModalTransferir(false)}
-          onTransferSuccess={() => {
-            setMostrarModalTransferir(false);
-            fetchMesa(); // Refresca la mesa después de transferir
+      {(showModal === "cierre" || showModal === "factura") && (
+        <MetodoPago
+          total={mesa.total}
+          onClose={() => setShowModal(false)}
+          onConfirm={(metodoPago) => {
+            if (showModal === "factura") {
+              setMetodoPagoFactura(metodoPago);
+              setShowModal(false);
+              setMostrarFacturaModal(true); // Abre el modal de datos fiscales
+            } else {
+              cerrarMesa(metodoPago, "simplificada", {}, user?.name || user?.email || "");
+            }
           }}
         />
       )}
     </div>
+      {
+    mensajeAlerta && (
+      <AlertaMensaje
+        tipo={mensajeAlerta.tipo}
+        mensaje={mensajeAlerta.mensaje}
+        onClose={() => setMensajeAlerta(null)}
+      />
+    )
+  }
+
+  {
+    mostrarModalTransferir && (
+      <ModalTransferencia
+        mesaOrigen={mesa}
+        onClose={() => setMostrarModalTransferir(false)}
+        onTransferSuccess={() => {
+          setMostrarModalTransferir(false);
+          fetchMesa(); // Refresca la mesa después de transferir
+        }}
+      />
+    )
+  }
+    </div >
   );
 };
 

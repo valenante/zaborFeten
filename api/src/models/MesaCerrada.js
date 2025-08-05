@@ -23,6 +23,7 @@ const mesaCerradaSchema = new Schema({
     ref: 'SesionMesa',
     default: null,
   }, // ✅ Consistente
+  camarero: { type: String, default: '' }, // Nombre del camarero que cierra la mesa
 });
 
 export default model('MesaCerrada', mesaCerradaSchema);

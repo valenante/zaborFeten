@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
         if (token) {
           setAccessToken(token);
           const response = await api.get("/auth/me/me", { withCredentials: true });
+          console.log("User data:", response.data);
           setUser(response.data.user);
         } else {
           setSessionActive(false);

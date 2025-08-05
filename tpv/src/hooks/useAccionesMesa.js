@@ -13,17 +13,19 @@ const useAccionesMesa = (mesa, setMensajeAlerta, navigate, datosFactura) => {
 
 
   const cerrarMesa = useCallback(
-    async (metodoPago, tipoFactura = "simplificada", cliente = {}) => {
+    async (metodoPago, tipoFactura = "simplificada", cliente = {}, camarero = "") => {
+      console.log(camarero);
       try {
         const response = await api.put(`/mesas/${mesa._id}/cerrar`, {
           metodoPago,
           clienteNombre: cliente.nombre || "",
           clienteNIF: cliente.nif || "",
+          camarero
         });
 
         const { datosImpresion } = response.data;
 
-        if (tipoFactura === "nominativa" && datosImpresion) {
+        if (datosImpresion) {
           await enviarAFacturaPrinter(datosImpresion);
         }
 
@@ -39,8 +41,8 @@ const useAccionesMesa = (mesa, setMensajeAlerta, navigate, datosFactura) => {
     [mesa, navigate, enviarAFacturaPrinter, setMensajeAlerta]
   );
 
-  const emitirFactura = async (metodoPago, datosCliente) => {
-    await cerrarMesa(metodoPago, "nominativa", datosCliente);
+  const emitirFactura = async (metodoPago, datosCliente, camarero = "") => {
+    await cerrarMesa(metodoPago, "nominativa", datosCliente, camarero);
   };
 
   const imprimirCuenta = useCallback(async () => {

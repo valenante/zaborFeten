@@ -182,7 +182,9 @@ function calcularIVA(total) {
 }
 export const cerrarMesa = async (req, res) => {
   const { id } = req.params;
-  const { metodoPago, clienteNombre, clienteNIF } = req.body;
+  const { metodoPago, clienteNombre, clienteNIF, camarero } = req.body;
+
+  console.log(camarero);
 
   try {
     const ahora = new Date();
@@ -215,6 +217,7 @@ export const cerrarMesa = async (req, res) => {
       comensales: mesa.comensales || 1,
       metodoPago: { efectivo, tarjeta, propina: propinaCalculada, cambio: cambioCalculado },
       sesionActiva: mesa.sesionActiva,
+      camarero: camarero || '',
     });
 
     await mesaCerrada.save();
@@ -279,6 +282,7 @@ export const cerrarMesa = async (req, res) => {
       productos,
       importeTotal: totalMesa,
       mesaNumero: mesa.numero,
+      camarero: camarero || '',
     });
 
     await new EventoFactura({
@@ -330,7 +334,9 @@ export const cerrarMesa = async (req, res) => {
         productos,
         total: totalMesa,
         hash: hashFactura.hash,
+        camarero: camarero || '',
       },
+      
     });
   } catch (error) {
     logger.error('❌ Error al cerrar la mesa:', error);

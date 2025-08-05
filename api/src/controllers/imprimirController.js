@@ -62,7 +62,10 @@ export const imprimirFactura = async (req, res) => {
     productos,
     hash,
     numeroFactura,
+    camarero
   } = req.body;
+
+  console.log(camarero, ' en imprimirFactura');
 
   try {
     // Buscar mesa en BD
@@ -83,6 +86,7 @@ export const imprimirFactura = async (req, res) => {
       metodoPago,
       hash,
       numeroFactura,
+      camarero
     };
 
     try {

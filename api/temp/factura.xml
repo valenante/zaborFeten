@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Factura xmlns="http://www.facturae.gob.es/formato">
   <Cabecera>
-    <Numero>2025-0002</Numero>
+    <Numero>2025-0019</Numero>
     <Fecha>2025-08-04</Fecha>
-    <ClienteNombre>asddas</ClienteNombre>
-    <ClienteNIF>123123</ClienteNIF>
-    <ImporteTotal>3.64</ImporteTotal>
-    <Hash>TAtWSKyD2fvkwwVAFiha+oqguUtBO93/iIAmxFPncuc=</Hash>
+    <ClienteNombre>Consumidor Final</ClienteNombre>
+    <ClienteNIF>N/A</ClienteNIF>
+    <ImporteTotal>0.00</ImporteTotal>
+    <Hash>VNOqdh+KfcJcagb9qDTY1z5w6AB72FHDc7irU40OJdk=</Hash>
   </Cabecera>
   <Productos>
     
-    <Producto>
-      <Nombre>Croquetas de Jamón 16</Nombre>
-      <Cantidad>1</Cantidad>
-      <Precio>3.64</Precio>
-    </Producto>
   </Productos>
   
   <Software>

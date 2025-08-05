@@ -42,6 +42,7 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
       if (!numeroMesa) return; // Si no hay número de mesa, no hacemos la petición
       try {
         const response = await api.get(`/pedidos/pedidos/estado/${numeroMesa}`);
+        logger.info("Estado de pedidos verificado:", response.data);
         setPedidosListos(response.data?.todosListos || false);
       } catch (error) {
         logger.error("Error al verificar el estado de los pedidos:", error);
