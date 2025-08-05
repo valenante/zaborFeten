@@ -14,7 +14,6 @@ const useAccionesMesa = (mesa, setMensajeAlerta, navigate, datosFactura) => {
 
   const cerrarMesa = useCallback(
     async (metodoPago, tipoFactura = "simplificada", cliente = {}, camarero = "") => {
-      console.log(camarero);
       try {
         const response = await api.put(`/mesas/${mesa._id}/cerrar`, {
           metodoPago,

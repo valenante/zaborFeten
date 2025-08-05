@@ -21,8 +21,6 @@ const RutaProtegida = ({ children, rolesPermitidos }) => {
     return <Navigate to="/login" />;
   }
 
-  console.log("Ruta protegida renderizada", { accessToken, user });
-
   if (rolesPermitidos && user && !rolesPermitidos.includes(user.role)) {
     return (
       <div className="protegida-denegado">

@@ -9,9 +9,6 @@ import logo from "../../images/LovePizzaLogo.png";
 const mostrarBarra = process.env.REACT_APP_BARRA === 'true';
 const mostrarCocina = process.env.REACT_APP_COCINA === 'true';
 
-console.log("Mostrar Barra:", process.env.REACT_APP_BARRA);
-console.log("Mostrar Cocina:", process.env.REACT_APP_COCINA);
-
 const Navbar = () => {
   const [selectValue, setSelectValue] = useState("");
   const [config, setConfig] = useState({

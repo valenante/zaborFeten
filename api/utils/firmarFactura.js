@@ -20,13 +20,6 @@ export const firmarFacturaConJava = async (xmlSinFirma, rutaCertP12, password) =
   const rutaJar = path.resolve('./firmador.jar');
   const rutaCertAbs = path.resolve(rutaCertP12); // en caso que no sea absoluta
 
-  console.log('Ejecutando java con estos argumentos:');
-  console.log(rutaJar);
-  console.log(archivoEntrada);
-  console.log(archivoSalida);
-  console.log(rutaCertAbs);
-  console.log(password);
-
   // Ejecutar el firmador Java con rutas absolutas
   await new Promise((resolve, reject) => {
     execFile('java', [
@@ -41,7 +34,6 @@ export const firmarFacturaConJava = async (xmlSinFirma, rutaCertP12, password) =
         console.error('Error al firmar con Java:', stderr);
         return reject(error);
       }
-      console.log('Firmador Java output:', stdout);
       resolve();
     });
   });

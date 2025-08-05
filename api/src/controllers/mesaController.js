@@ -176,15 +176,9 @@ function calcularBaseImponible(total) {
   return +(total / 1.21).toFixed(2);
 }
 
-function calcularIVA(total) {
-  const base = calcularBaseImponible(total);
-  return +(total - base).toFixed(2);
-}
 export const cerrarMesa = async (req, res) => {
   const { id } = req.params;
   const { metodoPago, clienteNombre, clienteNIF, camarero } = req.body;
-
-  console.log(camarero);
 
   try {
     const ahora = new Date();

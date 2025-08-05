@@ -20,7 +20,6 @@ export const authMiddleware = (req, res, next) => {
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
     req.user = verified; // Guardar los datos del usuario en la solicitud
-    console.log('Token verificado:', verified);
     logger.info(`Token verificado para el usuario: ${verified.id}`);
     next();
   } catch (error) {

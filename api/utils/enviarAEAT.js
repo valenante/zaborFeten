@@ -39,8 +39,6 @@ export async function enviarFacturaAEAT(factura) {
         },
       }
     );
-
-    console.log('✅ Envío a AEAT exitoso:', res.data);
     return res.data;
   } catch (error) {
     console.error('❌ Error al enviar factura a AEAT:', error.response?.data || error.message);

@@ -65,8 +65,6 @@ export const imprimirFactura = async (req, res) => {
     camarero
   } = req.body;
 
-  console.log(camarero, ' en imprimirFactura');
-
   try {
     // Buscar mesa en BD
     const mesa = await Mesa.findById(mesaId).lean();
