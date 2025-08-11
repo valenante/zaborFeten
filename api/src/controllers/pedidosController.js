@@ -60,7 +60,7 @@ export const crearPedido = async (req, res) => {
         producto: producto.producto,
         pedidoId: nuevoPedido._id,
         cantidad: producto.cantidad,
-        total,
+        total: producto.total, // ← este
       });
 
       await venta.save();
@@ -86,8 +86,12 @@ export const crearPedido = async (req, res) => {
       await Cart.findByIdAndDelete(cartId);
     }
 
-    // Emitir el evento de nuevo pedido
-    req.io.emit('nuevoPedido', nuevoPedido);
+    // crearPedido
+    req.io.emit('nuevoPedido', {
+      tipo: 'crear',
+      mesaId: mesaExistente._id.toString(),
+      pedido: nuevoPedido.toObject(),
+    });
 
     res.status(201).json({
       message: 'Pedido creado con éxito',
@@ -99,6 +103,7 @@ export const crearPedido = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
 export const agregarProductoAlPedido = async (req, res) => {
   const { mesaId } = req.params;
   const { productos } = req.body;
@@ -222,9 +227,11 @@ export const agregarProductoAlPedido = async (req, res) => {
       }
     }
 
+    // agregarProductoAlPedido (ya casi está, lo dejo homogéneo)
     req.io.emit('nuevoPedido', {
-      ...pedidoModificado.toObject(),
-      mesaId: mesa._id,
+      tipo: 'agregar',
+      mesaId: mesa._id.toString(),
+      pedido: pedidoModificado.toObject(),
     });
 
     const datosRespuesta = {
@@ -374,7 +381,7 @@ export const obtenerPedidoPorMesaId = async (req, res) => {
 
     // Unificar todos los productos
     const productosUnificados = [...productosComida, ...productosBebidas];
-    
+
     res.status(200).json(productosUnificados);
   } catch (error) {
     console.error('🔴 Error inesperado al obtener los pedidos de la mesa:', error);

@@ -1,53 +1,53 @@
 import React, { useState, useEffect } from "react";
 import { useCategorias } from "../../context/CategoriasContext";
-import * as logger from '../../utils/logger';
+import * as logger from "../../utils/logger";
 import EditProduct from "./EditProducts";
-import CrearProducto from "./CrearProducto"
-import AlertaMensaje from "../AlertaMensaje/AlertaMensaje"; // Componente para mostrar alertas
+import CrearProducto from "./CrearProducto";
+import AlertaMensaje from "../AlertaMensaje/AlertaMensaje";
+import ModalConfirmacion from "../Modal/ModalConfirmacion";
 import "./Categories.css";
 
 const Categories = ({ category }) => {
-  const [editingProduct, setEditingProduct] = useState(null); // Producto en edición
+  const [editingProduct, setEditingProduct] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [mensajeAlerta, setMensajeAlerta] = useState(null); // Mensaje de alerta
+  const [mensajeAlerta, setMensajeAlerta] = useState(null);
+  const [productoAEliminar, setProductoAEliminar] = useState(null); // ID del producto pendiente de confirmación
 
   const { products, fetchProducts, updateProduct, deleteProduct } = useCategorias();
 
   useEffect(() => {
-    // Evita hacer solicitudes si no hay una categoría válida
     if (category) {
-      fetchProducts(category); // Cargar productos desde el contexto
+      fetchProducts(category);
     }
-  }, [category]); // Llama a fetchProducts solo cuando la categoría cambia
+  }, [category]);
 
   const handleEdit = (product) => {
-    setEditingProduct(product); // Selecciona el producto para editar
+    setEditingProduct(product);
   };
 
   const handleSave = async (updatedProduct) => {
     try {
-      await updateProduct(updatedProduct); // Usa el método del contexto
-      setEditingProduct(null); // Cierra el editor
+      await updateProduct(updatedProduct);
+      setEditingProduct(null);
     } catch (error) {
       logger.error("Error al guardar producto:", error);
     }
   };
 
-  const handleDeleteProduct = async (id) => {
-    const confirmacion = window.confirm("¿Estás seguro de que quieres eliminar este producto?");
-    if (!confirmacion) return;
-
+  const confirmarEliminacion = async (id) => {
     try {
-      await deleteProduct(id); // Usa el método del contexto
-      await fetchProducts(category); // Refresca los productos después de eliminar
-      setMensajeAlerta({ tipo: "exito", mensaje: "Producto eliminado con exito" });
+      await deleteProduct(id);
+      await fetchProducts(category);
+      setMensajeAlerta({ tipo: "exito", mensaje: "Producto eliminado con éxito" });
     } catch (error) {
       logger.error("Error al eliminar producto:", error);
+    } finally {
+      setProductoAEliminar(null);
     }
   };
 
   const handleCancel = () => {
-    setEditingProduct(null); // Cancela la edición
+    setEditingProduct(null);
   };
 
   return (
@@ -57,7 +57,7 @@ const Categories = ({ category }) => {
           product={editingProduct}
           onSave={handleSave}
           onCancel={handleCancel}
-          onDelete={handleDeleteProduct}
+          onDelete={(id) => setProductoAEliminar(id)} // Cambiamos confirm por modal
         />
       ) : (
         <>
@@ -69,11 +69,14 @@ const Categories = ({ category }) => {
                 <div key={product._id} className="producto-card--categories">
                   <p>{product.nombre}</p>
                   <div className="producto-botones--categories">
-                    <button onClick={() => handleEdit(product)} className="boton-editar--categories">
+                    <button
+                      onClick={() => handleEdit(product)}
+                      className="boton-editar--categories"
+                    >
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDeleteProduct(product._id)}
+                      onClick={() => setProductoAEliminar(product._id)}
                       className="boton-eliminar--categories"
                     >
                       Eliminar
@@ -95,10 +98,23 @@ const Categories = ({ category }) => {
 
       {mostrarFormulario && (
         <>
-          <div className="crear-producto-overlay--crear" onClick={() => setMostrarFormulario(false)}></div>
+          <div
+            className="crear-producto-overlay--crear"
+            onClick={() => setMostrarFormulario(false)}
+          ></div>
           <CrearProducto onClose={() => setMostrarFormulario(false)} />
         </>
       )}
+
+      {productoAEliminar && (
+        <ModalConfirmacion
+          titulo="Eliminar producto"
+          mensaje="¿Estás seguro de que quieres eliminar este producto?"
+          onConfirm={() => confirmarEliminacion(productoAEliminar)}
+          onClose={() => setProductoAEliminar(null)}
+        />
+      )}
+
       {mensajeAlerta && (
         <AlertaMensaje
           tipo={mensajeAlerta.tipo}

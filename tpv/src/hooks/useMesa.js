@@ -56,19 +56,24 @@ const useMesa = (id, socket) => {
 
   useEffect(() => {
     if (!socket) return;
-  
-    const manejarNuevoPedido = (pedidoActualizado) => {
-      if (pedidoActualizado.mesaId === id) {
-        fetchMesa(); // recarga la mesa completa
+
+    const manejarNuevoPedido = (payload) => {
+      // intenta extraer mesaId de varias formas
+      const mesaIdEmision =
+        payload?.mesaId ||
+        payload?.mesa ||                     // si te mandan el id como 'mesa'
+        payload?.pedido?.mesa ||            // si te mandan { pedido: {..., mesa} }
+        payload?._id                        // último recurso: si te llega el pedido y luego lo buscas (no ideal)
+        ;
+
+      if (mesaIdEmision && String(mesaIdEmision) === String(id)) {
+        fetchMesa();
       }
     };
-  
+
     socket.on("nuevoPedido", manejarNuevoPedido);
-  
-    return () => {
-      socket.off("nuevoPedido", manejarNuevoPedido);
-    };
-  }, [socket, id]);  
+    return () => socket.off("nuevoPedido", manejarNuevoPedido);
+  }, [socket, id]);
 
   return { mesa, setMesa, productosDetalles, fetchMesa };
 };
