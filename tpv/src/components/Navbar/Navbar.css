@@ -123,14 +123,17 @@
   background-color: var(--blanco);
   color: var(--color-principal);
   font-weight: bold;
+    max-height: 38px;      /* altura del propio select */
   box-shadow: var(--sombra-suave);
   appearance: none;
   cursor: pointer;
+  overflow-y: auto;
 }
 
 .navbar-select--navbar option {
   background-color: var(--blanco);
   color: var(--gris-oscuro);
+  max-height: 38px;      /* altura del propio option */
 }
 
 .only-mobile {
@@ -187,6 +190,7 @@
 
   .navbar-item--navbar {
     flex: 1 1 auto;
+    max-height: 200px;
     max-width: 100%;
   }
 
