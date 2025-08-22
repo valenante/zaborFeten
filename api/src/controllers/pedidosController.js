@@ -60,6 +60,7 @@ export const crearPedido = async (req, res) => {
         producto: producto.producto,
         pedidoId: nuevoPedido._id,
         cantidad: producto.cantidad,
+        tipo: producto.tipo || 'plato',
         total: producto.total, // ← este
       });
 
@@ -209,6 +210,7 @@ export const agregarProductoAlPedido = async (req, res) => {
         producto: producto.producto,
         pedidoId: pedidoModificado._id,
         cantidad: producto.cantidad,
+        tipo: producto.tipo || 'plato',
         total: producto.total,
       });
 

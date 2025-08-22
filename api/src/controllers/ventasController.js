@@ -51,6 +51,7 @@ export const crearVenta = async (req, res) => {
       productoId,
       pedidoId,
       cantidad,
+      tipo: producto.tipo,
     });
 
     // Guardar la venta en la base de datos

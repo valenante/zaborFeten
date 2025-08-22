@@ -45,6 +45,7 @@ import imprimirRoutes from './src/routes/imprimirRoutes.js'; // ✅ Importamos l
 import configuracionRoutes from './src/routes/configuracionRoutes.js'; // Importar las rutas de configuración global
 import extraRoutes from './src/routes/extraRoutes.js'; // Importar las rutas de extras
 import firmaRoutes from './src/routes/firmaRoutes.js'; // Importar las rutas de firma digital
+import reportesRoutes from './src/routes/reportesRoutes.js'
 // Configurar dotenv
 config();
 
@@ -159,6 +160,7 @@ app.use('/api/v1/imprimir', imprimirRoutes);
 app.use('/api/v1/configuracion-global', configuracionRoutes);
 app.use('/api/v1/extras', extraRoutes);
 app.use('/api/v1/firma', firmaRoutes); // Rutas de firma digital
+app.use('/api/v1/reportes', reportesRoutes);
 
 // Middlewares de error
 app.use(notFoundHandler);

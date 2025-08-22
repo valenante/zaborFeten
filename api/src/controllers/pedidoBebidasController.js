@@ -61,6 +61,7 @@ export const crearPedido = async (req, res) => {
         producto: producto.producto,
         pedidoId: nuevoPedido._id,
         cantidad: producto.cantidad,
+        tipo: producto.tipo || 'bebida',
         total,
       });
 
@@ -373,6 +374,7 @@ export const agregarProductoBebida = async (req, res) => {
         pedidoId: pedidoModificado._id,
         cantidad: producto.cantidad,
         total: producto.total,
+        tipo: producto.tipo || 'bebida'
       });
 
       await venta.save();
