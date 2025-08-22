@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Factura xmlns="http://www.facturae.gob.es/formato">
   <Cabecera>
-    <Numero>2025-0028</Numero>
-    <Fecha>2025-08-11</Fecha>
+    <Numero>2025-0038</Numero>
+    <Fecha>2025-08-22</Fecha>
     <ClienteNombre>Consumidor Final</ClienteNombre>
     <ClienteNIF>N/A</ClienteNIF>
-    <ImporteTotal>0.00</ImporteTotal>
-    <Hash>3P5krMccKtZshhMEjOCiWaUEP1UrlLdfHLajgG44sHA=</Hash>
+    <ImporteTotal>22.30</ImporteTotal>
+    <Hash>H0mHf2BeDqAzOF4R9TWCPzsgSyyXGqdTSdxBWRsItEQ=</Hash>
   </Cabecera>
   <Productos>
     
+    <Producto>
+      <Nombre>Pizza Margarita 42</Nombre>
+      <Cantidad>1</Cantidad>
+      <Precio>3.17</Precio>
+    </Producto>
   </Productos>
   
   <Software>
