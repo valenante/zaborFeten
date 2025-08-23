@@ -13,6 +13,24 @@ import axios from 'axios';
 
 const IMPRESION_SERVER = process.env.IMPRESION_SERVER
 
+// ==== Helpers para texto de locución ====
+const limpiar = (s) => (s ?? "").toString().trim();
+const artCant = (n) => (Number(n) === 1 ? "un" : String(n));
+
+const labelTipoPrecio = (tp) => {
+  const t = (tp || "").toLowerCase();
+  if (!t || t === "preciobase" || t === "base" || t === "precio base") return ""; // no decir nada
+  const mapa = { tapa: "tapa", racion: "ración", media: "media", surtido: "surtido" };
+  return mapa[t] || t;
+};
+
+const juntar = (arr, prop = "nombre") =>
+  (arr || [])
+    .map((x) => (prop ? limpiar(x?.[prop]) : limpiar(x)))
+    .filter(Boolean)
+    .join(", ");
+
+
 // Crear un nuevo pedido
 export const crearPedido = async (req, res) => {
   try {
@@ -235,7 +253,6 @@ export const agregarProductoAlPedido = async (req, res) => {
       mesaId: mesa._id.toString(),
       pedido: pedidoModificado.toObject(),
     });
-
     const datosRespuesta = {
       mesaNumero: mesa.numero,
       comensales: mesa.comensales || 0,
@@ -272,6 +289,62 @@ export const agregarProductoAlPedido = async (req, res) => {
     } catch (error) {
       logger.error('Error al enviar pedido a la impresora:', error.message);
     }
+
+    // ==== Construir items detallados para TTS (cocina) ====
+    const itemsDetallados = productosCompletos
+      .filter(p => ['plato', 'tapaRacion'].includes(p.tipo))
+      .map(p => {
+        const prodInfo = productosDB.find(pd => pd._id.toString() === p.producto.toString());
+        const nombre = prodInfo?.nombre || 'Producto';
+        const cant = artCant(p.cantidad);
+        const tp = labelTipoPrecio(p.tipoPrecio);
+
+        // “extras/adicionales” (usa el que venga; si tienes los dos, se suman)
+        const conExtras = [juntar(p.adicionales), juntar(p.extras)].filter(Boolean).join(", ");
+        // “sin …” (puede venir como array de strings)
+        const sinIngr = juntar(p.ingredientesEliminados, null);
+        // nota/mensaje
+        const nota = limpiar(p.mensaje);
+        // individual / para compartir (opcional)
+        const tipoPlatoTxt = p.tipoPrecio === "individual" ? "individual"
+          : p.tipoPrecio === "compartir" ? "para compartir" : "";
+
+        // Frase final por producto
+        const partes = [
+          `${cant} ${nombre}`,
+          tp ? tp : "",
+          tipoPlatoTxt ? tipoPlatoTxt : "",
+          conExtras ? `con ${conExtras}` : "",
+          sinIngr ? `sin ${sinIngr}` : "",
+          nota ? `nota: ${nota}` : ""
+        ].filter(Boolean);
+
+        return {
+          // para UI si quisieras
+          nombre, cantidad: p.cantidad, tipoPrecio: p.tipoPrecio, adicionales: p.adicionales, extras: p.extras,
+          ingredientesEliminados: p.ingredientesEliminados, mensaje: p.mensaje, tipoPlato: p.tipoPlato, seccion: p.seccion,
+          // para TTS
+          texto: partes.join(", ")
+        };
+      });
+
+    const notasGlobales = productosCompletos.map(p => limpiar(p.mensaje)).filter(Boolean).join(". ");
+    const alergias = productosCompletos.map(p => limpiar(p.alergiasComensal)).filter(Boolean);
+
+    // Clave estable por pedido (evita loops, tu hook la limita a 2)
+    const lecturaKey = `${pedidoModificado._id}:${mesa.numero}:${itemsDetallados.map(i => i.texto).join('|')}`;
+
+    // 📣 Evento específico para locución
+    req.io.emit('nuevaComanda', {
+      area: 'cocina',
+      mesa: mesa.numero,
+      // items incluye cada producto, pero lo importante para TTS es itemsTexto:
+      items: itemsDetallados,
+      itemsTexto: itemsDetallados.map(i => i.texto),
+      alergias,
+      notas: notasGlobales,
+      lecturaKey,
+    });
 
     res.json(datosRespuesta);
   } catch (error) {

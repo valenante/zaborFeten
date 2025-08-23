@@ -5,7 +5,84 @@ import { SocketContext } from "../../utils/socket";
 import PedidosFinalizados from './PedidosFinalizados';
 import * as logger from '../../utils/logger';
 import { useAuth } from "../../context/AuthContext";
+import { useLecturaVoz } from '../../hooks/useLecturaVoz';
+import { useReconocimientoVoz, extraerNumeroMesa } from '../../hooks/useReconocimientoVoz';
+import { parseCocinaCommand } from '../../Voice/intentsCocina';
+
+
 import './Cocina.css';
+
+// Helpers de formateo local (para consultas por voz)
+const _limpiar = (s) => (s ?? "").toString().trim();
+const _juntar = (arr, prop = "nombre") =>
+  (arr || []).map(x => (prop ? _limpiar(x?.[prop]) : _limpiar(x))).filter(Boolean).join(", ");
+const _artCant = (n) => (Number(n) === 1 ? "un" : String(n));
+const _labelTipoPrecio = (tp) => {
+  const t = (tp || "").toLowerCase();
+  if (!t || t === "preciobase" || t === "base" || t === "precio base") return "";
+  const mapa = { tapa: "tapa", racion: "ración", media: "media", surtido: "surtido" };
+  return mapa[t] || t;
+};
+const formatearProductoCliente = (pr) => {
+  const cant = _artCant(pr.cantidad);
+  const nombre = pr.producto?.nombre || "Producto";
+  const tp = _labelTipoPrecio(pr.tipoPrecio);
+  const conExtras = [_juntar(pr.adicionales), _juntar(pr.extras)].filter(Boolean).join(", ");
+  const sinIngr = _juntar(pr.ingredientesEliminados, null);
+  const nota = _limpiar(pr.mensaje);
+  const tipoPlatoTxt =
+    pr.tipoPlato === "individual" ? "individual" :
+      pr.tipoPlato === "compartir" ? "para compartir" : "";
+
+  return [
+    `${cant} ${nombre}`,
+    tp,
+    tipoPlatoTxt,
+    conExtras ? `con ${conExtras}` : "",
+    sinIngr ? `sin ${sinIngr}` : "",
+    nota ? `nota: ${nota}` : "",
+  ].filter(Boolean).join(", ");
+};
+
+// Busca el pedido pendiente por número de mesa
+const findPedidoPendienteByMesa = (pedidos, mesaNum) =>
+  pedidos.find(p => p.mesa?.numero === mesaNum && p.estado !== 'listo');
+
+// Genera texto de resumen (top productos pendientes)
+const resumenPendientesTexto = (pedidos) => {
+  const conteo = {};
+  pedidos.forEach(p => {
+    p.productos
+      .filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo')
+      .forEach(pr => {
+        const nombre = pr.producto?.nombre || 'Producto';
+        const key = `${nombre} ${pr.tipoPrecio || ''}`.trim();
+        conteo[key] = (conteo[key] || 0) + pr.cantidad;
+      });
+  });
+  const items = Object.entries(conteo)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([k, v]) => `${v === 1 ? 'un' : v} ${k}`);
+  return items.length ? items.join('. ') : 'No hay productos pendientes.';
+};
+
+// Busca producto por índice 1‑based o por nombre aproximado
+const findProductoPendienteEnPedido = (pedido, { idx, nombre }) => {
+  const lista = pedido.productos
+    .filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo');
+
+  if (idx != null) {
+    const i = idx - 1;
+    return (i >= 0 && i < lista.length) ? lista[i] : null;
+  }
+  if (nombre) {
+    const n = nombre.trim();
+    // match contiene el nombre del producto
+    return lista.find(pr => (pr.producto?.nombre || '').toLowerCase().includes(n));
+  }
+  return null;
+};
 
 const Cocina = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -16,6 +93,8 @@ const Cocina = () => {
   const { logout } = useAuth();
   const [resumenProductos, setResumenProductos] = useState([]);
   const [mostrarResumen, setMostrarResumen] = useState(false);
+  const { habilitado, activar, encolarLectura, silenciar } = useLecturaVoz(1, 8000);
+  const { activo, iniciarContinua, detenerContinua, onResultado, onFin, onError, soportado } = useReconocimientoVoz({ idioma: "es-ES" });
 
   const cargarMesas = async () => {
     try {
@@ -68,16 +147,262 @@ const Cocina = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const manejarNuevoPedido = () => {
-      cargarPedidos();
+    const manejarNuevoPedido = () => cargarPedidos();
+    const manejarNuevaComanda = (payload) => {
+      if (payload?.area !== 'cocina') return;
+      encolarLectura({ ...payload, tipoLectura: 'comanda' });
     };
 
     socket.on("nuevoPedido", manejarNuevoPedido);
-
+    socket.on("nuevaComanda", manejarNuevaComanda);
     return () => {
       socket.off("nuevoPedido", manejarNuevoPedido);
+      socket.off("nuevaComanda", manejarNuevaComanda);
     };
-  }, [socket]); // 👈 importante agregar socket como dependencia  
+  }, [socket, encolarLectura]);
+
+
+  useEffect(() => {
+    if (!soportado) return;
+
+    iniciarContinua();
+
+    onResultado(async ({ text, raw, hadHotword, inHotWindow }) => {
+      // Solo procesa si hubo hotword o estás dentro de la ventana caliente
+      if (!hadHotword && !inHotWindow) return;
+
+      const texto = (text || "").trim();
+      console.log("🎙️ Reconocido por cocina:", { texto, raw, hadHotword, inHotWindow });
+
+      const intent = parseCocinaCommand(texto);
+      console.info('[VOICE][COCINA]', intent);
+
+      if (intent.type === 'NONE') {
+        encolarLectura({
+          area: 'cocina',
+          mesa: '',
+          itemsTexto: [],
+          notas: 'No te he entendido.',
+          lecturaKey: `na-${Date.now()}`
+        });
+        return;
+      }
+
+      if (intent.type === 'RESUMEN_PENDIENTES') {
+        const t = resumenPendientesTexto(pedidos);
+        encolarLectura({
+          area: 'cocina',
+          mesa: '',
+          itemsTexto: [t],
+          notas: '',
+          lecturaKey: `resumen-${Date.now()}`
+        });
+        return;
+      }
+
+      const rePedidoListo = /(marca|marcar|termina|terminar|finaliza|finalizar|cierra|cerrar).*(list[oa])?/i;
+      const reMencionaPlato = /\bplato\b/i;
+      const mesaNum = extraerNumeroMesa(texto);
+
+      // ✅ Ya no exigimos que empiece por “cocina …”
+      if (rePedidoListo.test(texto) && mesaNum != null && !reMencionaPlato.test(texto)) {
+        // → INTENT: MARCAR_PEDIDO_LISTO
+        const pedido = pedidos.find(p => p.mesa?.numero === mesaNum && p.estado !== 'listo');
+        if (!pedido) {
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNum,
+            itemsTexto: [],
+            notas: `No encontré pedido pendiente en la mesa ${mesaNum}.`,
+            lecturaKey: `no-pedido-${mesaNum}-${Date.now()}`
+          });
+          return;
+        }
+        try {
+          await marcarPedidoComoListo(pedido._id);
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNum,
+            itemsTexto: [`Pedido de la mesa ${mesaNum} marcado listo.`],
+            notas: '',
+            lecturaKey: `ok-pedido-${mesaNum}-${Date.now()}`
+          });
+        } catch (e) {
+          console.error(e);
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNum,
+            itemsTexto: [],
+            notas: `No pude marcar listo el pedido de la mesa ${mesaNum}.`,
+            lecturaKey: `err-pedido-${mesaNum}-${Date.now()}`
+          });
+        }
+        return; // 🔚 Importante: salimos, no seguimos al fallback
+      }
+
+      if (intent.type === 'CONSULTAR_MESA') {
+        const mesaNumero = intent.mesa;
+        const pedidosMesa = pedidos.filter(p => p.mesa?.numero === mesaNumero);
+        const productos = pedidosMesa.flatMap(p =>
+          p.productos.filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo')
+        );
+        if (productos.length === 0) {
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `La mesa ${mesaNumero} no tiene productos pendientes.`,
+            lecturaKey: `consulta-empty-${mesaNumero}-${Date.now()}`
+          });
+          return;
+        }
+        const frases = productos.map(formatearProductoCliente);
+        encolarLectura({
+          area: 'cocina',
+          mesa: mesaNumero,
+          itemsTexto: frases,
+          notas: '',
+          lecturaKey: `consulta-${mesaNumero}-${Date.now()}`
+        });
+        return;
+      }
+
+      if (intent.type === 'MARCAR_PEDIDO_LISTO') {
+        const mesaNumero = intent.mesa;
+        const pedido = findPedidoPendienteByMesa(pedidos, mesaNumero);
+
+        if (!pedido) {
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No encontré pedido pendiente en la mesa ${mesaNumero}.`,
+            lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}`
+          });
+          return;
+        }
+
+        try {
+          await marcarPedidoComoListo(pedido._id);
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [`Pedido de la mesa ${mesaNumero} marcado listo.`],
+            notas: '',
+            lecturaKey: `ok-pedido-${mesaNumero}-${Date.now()}`
+          });
+        } catch (e) {
+          console.error(e);
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No pude marcar listo el pedido de la mesa ${mesaNumero}.`,
+            lecturaKey: `err-pedido-${mesaNumero}-${Date.now()}`
+          });
+        }
+        return;
+      }
+
+      if (intent.type === 'MARCAR_PRODUCTO_LISTO') {
+        const mesaNumero = intent.mesa;
+        const pedido = findPedidoPendienteByMesa(pedidos, mesaNumero);
+        if (!pedido) {
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No encontré pedido pendiente en la mesa ${mesaNumero}.`,
+            lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}`
+          });
+          return;
+        }
+        const pr = findProductoPendienteEnPedido(pedido, { idx: intent.idx, nombre: intent.nombre });
+        if (!pr) {
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`,
+            lecturaKey: `no-prod-${mesaNumero}-${Date.now()}`
+          });
+          return;
+        }
+        try {
+          await api.put(`/pedidos/${pedido._id}/producto/${pr._id}`, { estadoPreparacion: 'listo' });
+          await cargarPedidos();
+          const frase = formatearProductoCliente(pr);
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [`Marcado listo: ${frase}`],
+            notas: '',
+            lecturaKey: `ok-prod-${mesaNumero}-${Date.now()}`
+          });
+        } catch (e) {
+          encolarLectura({
+            area: 'cocina',
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No pude marcar el plato como listo en la mesa ${mesaNumero}.`,
+            lecturaKey: `err-prod-${mesaNumero}-${Date.now()}`
+          });
+        }
+        return;
+      }
+    });
+
+    onFin(() => {
+      // opcional: actualizar UI, apagar un loader, etc.
+    });
+
+    onError((e) => {
+      console.error("❌ Error en reconocimiento de voz:", e);
+      encolarLectura({
+        area: "cocina",
+        mesa: "",
+        items: [],
+        notas: "Ha ocurrido un error con el micrófono.",
+        lecturaKey: `error-mic-${Date.now()}`
+      });
+    });
+
+    // Al desmontar, corta la escucha continua
+    return () => detenerContinua();
+  }, [soportado, iniciarContinua, detenerContinua, onResultado, onFin, onError, pedidos, encolarLectura]);
+
+  // Evitar eco: si el TTS está hablando, pausamos el micro; al terminar, lo reanudamos
+  useEffect(() => {
+    if (!soportado) return;
+
+    let wasSpeaking = false;
+    let reanudarTimer = null;
+
+    const tick = () => {
+      const speaking = typeof window !== "undefined" && window.speechSynthesis?.speaking;
+      // Al empezar a hablar → detener micro
+      if (speaking && !wasSpeaking) {
+        wasSpeaking = true;
+        try { detenerContinua(); } catch { }
+        // (opcional) también puedes limpiar ventana caliente si quieres:
+        // limpiarVentanaCaliente(); // si implementaste algo así en tu hook
+      }
+      // Al dejar de hablar → reanudar micro con un pequeño delay para no cortarnos
+      if (!speaking && wasSpeaking) {
+        wasSpeaking = false;
+        clearTimeout(reanudarTimer);
+        reanudarTimer = setTimeout(() => {
+          try { iniciarContinua(); } catch { }
+        }, 250); // 250–400ms suele ir bien
+      }
+    };
+
+    const id = setInterval(tick, 200); // polling suave
+    return () => {
+      clearInterval(id);
+      clearTimeout(reanudarTimer);
+    };
+  }, [soportado, iniciarContinua, detenerContinua]);
 
   const marcarProductoComoListo = async (pedidoId, productoId) => {
     try {
@@ -145,6 +470,27 @@ const Cocina = () => {
           <button onClick={logout} className="boton-cerrar--cocina">
             Cerrar Sesión
           </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {!habilitado ? (
+              <button onClick={activar} className="boton-activar-voz--cocina">
+                🔊 Activar lectura
+              </button>
+            ) : (
+              <button onClick={silenciar} className="boton-silenciar-voz--cocina">
+                🔇 Silenciar
+              </button>
+            )}
+
+            {soportado && (
+              <button
+                onClick={() => (activo ? detenerContinua() : iniciarContinua())}
+                className="boton-voz--cocina"
+                title="Hotword: 'cocina …' o 'oye cocina …'"
+              >
+                {activo ? "🎙️ Escuchando…" : "🎙️ Reanudar micro"}
+              </button>
+            )}
+          </div>
         </div>
 
         <h1 className="titulo--cocina">Pedidos Pendientes</h1>
