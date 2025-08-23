@@ -6,10 +6,12 @@ import Venta from '../models/Ventas.js';
 import Cart from '../models/Cart.js';
 import Producto from '../models/Producto.js';
 import SesionMesa from '../models/SesionMesa.js';
+import { roomEstacion } from '../helpers/socketRooms.js';
 import { io } from '../../index.js';
 
 // Crear un nuevo pedido
 import axios from 'axios';
+import e from 'express';
 
 const IMPRESION_SERVER = process.env.IMPRESION_SERVER
 
@@ -30,14 +32,11 @@ const juntar = (arr, prop = "nombre") =>
     .filter(Boolean)
     .join(", ");
 
-
-// Crear un nuevo pedido
 export const crearPedido = async (req, res) => {
   try {
     const {
       mesa,
-      productos,
-      total,
+      productos = [],   // [{ producto, cantidad, total, ... }]
       comensales,
       alergias,
       pan,
@@ -47,15 +46,45 @@ export const crearPedido = async (req, res) => {
     } = req.body;
 
     const mesaExistente = await Mesa.findById(mesa);
-
     if (!mesaExistente) {
       logger.error('Mesa no encontrada');
       return res.status(404).json({ error: 'Mesa no encontrada' });
     }
 
+    // 1) Traer catálogo
+    const idsProductos = productos.map(p => p.producto);
+    const productosDB = await Producto.find({ _id: { $in: idsProductos } });
+
+    const now = Date.now();
+    const productosCompletos = productos.map((p) => {
+      const info = productosDB.find(x => x._id.toString() === String(p.producto));
+      const estacion = info?.estacion || 'frito';
+      return {
+        ...p,
+        nombre: info?.nombre || p.nombre,
+        categoria: p.categoria || info?.categoria,
+        tipo: p.tipo || info?.tipo || 'plato',
+        tipoPrecio: p.tipoPrecio || info?.tipoPrecio || 'tapa',
+        estacion, // 👈 **clave** para pantallas
+        workflow: {
+          estado: 'pendiente',
+          solicitadoPor: null,
+          solicitadoA: estacion, // 👈 arranca apuntando a su estación natural
+          tPendiente: now,
+          tSolicitado: null,
+          tInicio: null,
+          tListo: null,
+        },
+      };
+    });
+
+    // 2) total confiable
+    const totalPedido = Number(productosCompletos.reduce((s, it) => s + (it.total || 0), 0).toFixed(2));
+
+    // 3) Crea pedido
     const nuevoPedido = new Pedido({
-      productos,
-      total,
+      productos: productosCompletos,
+      total: totalPedido,
       comensales,
       alergias,
       pan,
@@ -63,53 +92,105 @@ export const crearPedido = async (req, res) => {
       mesa: mesaExistente._id,
       precioSeleccionado,
       sesionId: mesaExistente.sesionActiva,
+      estado: 'pendiente',
     });
 
-    nuevoPedido.total = parseFloat(nuevoPedido.total.toFixed(2));
     await nuevoPedido.save();
 
+    // 4) Actualiza mesa
     mesaExistente.pedidos.push(nuevoPedido._id);
-    mesaExistente.total += nuevoPedido.total;
-    mesaExistente.total = parseFloat(mesaExistente.total.toFixed(2));
+    mesaExistente.total = Number((mesaExistente.total + totalPedido).toFixed(2));
     await mesaExistente.save();
 
-    for (const producto of productos) {
+    // 5) Ventas + stock
+    for (const item of productosCompletos) {
       const venta = new Venta({
-        producto: producto.producto,
+        producto: item.producto,
         pedidoId: nuevoPedido._id,
-        cantidad: producto.cantidad,
-        tipo: producto.tipo || 'plato',
-        total: producto.total, // ← este
+        cantidad: item.cantidad,
+        tipo: item.tipo || 'plato',
+        total: item.total || 0,
       });
-
       await venta.save();
 
-      const productoEnDB = await Producto.findById(producto.producto);
-
-      if (productoEnDB) {
-        productoEnDB.ventas.push(venta._id);
-        productoEnDB.stock -= producto.cantidad;
-        await productoEnDB.save();
+      const prodDB = productosDB.find(pd => pd._id.toString() === String(item.producto));
+      if (prodDB) {
+        prodDB.ventas.push(venta._id);
+        prodDB.stock -= item.cantidad;
+        await prodDB.save();
       } else {
-        logger.error(
-          'Producto no encontrado en la base de datos:',
-          producto.productoId
-        );
-        return res
-          .status(400)
-          .json({ error: 'Producto no encontrado en la base de datos' });
+        logger.error('Producto no encontrado en la base de datos:', item.producto);
+        return res.status(400).json({ error: 'Producto no encontrado en la base de datos' });
       }
     }
 
-    if (cartId) {
-      await Cart.findByIdAndDelete(cartId);
-    }
+    if (cartId) await Cart.findByIdAndDelete(cartId);
 
-    // crearPedido
+    // 6) Sockets
+
+    // a) Emisión general
     req.io.emit('nuevoPedido', {
       tipo: 'crear',
       mesaId: mesaExistente._id.toString(),
       pedido: nuevoPedido.toObject(),
+    });
+
+    // b) Por estación (kitchen:newItems)
+    // Tras el save, los subdocs ya tienen _id. Hacemos pairing por índice.
+    const porEstacion = {};
+    nuevoPedido.productos.forEach((it, idx) => {
+      const est = it.estacion || 'frito';
+      (porEstacion[est] ||= []).push({
+        pedidoId: nuevoPedido._id,
+        item: it.toObject(),
+        mesa: { _id: mesaExistente._id, numero: mesaExistente.numero },
+      });
+    });
+
+    Object.entries(porEstacion).forEach(([est, items]) => {
+      req.io.to(`cocina:${est}`).emit('kitchen:newItems', { estacion: est, items });
+    });
+
+    // Opcional: mandar todo también a la central
+    req.io.to('cocina:frito').emit('kitchen:newItems', {
+      estacion: 'frito',
+      items: Object.values(porEstacion).flat(),
+    });
+
+    // 7) TTS cocina
+    const itemsDetallados = productosCompletos
+      .filter((p) => ['plato', 'tapaRacion'].includes(p.tipo))
+      .map((p) => {
+        const prodInfo = productosDB.find((pd) => pd._id.toString() === p.producto.toString());
+        const nombre = prodInfo?.nombre || 'Producto';
+        const cant = artCant(p.cantidad);
+        const tp = labelTipoPrecio(p.tipoPrecio);
+        const conExtras = [juntar(p.adicionales), juntar(p.extras)].filter(Boolean).join(', ');
+        const sinIngr = juntar(p.ingredientesEliminados, null);
+        const nota = limpiar(p.mensaje);
+        const tipoPlatoTxt = p.tipoPrecio === 'individual' ? 'individual'
+          : p.tipoPrecio === 'compartir' ? 'para compartir' : '';
+        const partes = [`${cant} ${nombre}`, tp || '', tipoPlatoTxt || '', conExtras ? `con ${conExtras}` : '', sinIngr ? `sin ${sinIngr}` : '', nota ? `nota: ${nota}` : ''].filter(Boolean);
+        return {
+          nombre, cantidad: p.cantidad, tipoPrecio: p.tipoPrecio, adicionales: p.adicionales, extras: p.extras,
+          ingredientesEliminados: p.ingredientesEliminados, mensaje: p.mensaje, tipoPlato: p.tipoPlato, seccion: p.seccion,
+          texto: partes.join(', ')
+        };
+      });
+
+    const notasGlobales = productosCompletos.map(p => limpiar(p.mensaje)).filter(Boolean).join('. ');
+    const alergiasItems = productosCompletos
+      .map(p => limpiar(p.alergiasComensal))
+      .filter(Boolean); const lecturaKey = `${nuevoPedido._id}:${mesaExistente.numero}:${itemsDetallados.map(i => i.texto).join('|')}`;
+
+    req.io.emit('nuevaComanda', {
+      area: 'cocina',
+      mesa: mesaExistente.numero,
+      items: itemsDetallados,
+      itemsTexto: itemsDetallados.map(i => i.texto),
+      alergias: alergiasItems,
+      notas: notasGlobales,
+      lecturaKey,
     });
 
     res.status(201).json({
@@ -141,37 +222,46 @@ export const agregarProductoAlPedido = async (req, res) => {
   }
 
   try {
+    // === Buscar mesa (por ObjectId o por número)
     const mesa = /^[0-9a-fA-F]{24}$/.test(mesaId)
       ? await Mesa.findById(mesaId).populate('pedidos')
       : await Mesa.findOne({ numero: parseInt(mesaId, 10) }).populate('pedidos');
 
     if (!mesa) return res.status(404).json({ error: 'Mesa no encontrada' });
 
-    const sesionActiva = await SesionMesa.findOne({
-      mesa: mesa._id,
-      estado: 'activa',
-    });
+    // === Verificar sesión activa
+    const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: 'activa' });
     if (!sesionActiva) {
-      return res.status(400).json({
-        error: 'La mesa no tiene una sesión activa.',
-      });
+      return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
     }
 
+    // === Traer info de catálogo para enriquecer
     const idsProductos = productos.map((p) => p.producto);
     const productosDB = await Producto.find({ _id: { $in: idsProductos } });
 
     const productosCompletos = productos.map((p) => {
-      const productoInfo = productosDB.find(
-        (prod) => prod._id.toString() === p.producto.toString()
-      );
+      const prodInfo = productosDB.find((x) => x._id.toString() === p.producto.toString());
+      const estacion = prodInfo?.estacion || 'frito'; // fallback seguro
       return {
         ...p,
-        tipoPrecio: p.tipoPrecio || productoInfo?.tipoPrecio || 'tapa',
-        categoria: p.categoria || productoInfo?.categoria || 'general',
-        tipo: p.tipo || productoInfo?.tipo || 'producto',
+        nombre: prodInfo?.nombre,
+        categoria: p.categoria || prodInfo?.categoria,
+        tipo: p.tipo || prodInfo?.tipo || 'plato',
+        tipoPrecio: p.tipoPrecio || prodInfo?.tipoPrecio || 'tapa',
+        estacion,
+        workflow: {
+          estado: 'pendiente',
+          solicitadoPor: null,
+          solicitadoA: estacion,
+          tPendiente: Date.now(),
+          tSolicitado: null,
+          tInicio: null,
+          tListo: null,
+        },
       };
     });
 
+    // === Agregar a pedido pendiente existente o crear uno nuevo
     let pedidoModificado;
     const pedidoExistente = mesa.pedidos.find((p) => p.estado === 'pendiente');
 
@@ -193,36 +283,18 @@ export const agregarProductoAlPedido = async (req, res) => {
       mesa.pedidos.push(pedidoModificado._id);
     }
 
-    // 💥 Recalcular total completo (evita errores por concurrencia)
-    // ...
-    // 💥 Recalcular total completo (evita errores por concurrencia)
+    // === Recalcular total de la mesa (evita errores por concurrencia)
     const pedidos = await Pedido.find({ mesa: mesa._id });
-    logger.info(`🔁 ${pedidos.length} pedidos encontrados para mesa ${mesa.numero}`);
-
     const pedidosBebidas = await PedidoBebida.find({ mesa: mesa._id });
-    logger.info(`🥤 ${pedidosBebidas.length} pedidos de bebidas encontrados para mesa ${mesa.numero}`);
 
-    const totalPedidos = pedidos.reduce((sum, p) => {
-      logger.debug(`📦 Pedido normal: total = ${p.total}`);
-      return sum + p.total;
-    }, 0);
-
-    const totalBebidas = pedidosBebidas.reduce((sum, p) => {
-      logger.debug(`🍹 Pedido bebida: total = ${p.total}`);
-      return sum + p.total;
-    }, 0);
-
+    const totalPedidos = pedidos.reduce((sum, p) => sum + (p.total || 0), 0);
+    const totalBebidas = pedidosBebidas.reduce((sum, p) => sum + (p.total || 0), 0);
     const totalMesa = totalPedidos + totalBebidas;
-    logger.info(`🧮 Total recalculado para mesa ${mesa.numero}: ${totalPedidos} + ${totalBebidas} = ${totalMesa}`);
 
-    mesa.total = totalMesa;
-    await mesa.save();
-    logger.info(`💾 Total de la mesa ${mesa.numero} guardado: ${mesa.total}`);
-
-
+    mesa.total = parseFloat(totalMesa.toFixed(2));
     await mesa.save();
 
-    // Crear ventas por cada producto agregado
+    // === Registrar ventas + actualizar stock
     for (const producto of productosCompletos) {
       const venta = new Venta({
         producto: producto.producto,
@@ -231,13 +303,9 @@ export const agregarProductoAlPedido = async (req, res) => {
         tipo: producto.tipo || 'plato',
         total: producto.total,
       });
-
       await venta.save();
 
-      const productoEnDB = productosDB.find(
-        (p) => p._id.toString() === producto.producto.toString()
-      );
-
+      const productoEnDB = productosDB.find((p) => p._id.toString() === producto.producto.toString());
       if (productoEnDB) {
         productoEnDB.ventas.push(venta._id);
         productoEnDB.stock -= producto.cantidad;
@@ -247,17 +315,60 @@ export const agregarProductoAlPedido = async (req, res) => {
       }
     }
 
-    // agregarProductoAlPedido (ya casi está, lo dejo homogéneo)
+    // === SOCKETS (general)
     req.io.emit('nuevoPedido', {
       tipo: 'agregar',
       mesaId: mesa._id.toString(),
       pedido: pedidoModificado.toObject(),
     });
+
+    // === SOCKETS por estación (frio/frito/plancha) + central (frito)
+    // Identificar cuáles son los ítems recién agregados en el documento guardado
+    // (mapeo por (producto,cantidad,total,nombre) es suficiente en práctica; si quieres más robustez, añade un UUID cliente)
+    const nuevosItemsGuardados = [];
+    for (const it of pedidoModificado.productos) {
+      const match = productosCompletos.find(
+        (p) =>
+          String(p.producto) === String(it.producto) &&
+          p.cantidad === it.cantidad &&
+          Number(p.total) === Number(it.total) &&
+          (p.nombre || '') === (it.nombre || '')
+      );
+      if (match) {
+        nuevosItemsGuardados.push({
+          pedidoId: pedidoModificado._id,
+          item: it.toObject(),
+          mesa: { _id: mesa._id, numero: mesa.numero },
+        });
+      }
+    }
+
+    // Agrupar por estación
+    const porEstacion = nuevosItemsGuardados.reduce((acc, it) => {
+      const est = it.item.estacion || 'frito';
+      (acc[est] ||= []).push(it);
+      return acc;
+    }, {});
+
+    // Emitir a cada sala de cocina específica
+    for (const estacion of Object.keys(porEstacion)) {
+      req.io.to(`cocina:${estacion}`).emit('kitchen:newItems', {
+        estacion,
+        items: porEstacion[estacion],
+      });
+    }
+    // Avisar también a la central (frito) con todos los ítems nuevos
+    req.io.to('cocina:frito').emit('kitchen:newItems', {
+      estacion: 'frito',
+      items: Object.values(porEstacion).flat(),
+    });
+
+    // === Preparar datos para impresión
     const datosRespuesta = {
       mesaNumero: mesa.numero,
       comensales: mesa.comensales || 0,
       productos: productosCompletos.map((p) => {
-        const productoInfo = productosDB.find((prod) => prod._id.toString() === p.producto);
+        const productoInfo = productosDB.find((prod) => prod._id.toString() === p.producto.toString());
         return {
           nombre: productoInfo?.nombre || 'Producto desconocido',
           cantidad: p.cantidad,
@@ -284,75 +395,73 @@ export const agregarProductoAlPedido = async (req, res) => {
       }),
     };
 
+    // === Impresión (best-effort)
     try {
       await axios.post(`${IMPRESION_SERVER}/imprimir`, datosRespuesta);
     } catch (error) {
       logger.error('Error al enviar pedido a la impresora:', error.message);
     }
 
-    // ==== Construir items detallados para TTS (cocina) ====
+    // === TTS cocina (como ya tenías)
     const itemsDetallados = productosCompletos
-      .filter(p => ['plato', 'tapaRacion'].includes(p.tipo))
-      .map(p => {
-        const prodInfo = productosDB.find(pd => pd._id.toString() === p.producto.toString());
+      .filter((p) => ['plato', 'tapaRacion'].includes(p.tipo))
+      .map((p) => {
+        const prodInfo = productosDB.find((pd) => pd._id.toString() === p.producto.toString());
         const nombre = prodInfo?.nombre || 'Producto';
         const cant = artCant(p.cantidad);
         const tp = labelTipoPrecio(p.tipoPrecio);
 
-        // “extras/adicionales” (usa el que venga; si tienes los dos, se suman)
-        const conExtras = [juntar(p.adicionales), juntar(p.extras)].filter(Boolean).join(", ");
-        // “sin …” (puede venir como array de strings)
+        const conExtras = [juntar(p.adicionales), juntar(p.extras)].filter(Boolean).join(', ');
         const sinIngr = juntar(p.ingredientesEliminados, null);
-        // nota/mensaje
         const nota = limpiar(p.mensaje);
-        // individual / para compartir (opcional)
-        const tipoPlatoTxt = p.tipoPrecio === "individual" ? "individual"
-          : p.tipoPrecio === "compartir" ? "para compartir" : "";
+        const tipoPlatoTxt =
+          p.tipoPrecio === 'individual' ? 'individual' :
+            p.tipoPrecio === 'compartir' ? 'para compartir' : '';
 
-        // Frase final por producto
         const partes = [
           `${cant} ${nombre}`,
-          tp ? tp : "",
-          tipoPlatoTxt ? tipoPlatoTxt : "",
-          conExtras ? `con ${conExtras}` : "",
-          sinIngr ? `sin ${sinIngr}` : "",
-          nota ? `nota: ${nota}` : ""
+          tp || '',
+          tipoPlatoTxt || '',
+          conExtras ? `con ${conExtras}` : '',
+          sinIngr ? `sin ${sinIngr}` : '',
+          nota ? `nota: ${nota}` : '',
         ].filter(Boolean);
 
         return {
-          // para UI si quisieras
-          nombre, cantidad: p.cantidad, tipoPrecio: p.tipoPrecio, adicionales: p.adicionales, extras: p.extras,
-          ingredientesEliminados: p.ingredientesEliminados, mensaje: p.mensaje, tipoPlato: p.tipoPlato, seccion: p.seccion,
-          // para TTS
-          texto: partes.join(", ")
+          nombre,
+          cantidad: p.cantidad,
+          tipoPrecio: p.tipoPrecio,
+          adicionales: p.adicionales,
+          extras: p.extras,
+          ingredientesEliminados: p.ingredientesEliminados,
+          mensaje: p.mensaje,
+          tipoPlato: p.tipoPlato,
+          seccion: p.seccion,
+          texto: partes.join(', '),
         };
       });
 
-    const notasGlobales = productosCompletos.map(p => limpiar(p.mensaje)).filter(Boolean).join(". ");
-    const alergias = productosCompletos.map(p => limpiar(p.alergiasComensal)).filter(Boolean);
+    const notasGlobales = productosCompletos.map((p) => limpiar(p.mensaje)).filter(Boolean).join('. ');
+    const alergias = productosCompletos.map((p) => limpiar(p.alergiasComensal)).filter(Boolean);
+    const lecturaKey = `${pedidoModificado._id}:${mesa.numero}:${itemsDetallados.map((i) => i.texto).join('|')}`;
 
-    // Clave estable por pedido (evita loops, tu hook la limita a 2)
-    const lecturaKey = `${pedidoModificado._id}:${mesa.numero}:${itemsDetallados.map(i => i.texto).join('|')}`;
-
-    // 📣 Evento específico para locución
     req.io.emit('nuevaComanda', {
       area: 'cocina',
       mesa: mesa.numero,
-      // items incluye cada producto, pero lo importante para TTS es itemsTexto:
       items: itemsDetallados,
-      itemsTexto: itemsDetallados.map(i => i.texto),
+      itemsTexto: itemsDetallados.map((i) => i.texto),
       alergias,
       notas: notasGlobales,
       lecturaKey,
     });
 
+    // === Respuesta
     res.json(datosRespuesta);
   } catch (error) {
     logger.error('Error al agregar producto:', error);
     res.status(500).json({ error: 'Error al agregar producto' });
   }
 };
-
 
 // Obtener todos los pedidos
 export const obtenerPedidos = async (req, res) => {
@@ -635,3 +744,4 @@ export const verificarPedidosMesa = async (req, res) => {
     res.status(500).json({ error: 'Error al verificar pedidos de la mesa.' });
   }
 };
+

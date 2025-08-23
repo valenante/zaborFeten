@@ -16,6 +16,20 @@ const adicionalSchema = new Schema(
   { _id: false }
 );
 
+const WorkflowSchema = new Schema({
+  estado: {
+    type: String,
+    enum: ['pendiente', 'solicitado', 'en_preparacion', 'listo'],
+    default: 'pendiente'
+  },
+  solicitadoPor: { type: String, enum: ['frito', 'sala', null], default: null },
+  solicitadoA: { type: String, enum: ['frio', 'plancha', 'frito', null], default: null },
+  tPendiente: { type: Number },   // epoch ms
+  tSolicitado: { type: Number },
+  tInicio: { type: Number },
+  tListo: { type: Number }
+}, { _id: false });
+
 const PedidoSchema = new Schema({
   mesa: { type: Schema.Types.ObjectId, ref: 'Mesa', required: true },
   usuario: { type: Schema.Types.ObjectId, ref: 'User' }, // Opcional
@@ -29,6 +43,12 @@ const PedidoSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Producto',
         required: true,
+      },
+      workflow: { type: WorkflowSchema, default: () => ({ tPendiente: Date.now() }) },
+      estacion: { 
+        type: String, 
+        enum: ['frio', 'frito', 'plancha'], 
+        required: true 
       },
       cantidad: { type: Number, required: true },
       eliminado: { type: Boolean, default: false }, // Indica si se eliminó
@@ -81,7 +101,7 @@ const PedidoSchema = new Schema({
         default: '',
       },
       total: { type: Number, required: true },
-      extras : [
+      extras: [
         {
           nombre: { type: String, required: true }, // Nombre del extra
           precio: { type: Number, required: true }, // Precio del extra

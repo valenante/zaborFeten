@@ -8,9 +8,11 @@ import { useAuth } from "../../context/AuthContext";
 import { useLecturaVoz } from '../../hooks/useLecturaVoz';
 import { useReconocimientoVoz, extraerNumeroMesa } from '../../hooks/useReconocimientoVoz';
 import { parseCocinaCommand } from '../../Voice/intentsCocina';
-
-
 import './Cocina.css';
+
+const ESTACIONES = ['frito', 'frio', 'plancha'];
+const ROOM = (e) => `cocina:${e}`;
+
 
 // Helpers de formateo local (para consultas por voz)
 const _limpiar = (s) => (s ?? "").toString().trim();
@@ -95,6 +97,22 @@ const Cocina = () => {
   const [mostrarResumen, setMostrarResumen] = useState(false);
   const { habilitado, activar, encolarLectura, silenciar } = useLecturaVoz(1, 8000);
   const { activo, iniciarContinua, detenerContinua, onResultado, onFin, onError, soportado } = useReconocimientoVoz({ idioma: "es-ES" });
+  const [estacion, setEstacion] = useState(() => localStorage.getItem('cocina_estacion') || 'frito');
+
+  const onChangeEstacion = (e) => {
+    const val = e.target.value;
+    setEstacion(val);
+    localStorage.setItem('cocina_estacion', val);
+  };
+
+  // Unirte/salirte del room de la estación (si tu server maneja room:join/room:leave)
+  useEffect(() => {
+    if (!socket) return;
+    const room = ROOM(estacion);
+    socket.emit('room:join', { room });
+    return () => socket.emit('room:leave', { room });
+  }, [socket, estacion]);
+
 
   const cargarMesas = async () => {
     try {
@@ -110,6 +128,26 @@ const Cocina = () => {
     const fechaPedido = new Date(fecha);
     const diferencia = Math.floor((ahora - fechaPedido) / 60000);
     return `${diferencia}m`;
+  };
+
+  const empezarItem = async (pedidoId, itemId) => {
+    try {
+      await api.post(`/cocina/${pedidoId}/items/${itemId}/empezar`);
+      // no recargues: te llegará un socket 'kitchen:update'. Si no, descomenta la siguiente línea:
+      // await cargarPedidos();
+    } catch (error) {
+      logger.error('Error al empezar item:', error);
+    }
+  };
+
+  const marcarItemListo = async (pedidoId, itemId) => {
+    try {
+      await api.post(`/cocina/${pedidoId}/items/${itemId}/listo`);
+      // idem arriba
+      // await cargarPedidos();
+    } catch (error) {
+      logger.error('Error al marcar item listo:', error);
+    }
   };
 
   const calcularResumenProductos = (listaPedidos) => {
@@ -148,19 +186,32 @@ const Cocina = () => {
     if (!socket) return;
 
     const manejarNuevoPedido = () => cargarPedidos();
-    const manejarNuevaComanda = (payload) => {
-      if (payload?.area !== 'cocina') return;
-      encolarLectura({ ...payload, tipoLectura: 'comanda' });
+
+    const manejarKitchenUpdate = (payload) => {
+      if (!payload || !payload.type) return;
+
+      // Opcional: si quieres evitar recargar, puedes parchear en memoria el estado del item en 'pedidos'
+      // Para simplificar, al menos disparamos el highlight en eventos clave:
+      if (payload.type === 'itemSolicitado') {
+        pushHighlight(`${payload.pedidoId}:${payload.item?._id}`);
+      } else if (payload.type === 'itemEnPreparacion' || payload.type === 'itemListo') {
+        // podrías también marcar cambios si quieres
+      }
     };
 
     socket.on("nuevoPedido", manejarNuevoPedido);
-    socket.on("nuevaComanda", manejarNuevaComanda);
+    socket.on("kitchen:update", manejarKitchenUpdate);
+    socket.on("nuevaComanda", (payload) => {
+      if (payload?.area !== 'cocina') return;
+      encolarLectura({ ...payload, tipoLectura: 'comanda' });
+    });
+
     return () => {
       socket.off("nuevoPedido", manejarNuevoPedido);
-      socket.off("nuevaComanda", manejarNuevaComanda);
+      socket.off("kitchen:update", manejarKitchenUpdate);
+      socket.off("nuevaComanda");
     };
   }, [socket, encolarLectura]);
-
 
   useEffect(() => {
     if (!soportado) return;
@@ -371,6 +422,43 @@ const Cocina = () => {
     return () => detenerContinua();
   }, [soportado, iniciarContinua, detenerContinua, onResultado, onFin, onError, pedidos, encolarLectura]);
 
+  // === NUEVO: deriva si esta pantalla es la central (frito)
+  const isCentral = estacion === 'frito';
+
+  // === NUEVO: quién puede qué
+  const puedeSolicitar = (estado) => estado === 'pendiente';           // Central solo solicita si está pendiente
+  const puedeListo = (estado) => estado !== 'listo';                   // Estaciones pueden marcar listo (usamos autopromoción en backend)
+
+  // === NUEVO: llamar API para solicitar a una estación
+  const solicitar = async ({ pedidoId, itemId, destino }) => {
+    try {
+      await api.post(`/cocina/${pedidoId}/items/${itemId}/solicitar`, {
+        solicitadoA: destino,
+        solicitadoPor: 'frito',
+      });
+      // no forzamos recarga, llegará socket 'kitchen:update'
+    } catch (error) {
+      logger.error('Error al solicitar item:', error);
+    }
+  };
+
+  // === NUEVO: ids resaltados tras solicitar
+  const [highlight, setHighlight] = useState(new Set());
+  const pushHighlight = (key) => {
+    setHighlight(prev => {
+      const n = new Set(prev);
+      n.add(key);
+      return n;
+    });
+    setTimeout(() => {
+      setHighlight(prev => {
+        const n = new Set(prev);
+        n.delete(key);
+        return n;
+      });
+    }, 3000); // 3s de flash
+  };
+
   // Evitar eco: si el TTS está hablando, pausamos el micro; al terminar, lo reanudamos
   useEffect(() => {
     if (!soportado) return;
@@ -404,13 +492,11 @@ const Cocina = () => {
     };
   }, [soportado, iniciarContinua, detenerContinua]);
 
-  const marcarProductoComoListo = async (pedidoId, productoId) => {
-    try {
-      await api.put(`/pedidos/${pedidoId}/producto/${productoId}`, { estadoPreparacion: 'listo' });
-      cargarPedidos();
-    } catch (error) {
-      logger.error('Error al marcar producto como listo:', error);
-    }
+  // Devuelve solo los productos de la estación elegida.
+  // La central (frito) ve todo sin filtrar.
+  const productosDeEstacion = (productos) => {
+    if (estacion === 'frito') return productos; // central ve todo
+    return productos.filter(p => p.estacion === estacion);
   };
 
   const marcarPedidoComoListo = async (pedidoId) => {
@@ -471,6 +557,19 @@ const Cocina = () => {
             Cerrar Sesión
           </button>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* … tus botones de voz … */}
+            <div className="cocina-selector">
+              <label htmlFor="estacion" style={{ marginRight: 8 }}>Pantalla:</label>
+              <select id="estacion" value={estacion} onChange={onChangeEstacion}>
+                {ESTACIONES.map((e) => (
+                  <option key={e} value={e}>
+                    {e === 'frito' ? 'Fritos (Central)' : e === 'frio' ? 'Fríos' : 'Plancha'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {!habilitado ? (
               <button onClick={activar} className="boton-activar-voz--cocina">
                 🔊 Activar lectura
@@ -506,13 +605,16 @@ const Cocina = () => {
         ) : (
           <div className="pedidos-container--cocina">
             {pedidos.map((pedido) => {
-              const todosProductosListos = pedido.productos
-                .filter((producto) => ['plato', 'tapaRacion'].includes(producto.tipo))
-                .every((producto) => producto.estadoPreparacion === 'listo');
-
-              const productosAgrupados = agruparPorSeccion(
+              const visibles = productosDeEstacion(
                 pedido.productos.filter((producto) => ['plato', 'tapaRacion'].includes(producto.tipo))
               );
+
+              const todosProductosListos = visibles.every(
+                (producto) => (producto.workflow?.estado === 'listo')
+              );
+
+              const productosAgrupados = agruparPorSeccion(visibles);
+
 
               return (
                 <div key={pedido._id} className="pedido-card--cocina">
@@ -529,31 +631,52 @@ const Cocina = () => {
                           <h4 className="seccion-titulo--cocina">{seccion.toUpperCase()}</h4>
                           <ul className="productos-list--cocina">
                             {productosAgrupados[seccion].map((producto) => (
-                              <li key={producto._id} className="producto-item--cocina">
+                              <li key={producto._id} className={
+                                "producto-item--cocina" +
+                                (highlight.has(`${pedido._id}:${producto._id}`) ? " flash-solicitado" : "")
+                              }>
                                 <label>
                                   <input
                                     type="checkbox"
-                                    checked={producto.estadoPreparacion === 'listo'}
-                                    onChange={() => marcarProductoComoListo(pedido._id, producto._id)}
+                                    checked={producto.workflow?.estado === 'listo'}
+                                    onChange={() => marcarItemListo(pedido._id, producto._id)} // si usas por-pedido, mantenlo
+                                    disabled={isCentral} // la central no marca listo desde aquí
                                   />
                                   <span style={{ color: producto.tipoPlato === 'individual' ? 'green' : 'purple' }}>
                                     {producto.cantidad}x {producto.tipoPrecio !== 'precioBase' && `${producto.tipoPrecio} `}
-                                    {producto.producto?.nombre || 'Producto no disponible'}
+                                    {producto.producto?.nombre || producto.nombre || 'Producto no disponible'}
+                                    {/* BADGE de solicitado */}
+                                    {producto.workflow?.estado === 'solicitado' && (
+                                      <span className="badge-solicitado">SOLICITADO</span>
+                                    )}
                                   </span>
                                 </label>
-                                {producto.adicionales.length > 0 && <p>{producto.adicionales.map(ad => ad.nombre).join(', ')}</p>}
-                                {producto.alergiasComensal && <p className="alergias-individual--cocina"><strong>A:</strong> {producto.alergiasComensal}</p>}
-                                {producto.tipoCroqueta && <p className="tipo-croqueta">{producto.tipoCroqueta}</p>}
-                                {producto.sabor?.length > 0 && (
-                                  <ul>{producto.sabor.map((s, i) => <li key={i}>{s.cantidad}x {s.ingrediente}</li>)}</ul>
-                                )}
-                                {producto.ingredientesEliminados.length > 0 && (
-                                  <p><strong>Sin:</strong> {producto.ingredientesEliminados.join(', ')}</p>
-                                )}
-                                {producto.especificaciones.length > 0 && (
-                                  <p><strong>Especificaciones:</strong> {producto.especificaciones.join(', ')}</p>
-                                )}
-                                {producto.mensaje && <p className="mensaje-producto--cocina">{producto.mensaje}</p>}
+
+                                {/* … resto de detalles (adicionales, alergias, etc.) … */}
+
+                                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                                  {/* Acciones CENTRAL (Fritos) → solicitar a FRÍO o PLANCHA */}
+                                  {isCentral && (
+                                    <>
+                                      <button
+                                        className="btn--cocina btn--ghost"
+                                        onClick={() => solicitar({ pedidoId: pedido._id, itemId: producto._id, destino: 'frio' })}
+                                        disabled={!puedeSolicitar(producto.workflow?.estado)}
+                                        title="Solicitar a Frío"
+                                      >
+                                        Solicitar Frío
+                                      </button>
+                                      <button
+                                        className="btn--cocina btn--ghost"
+                                        onClick={() => solicitar({ pedidoId: pedido._id, itemId: producto._id, destino: 'plancha' })}
+                                        disabled={!puedeSolicitar(producto.workflow?.estado)}
+                                        title="Solicitar a Plancha"
+                                      >
+                                        Solicitar Plancha
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               </li>
                             ))}
                           </ul>
@@ -563,29 +686,30 @@ const Cocina = () => {
                       <div className="seccion-pedido--cocina">
                         <h4 className="seccion-titulo--cocina">PRODUCTOS</h4>
                         <ul className="productos-list--cocina">
-                          {pedido.productos.map((producto) => (
+                          {visibles.map((producto) => (
                             <li key={producto._id} className="producto-item--cocina">
                               <label>
                                 <input
                                   type="checkbox"
-                                  checked={producto.estadoPreparacion === 'listo'}
-                                  onChange={() => marcarProductoComoListo(pedido._id, producto._id)}
+                                  checked={producto.workflow?.estado === 'listo'}
+                                  onChange={() => marcarItemListo(pedido._id, producto._id)}
                                 />
                                 <span style={{ color: producto.tipoPlato === 'individual' ? 'green' : 'purple' }}>
                                   {producto.cantidad}x {producto.tipoPrecio !== 'precioBase' && `${producto.tipoPrecio} `}
-                                  {producto.producto?.nombre || 'Producto no disponible'}
+                                  {producto.producto?.nombre || producto.nombre || 'Producto'}
                                 </span>
                               </label>
-                              {producto.adicionales.length > 0 && <p>{producto.adicionales.map(ad => ad.nombre).join(', ')}</p>}
+
+                              {producto.adicionales?.length > 0 && <p>{producto.adicionales.map(ad => ad.nombre).join(', ')}</p>}
                               {producto.alergiasComensal && <p className="alergias-individual--cocina"><strong>A:</strong> {producto.alergiasComensal}</p>}
                               {producto.tipoCroqueta && <p className="tipo-croqueta">{producto.tipoCroqueta}</p>}
                               {producto.sabor?.length > 0 && (
                                 <ul>{producto.sabor.map((s, i) => <li key={i}>{s.cantidad}x {s.ingrediente}</li>)}</ul>
                               )}
-                              {producto.ingredientesEliminados.length > 0 && (
+                              {producto.ingredientesEliminados?.length > 0 && (
                                 <p><strong>Sin:</strong> {producto.ingredientesEliminados.join(', ')}</p>
                               )}
-                              {producto.especificaciones.length > 0 && (
+                              {producto.especificaciones?.length > 0 && (
                                 <p><strong>Especificaciones:</strong> {producto.especificaciones.join(', ')}</p>
                               )}
                               {producto.mensaje && <p className="mensaje-producto--cocina">{producto.mensaje}</p>}
@@ -593,7 +717,8 @@ const Cocina = () => {
                           ))}
                         </ul>
                       </div>
-                    )}
+                    )
+                  }
 
                   <button
                     onClick={() => marcarPedidoComoListo(pedido._id)}

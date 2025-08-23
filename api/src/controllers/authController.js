@@ -3,22 +3,22 @@ import jwt from 'jsonwebtoken';
 import TokenRevocado from '../models/TokenRevocado.js';
 import logger from '../../utils/logger.js'; // Importar el logger
 // Generar access token
-const generarAccessToken = (user) => {
-  return jwt.sign(
-    { id: user._id, name: user.name, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' } // Token válido por 1 hora
-  );
-};
+export const generarAccessToken = (user) => jwt.sign(
+  {
+    id: user._id.toString(),
+    name: user.name,
+    role: user.role,           // ← importante
+    estacion: user.estacion,   // ← importante
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: '1h' }
+);
 
-// Generar refresh token
-const generarRefreshToken = (user) => {
-  return jwt.sign(
-    { id: user._id, name: user.name, role: user.role },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: '7d' }
-  );
-};
+export const generarRefreshToken = (user) => jwt.sign(
+  { id: user._id.toString() },
+  process.env.JWT_REFRESH_SECRET,
+  { expiresIn: '7d' }
+);
 
 export const renovarToken = async (req, res) => {
   const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
@@ -165,19 +165,9 @@ export const login = async (req, res) => {
     const accessToken = generarAccessToken(user);
     const refreshToken = generarRefreshToken(user);
 
-    res.cookie('token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-      maxAge: 60 * 60 * 1000, // 1 hora
-    });
+    res.cookie('token', accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', maxAge: 60 * 60 * 1000 });
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     return res.status(200).json({
       message: 'Inicio de sesión exitoso',
@@ -186,6 +176,7 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         role: user.role,
+        estacion: user.estacion, // ← añade esto
       },
     });
   } catch (error) {

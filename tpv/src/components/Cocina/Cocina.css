@@ -405,6 +405,41 @@
     transform: translateY(0);
 }
 
+/* Destello cuando se solicita */
+.flash-solicitado {
+  animation: flashSolicitado 0.6s ease-in-out 0s 3 alternate;
+  border-left: 4px solid #1e90ff; /* acento azul */
+  background: rgba(30, 144, 255, 0.06);
+}
+
+@keyframes flashSolicitado {
+  from { box-shadow: 0 0 0 rgba(30,144,255,0.0); }
+  to   { box-shadow: 0 0 12px rgba(30,144,255,0.45); }
+}
+
+/* Badge de estado */
+.badge-solicitado {
+  margin-left: 8px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  background: #1e90ff;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Botón fantasma (ligero) para acciones de central */
+.btn--ghost {
+  background: transparent;
+  border: 1px dashed #1e90ff;
+  color: #1e90ff;
+}
+.btn--ghost:disabled {
+  opacity: .4;
+  border-color: #aaa;
+  color: #aaa;
+}
+
 @media (max-width: 520px) {
     .boton-resumen--cocina {
         right: 12px;

@@ -1,25 +1,23 @@
+// middlewares/auth.js
 import jwt from 'jsonwebtoken';
-import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
+import logger from '../../utils/logger.js';
 
 export const authMiddleware = (req, res, next) => {
-  const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
-
-  const authHeader = req.header('Authorization');
-  if (!authHeader) {
-    return res
-      .status(401)
-      .json({ error: 'No autorizado. Token no proporcionado.' });
-  }
+  // lee cookie o header Bearer
+  const bearer = req.headers.authorization;
+  const token = req.cookies?.token || (bearer?.startsWith('Bearer ') ? bearer.slice(7) : null);
 
   if (!token) {
-    return res
-      .status(401)
-      .json({ error: 'No autorizado. Token no encontrado.' });
+    return res.status(401).json({ error: 'No autorizado. Token no proporcionado.' });
   }
 
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = verified; // Guardar los datos del usuario en la solicitud
+    // inferir estación desde role si no viene
+    if (!verified.estacion && typeof verified.role === 'string' && verified.role.startsWith('cocina-')) {
+      verified.estacion = verified.role.split('-')[1]; // 'frio'|'frito'|'plancha'
+    }
+    req.user = verified; // { id, name, role, estacion? }
     logger.info(`Token verificado para el usuario: ${verified.id}`);
     next();
   } catch (error) {

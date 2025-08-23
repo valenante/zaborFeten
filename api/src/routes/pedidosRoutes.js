@@ -135,7 +135,7 @@ router.get('/mesa/:mesaId', obtenerPedidoPorMesaId);
  *       201:
  *         description: Pedido creado correctamente
  */
-router.post('/', crearPedido, verificarLider);
+router.post('/',verificarLider ,crearPedido );
 
 /**
  * @swagger

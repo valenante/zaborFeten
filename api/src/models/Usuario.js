@@ -1,18 +1,29 @@
+// models/User.js
 import { Schema, model } from 'mongoose';
 import { hash, compare } from 'bcrypt';
 
 const userSchema = new Schema(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+
+    // Rol general (permite gatear pantallas/acciones)
     role: {
       type: String,
-      enum: ['admin', 'camarero', 'cocinero'],
-      default: 'user',
-    }, // Rol del usuario
-    isBlocked: { type: Boolean, default: false }, // Indica si la cuenta está bloqueada
-    blockedUntil: { type: Date, default: null }, // Tiempo hasta que se desbloquee la cuenta
-    failedAttempts: { type: Number, default: 0 }, // Intentos fallidos
+      enum: ['admin', 'camarero', 'cocinero', 'supervisor'],
+      default: 'camarero',
+    },
+
+    // ⬅️ NUEVO: estación asignada para cocina
+    estacion: {
+      type: String,
+      enum: ['frio', 'frito', 'plancha', null],
+      default: null, // camarero/admin no necesitan estación
+    },
+
+    isBlocked: { type: Boolean, default: false },
+    blockedUntil: { type: Date, default: null },
+    failedAttempts: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -21,22 +32,19 @@ userSchema.methods.resetFailedAttempts = function () {
   this.failedAttempts = 0;
   return this.save();
 };
-
 userSchema.methods.incrementFailedAttempts = function () {
   this.failedAttempts += 1;
   return this.save();
 };
 
-// Encriptar contraseña antes de guardar
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.password = await hash(this.password, 12); // Más rondas para mayor seguridad
+  this.password = await hash(this.password, 12);
   next();
 });
 
-// Método para verificar contraseñas
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await compare(candidatePassword, this.password);
+  return compare(candidatePassword, this.password);
 };
 
 export default model('User', userSchema);

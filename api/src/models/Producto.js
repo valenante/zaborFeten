@@ -63,6 +63,7 @@ const productoSchema = new Schema(
         valor: { type: String },
       },
     ],
+    estacion: { type: String, default: '' },
     sabor: {
       type: [
         {
