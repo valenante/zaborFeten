@@ -1,5 +1,21 @@
 import express from 'express';
 import { config } from 'dotenv';
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 🔥 Cargar el .env explícitamente
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+console.log("DEBUG ENV", {
+  enabled: process.env.VERIFACTU_SIGN_ENABLED,
+  jar: process.env.VERIFACTU_JAR_PATH,
+  p12: process.env.VERIFACTU_P12_PATH,
+  pass: process.env.VERIFACTU_P12_PASS,
+});
 import compression from 'compression';
 import logger from './utils/logger.js';
 import { createServer } from 'http';
@@ -10,7 +26,6 @@ import helmet from 'helmet';
 import redisClient from './config/redisClient.js';
 import morgan from 'morgan';
 import fs from 'fs';
-import path from 'path';
 import {
   corsOptions,
   sessionConfig,
@@ -47,6 +62,10 @@ import extraRoutes from './src/routes/extraRoutes.js'; // Importar las rutas de 
 import firmaRoutes from './src/routes/firmaRoutes.js'; // Importar las rutas de firma digital
 import reportesRoutes from './src/routes/reportesRoutes.js'
 import cocinaRoutes from './src/routes/cocinaRoutes.js'
+import facturacionRoutes from './src/routes/facturacionRoutes.js';
+import verifactuRoutes from './src/routes/verifactuRoutes.js'; // Importar las rutas de VeriFactu
+import remisionRoutes from './src/routes/remisionRoutes.js';    // (Fichero de remisión Bloques 1+2)
+import eventosRoutes from './src/routes/eventosRoutes.js';      // (Eventos art. 9)
 // Configurar dotenv
 config();
 
@@ -58,12 +77,11 @@ const server = createServer(app);
 app.use(compression());
 
 // Middleware para parsear JSON y formularios (PRIMERO)
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Trust proxy para manejar sesiones detrás de proxies (como Nginx)
 app.set('trust proxy', 1);
-
 
 // Cookies y sesión (DESPUÉS de parsear)
 app.use(cookieParser());
@@ -163,6 +181,10 @@ app.use('/api/v1/extras', extraRoutes);
 app.use('/api/v1/firma', firmaRoutes); // Rutas de firma digital
 app.use('/api/v1/reportes', reportesRoutes);
 app.use('/api/v1/cocina', cocinaRoutes);
+app.use('/api/v1/facturacion', facturacionRoutes);
+app.use('/api/v1/verifactu', verifactuRoutes); // Rutas de VeriFactu
+app.use('/api/v1/remision', remisionRoutes);   // Rutas de remisión
+app.use('/api/v1/eventos', eventosRoutes);     // Rutas de eventos
 
 // Middlewares de error
 app.use(notFoundHandler);

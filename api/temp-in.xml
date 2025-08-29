@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <sf:SuministroLRFacturasEmitidas xmlns:sf="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/tic/sede/verifactu/ws/ws-verifactu-v1.xsd">
+    <sf:Cabecera>
+      <sf:IDVersionSii>1.1</sf:IDVersionSii>
+      <sf:Titular>
+        <sf:NombreRazon>Nombre del Emisor</sf:NombreRazon>
+        <sf:NIF>12345678Z</sf:NIF>
+      </sf:Titular>
+    </sf:Cabecera>
+    <sf:RegistroLRFacturasEmitidas>
+      <sf:PeriodoLiquidacion>
+        <sf:Ejercicio>2025</sf:Ejercicio>
+        <sf:Periodo>08</sf:Periodo>
+      </sf:PeriodoLiquidacion>
+      <sf:IDFactura>
+        <sf:NumSerieFacturaEmisor>2025-0003</sf:NumSerieFacturaEmisor>
+        <sf:FechaExpedicionFacturaEmisor>2025-08-29</sf:FechaExpedicionFacturaEmisor>
+      </sf:IDFactura>
+      <sf:FacturaExpedida>
+        <sf:DescripcionFactura>Factura electrónica TPV</sf:DescripcionFactura>
+        <sf:Destinatarios>
+          <sf:IDDestinatario>
+            <sf:NombreRazon>Floren</sf:NombreRazon>
+            <sf:NIF>7777777777</sf:NIF>
+          </sf:IDDestinatario>
+        </sf:Destinatarios>
+        <sf:ImporteTotal>18.66</sf:ImporteTotal>
+        <sf:DetallesFactura>
+      <sf:DetalleLinea>
+        <sf:Descripcion>Secreto Ibérico a la Plancha</sf:Descripcion>
+        <sf:Cantidad>1</sf:Cantidad>
+        <sf:ImporteUnitario>14.90</sf:ImporteUnitario>
+        <sf:ImporteTotal>14.90</sf:ImporteTotal>
+      </sf:DetalleLinea></sf:DetallesFactura>
+        <sf:Huella>SRlhEjNC3VVq+zRR/gTHQrOvOtp6EYtgsxZERTolETI=</sf:Huella>
+      </sf:FacturaExpedida>
+    </sf:RegistroLRFacturasEmitidas>
+  </sf:SuministroLRFacturasEmitidas>

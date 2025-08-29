@@ -1,37 +1,67 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { Parser } from 'json2csv';
-import FacturaHash from '../models/FacturaHash.js';
+import RegistroVerifactu from '../models/RegistroVerifactu.js';
 import EventoFactura from '../models/EventosFactura.js';
 import { emitirFacturaBase } from '../../utils/emitirFactura.js';
 import { generarNumeroFacturaRectificativa } from '../../utils/numeracionRectificativas.js';
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
 
-
 export const listarFacturasEncadenadas = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page || '1', 10);
     const limit = 20;
     const skip = (page - 1) * limit;
 
-    const totalFacturas = await FacturaHash.countDocuments();
-    const facturas = await FacturaHash.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const pipeline = [
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'eventofacturas',        // nombre **real** de la colección
+          let: { num: '$numeroFactura' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$numeroFactura', '$$num'] } } },
+            { $sort: { fecha: -1, _id: -1 } }, // último evento por fecha
+            { $limit: 1 },
+          ],
+          as: 'ultimoEvento',
+        },
+      },
+      { $unwind: { path: '$ultimoEvento', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          numeroFactura: 1,
+          // si no existe 'fechaExpedicion' en el doc, usar createdAt
+          fechaExpedicion: { $ifNull: ['$fechaExpedicion', '$createdAt'] },
+          clienteNombre: '$ultimoEvento.clienteNombre',
+          clienteNIF: '$ultimoEvento.clienteNIF',
+          // si guardas importeTotal en el registro, úsalo de respaldo
+          importeTotal: { $ifNull: ['$ultimoEvento.importeTotal', '$importeTotal'] },
+          hash: '$hashFactura',          // en tu UI lo llamas f.hash
+          hashAnterior: 1,               // si lo tienes guardado en RegistroVerifactu
+          xmlFirmado: 1,
+        },
+      },
+    ];
+
+    const [facturas, totalFacturas] = await Promise.all([
+      RegistroVerifactu.aggregate(pipeline),
+      RegistroVerifactu.countDocuments(),
+    ]);
 
     res.json({ facturas, totalPaginas: Math.ceil(totalFacturas / limit) });
   } catch (error) {
     logger.error('❌ Error al obtener facturas:', error);
-    res
-      .status(500)
-      .json({ error: 'Error al obtener las facturas encadenadas.' });
+    res.status(500).json({ error: 'Error al obtener las facturas encadenadas.' });
   }
 };
 
 export const exportarFacturasCSV = async (_req, res) => {
   try {
-    const facturas = await FacturaHash.find().sort({ createdAt: 1 });
+    const facturas = await RegistroVerifactu.find().sort({ createdAt: 1 });
     if (!facturas.length) {
       return res.status(404).json({ error: 'No hay facturas registradas.' });
     }
@@ -61,7 +91,7 @@ export const rectificarFactura = async (req, res) => {
   const { motivo, importeTotal, clienteNombre, clienteNIF } = req.body;
 
   try {
-    const facturaOriginal = await FacturaHash.findById(id);
+    const facturaOriginal = await registroVerifactus.findById(id);
     if (!facturaOriginal)
       return res.status(404).json({ error: 'Factura original no encontrada.' });
 
@@ -128,7 +158,7 @@ export const rectificarFactura = async (req, res) => {
 export const verificarFactura = async (req, res) => {
   const { hash } = req.params;
 
-  const factura = await FacturaHash.findOne({ hash }).lean();
+  const factura = await registroVerifactus.findOne({ hash }).lean();
   if (!factura) return res.status(404).json({ error: 'Factura no encontrada' });
 
   const fecha = new Date(factura.fechaExpedicion).toISOString().slice(0, 10);

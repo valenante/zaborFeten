@@ -2,50 +2,72 @@ import User from '../models/Usuario.js'; // Modelo de usuario
 import jwt from 'jsonwebtoken';
 import TokenRevocado from '../models/TokenRevocado.js';
 import logger from '../../utils/logger.js'; // Importar el logger
-// Generar access token
-export const generarAccessToken = (user) => jwt.sign(
-  {
-    id: user._id.toString(),
-    name: user.name,
-    role: user.role,           // ← importante
-    estacion: user.estacion,   // ← importante
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: '1h' }
-);
+import dotenv from "dotenv";
 
-export const generarRefreshToken = (user) => jwt.sign(
-  { id: user._id.toString() },
-  process.env.JWT_REFRESH_SECRET,
-  { expiresIn: '7d' }
-);
+dotenv.config();
+
+const datosToken = (user) => ({
+  id: user.id?.toString(),
+  role: user.role,
+  name: user.name
+});
+
+export const generarAccessToken = (user) => {
+  return jwt.sign(
+    datosToken(user),
+    process.env.JWT_ACCESS_SECRET,
+    { expiresIn: '15m' }
+  );
+};
+
+export const generarRefreshToken = (user) => {
+  return jwt.sign(
+    datosToken(user),
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+};
 
 export const renovarToken = async (req, res) => {
   const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
+  console.log('👉 Refresh Token recibido:', refreshToken);
 
   if (!refreshToken) {
+    console.warn('⛔ No se proporcionó refresh token.');
     return res.status(401).json({ error: 'Refresh token no proporcionado.' });
   }
 
   try {
+    console.log('🔍 Buscando token revocado...');
     const tokenRevocado = await TokenRevocado.findOne({ token: refreshToken });
     if (tokenRevocado) {
-      return res
-        .status(403)
-        .json({ error: 'Este refresh token ha sido revocado.' });
+      console.warn('⛔ Token revocado.');
+      return res.status(403).json({ error: 'Este refresh token ha sido revocado.' });
     }
 
+    console.log('🔐 Verificando refresh token con JWT...');
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = { id: decoded.id, role: decoded.role, name: decoded.name };
-    const newAccessToken = generarAccessToken(user);
+    console.log('✅ Token verificado:', decoded);
 
-    res.status(200).json({ accessToken: newAccessToken });
+    const user = {
+      id: decoded.id,
+      role: decoded.role,
+      name: decoded.name
+    };
+
+    const newAccessToken = generarAccessToken(user);
+    console.log('🎫 Nuevo access token generado.');
+
+    return res.status(200).json({ accessToken: newAccessToken });
+
   } catch (error) {
+    console.error('❌ Error al verificar token:', error.name, error.message);
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         error: 'Refresh token expirado. Por favor, inicia sesión nuevamente.',
       });
     }
+
     return res.status(403).json({ error: 'Refresh token inválido.' });
   }
 };
@@ -180,9 +202,11 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('[LOGIN ERROR]', error);
     logger.error('[ERROR] Fallo en el inicio de sesión:', error.message || error);
     return res.status(500).json({
       error: 'No se pudo completar el inicio de sesión. Intenta más tarde.',
+      detalle: error.message || error, // opcional para frontend dev
     });
   }
 };

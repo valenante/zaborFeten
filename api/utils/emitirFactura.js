@@ -1,18 +1,25 @@
-import { generarHashFactura } from './hashFactura.js';
-import { generarFacturaXML } from './generarFacturaXML.js';
-import { enviarFacturaAEAT } from './enviarAEAT.js';
-import { firmarFacturaConJava } from './firmarFactura.js';
-import FacturaHash from '../src/models/FacturaHash.js';
+// utils/emitirFactura.js
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const modoVerifactu = process.env.MODO_VERIFACTU === 'true';
-// Obtener __dirname equivalente
+import { generarHashFactura } from './hashFactura.js';          // si sigues usando tu hash simple
+import { generarVerifactuXML } from './generarVerifactuXML.js';      // tu XML “interno” (no VERI*FACTU)
+import { enviarFacturaAEAT } from './enviarAEAT.js';             // tu stub de envío (modo VERI*FACTU)
+
+// 👇 NUEVO: usamos el servicio de firma XAdES que llama a firmador.jar
+import { signXadesEnveloped } from '../src/services/xadesService.js';
+
+// Si persistes la cadena/último hash/factura:
+import registroVerifactus from '../src/models/RegistroVerifactu.js';
+
+// __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const rutaCertificado = path.resolve(__dirname, '../certificados/certificado.p12');
+// “modo verifactu” = true => no firmamos tu XML interno; en su lugar,
+// generas los bloques de remisión y los envías con enviarFacturaAEAT()
+const modoVerifactu = String(process.env.MODO_VERIFACTU || 'false').toLowerCase() === 'true';
 
 export async function emitirFacturaBase({
   numeroFactura,
@@ -23,42 +30,53 @@ export async function emitirFacturaBase({
   importeTotal,
 }) {
   try {
-    fechaExpedicion = fechaExpedicion ? new Date(fechaExpedicion) : new Date();
+    // normaliza fecha
+    const fecha = fechaExpedicion ? new Date(fechaExpedicion) : new Date();
 
-    const ultimaFactura = await FacturaHash.findOne().sort({ createdAt: -1 });
-    const hashAnterior = ultimaFactura?.hash || '0000';
+    // tu cadena/encadenamiento “interno” (si lo sigues usando)
+    const ultima = await registroVerifactus.findOne().sort({ createdAt: -1 });
+    const hashAnterior = ultima?.hash || '0000';
+
     const hash = generarHashFactura(
-      { numeroFactura, fechaExpedicion, clienteNombre, clienteNIF, importeTotal },
+      { numeroFactura, fechaExpedicion: fecha, clienteNombre, clienteNIF, importeTotal },
       hashAnterior
     );
 
     const datosFactura = {
       numeroFactura,
-      fechaExpedicion,
+      fechaExpedicion: fecha,
       clienteNombre,
       clienteNIF,
       productos,
       importeTotal,
-      hash,
+      hashFactura: hash,
       hashAnterior,
     };
 
     let xmlFirmado = null;
 
     if (!modoVerifactu) {
-      const xml = generarFacturaXML(datosFactura);
-      xmlFirmado = await firmarFacturaConJava(xml, rutaCertificado, 'MIKHAILTAL1!');
+      // 1) Construyes tu XML “interno”
+      const xml = await generarVerifactuXML(datosFactura);
+
+      // 2) Lo firmas con XAdES (el servicio usa firmador.jar si VERIFACTU_SIGN_ENABLED=true)
+      //    Si VERIFACTU_SIGN_ENABLED=false, devuelve el XML tal cual (útil para dev)
+      xmlFirmado = await signXadesEnveloped(xml);
       datosFactura.xmlFirmado = xmlFirmado;
 
-      const carpetaFacturas = path.resolve('facturas_emitidas');
-      if (!fs.existsSync(carpetaFacturas)) fs.mkdirSync(carpetaFacturas);
+      // 3) Guardar en disco (opcional)
+      const carpetaFacturas = path.resolve(__dirname, '../facturas_emitidas');
+      if (!fs.existsSync(carpetaFacturas)) fs.mkdirSync(carpetaFacturas, { recursive: true });
       const ruta = path.join(carpetaFacturas, `${numeroFactura}.xml`);
-      fs.writeFileSync(ruta, xmlFirmado);
+      fs.writeFileSync(ruta, xmlFirmado, 'utf8');
     } else {
+      // Modo VERI*FACTU: en vez de firmar “tu” XML, prepara Bloque1+2 y remite
+      // (tu enviarFacturaAEAT debería construir la Cabecera + RegistroFactura y hacer POST a la AEAT cuando esté disponible)
       await enviarFacturaAEAT(datosFactura);
     }
 
-    const nuevaFactura = new FacturaHash(datosFactura);
+    // Persiste el “último” para tu cadena interna
+    const nuevaFactura = new registroVerifactus(datosFactura);
     await nuevaFactura.save();
 
     return nuevaFactura;

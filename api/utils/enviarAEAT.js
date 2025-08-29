@@ -1,47 +1,55 @@
-import axios from 'axios';
-import https from 'https';
-import fs from 'fs';
-import path from 'path';
-import { mapFacturaToVerifactu } from './verifactuMapper.js';
+import { writeFileSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { execSync } from 'child_process';
+import generarVerifactuXML from './generarVerifactuXML.js';
+import RegistroVerifactu from '../src/models/RegistroVerifactu.js'; // ✅ modelo completo
+import { Console } from 'console';
 
-const basePath = path.join(process.cwd(), 'certificados');
-
-export async function enviarFacturaAEAT(factura) {
-  const CERT_PATH = path.join(basePath, 'certificado.pem');
-  const KEY_PATH = path.join(basePath, 'certificado.key');
-  const PASS_PATH = path.join(basePath, 'certificado.p12.pass');
-
-  if (!fs.existsSync(CERT_PATH) || !fs.existsSync(KEY_PATH) || !fs.existsSync(PASS_PATH)) {
-    throw new Error('❌ No se encontraron certificado, clave o contraseña en la carpeta certificados');
-  }
-
-  const cert = fs.readFileSync(CERT_PATH);
-  const key = fs.readFileSync(KEY_PATH);
-  const passphrase = fs.readFileSync(PASS_PATH, 'utf-8').trim();
-
-  const httpsAgent = new https.Agent({
-    cert,
-    key,
-    passphrase,
-    rejectUnauthorized: false,
-  });
-
-  const json = mapFacturaToVerifactu(factura);
-
+export async function enviarFacturaAEAT(datosFactura) {
   try {
-    const res = await axios.post(
-      'https://prewww10.aeat.es/webservices-verifactu/FACT/wsFacturacion/verifactu',
-      json,
-      {
-        httpsAgent,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    return res.data;
-  } catch (error) {
-    console.error('❌ Error al enviar factura a AEAT:', error.response?.data || error.message);
-    throw error;
+    const xmlSinFirmar = await generarVerifactuXML(datosFactura);
+
+    const tempInPath = join(__dirname, '../../temp-in.xml');
+    const tempOutPath = join(__dirname, '../../temp-out.xml');
+
+    writeFileSync(tempInPath, xmlSinFirmar, 'utf8');
+
+    // Firmar usando JAR
+    const certPath = join(__dirname, '../../certificados/certificado.p12');
+    const certPassword = process.env.CERT_PASSWORD || 'MIKHAILTAL1!';
+
+    const comandoFirma = `java -jar firmador.jar ${tempInPath} ${tempOutPath} ${certPath} ${certPassword}`;
+    execSync(comandoFirma);
+
+    const xmlFirmado = readFileSync(tempOutPath, 'utf8');
+
+    // Enviar a AEAT
+    const endpoint = process.env.VERIFACTU_ENDPOINT || 'https://prewww1.aeat.es/wlpl/TIKE-CONT/ws/SistemaFacturacion/VerifactuSOAP';
+
+    const curlCmd = `curl -k --cert-type P12 --cert ${certPath}:${certPassword} \
+      -H "Content-Type: text/xml" \
+      --data @${tempOutPath} \
+      ${endpoint}`;
+
+    const respuestaAEAT = execSync(curlCmd).toString();
+
+    console.log('✅ Respuesta AEAT:', respuestaAEAT);
+
+    // Guardar en la base de datos
+    await RegistroVerifactu.create({
+      numeroFactura: datosFactura.numeroFactura,
+      xmlFirmado,
+      respuestaAEAT,
+      estado: respuestaAEAT.includes('<env:Fault>') ? 'error' : 'aceptado',
+      fechaEnvio: new Date(),
+      hashFactura: datosFactura.hash,
+    });
+
+    return respuestaAEAT;
+  } catch (err) {
+    console.error('❌ Error en enviarFacturaAEAT:', err);
+    throw err;
   }
 }
+
+export default enviarFacturaAEAT;

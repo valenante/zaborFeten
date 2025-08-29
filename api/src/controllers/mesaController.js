@@ -172,9 +172,6 @@ export const abrirMesaCamarero = async (req, res) => {
     res.status(500).json({ error: 'Error al reabrir la mesa' });
   }
 };
-function calcularBaseImponible(total) {
-  return +(total / 1.21).toFixed(2);
-}
 
 export const cerrarMesa = async (req, res) => {
   const { id } = req.params;

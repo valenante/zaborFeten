@@ -12,11 +12,11 @@ const eventoFacturaSchema = new mongoose.Schema({
   hashFactura: { type: String }, // Este campo es útil si quieres almacenar el hash de la factura
   facturaOriginalId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'FacturaHash',
+    ref: 'RegistroVerifactu',
   },
   facturaRectificativaId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'FacturaHash',
+    ref: 'RegistroVerifactu',
   },
 });
 

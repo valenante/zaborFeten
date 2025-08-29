@@ -4,8 +4,9 @@ import { config } from 'dotenv';
 import { connect } from 'mongoose';
 import logger from '../utils/logger.js';
 import MongoStore from 'connect-mongo';
+import dotenv from "dotenv";
 
-config();
+dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -31,8 +32,8 @@ export const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true,
-    secure: isProduction, // Solo true en producción
+    httpOnly: false,
+    secure: false, // Solo true en producción
     sameSite: isProduction ? 'None' : 'Lax',
     maxAge: 5 * 60 * 60 * 1000, // ⏱️ 5 horas en milisegundos
   },

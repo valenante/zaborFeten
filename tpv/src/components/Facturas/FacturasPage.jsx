@@ -30,6 +30,8 @@ const FacturasPage = () => {
         }
     };
 
+    console.log(facturas);
+
     useEffect(() => {
         cargarFacturas();
     }, []);
@@ -108,15 +110,21 @@ const FacturasPage = () => {
 
     const getPlaceholderPaso = (paso) => getMensajePaso(paso);
 
-    const facturasFiltradas = facturas.filter(f =>
-        (!filtroAnio || new Date(f.fechaExpedicion).getFullYear().toString() === filtroAnio) &&
-        (
-            f.numeroFactura.toLowerCase().includes(busqueda.toLowerCase()) ||
-            (f.clienteNIF && f.clienteNIF.toLowerCase().includes(busqueda.toLowerCase())) ||
-            (f.hash && f.hash.toLowerCase().includes(busqueda.toLowerCase())) ||
-            (f.hashAnterior && f.hashAnterior.toLowerCase().includes(busqueda.toLowerCase()))
-        )
-    );
+    const normaliza = (s) => (s || '').toString().toLowerCase();
+    const anioCoincide = (f) =>
+        !filtroAnio ||
+        (f.fechaExpedicion && new Date(f.fechaExpedicion).getFullYear().toString() === filtroAnio);
+    const textoCoincide = (f) => {
+        const q = normaliza(busqueda);
+        if (!q) return true;
+        return (
+            normaliza(f.numeroFactura).includes(q) ||
+            normaliza(f.clienteNIF).includes(q) ||
+            normaliza(f.hash ?? f.hashFactura).includes(q) ||
+            normaliza(f.hashAnterior).includes(q)
+        );
+    };
+    const facturasFiltradas = facturas.filter(f => anioCoincide(f) && textoCoincide(f));
 
     const exportarCSV = () => {
         const csv = Papa.unparse(
@@ -125,9 +133,9 @@ const FacturasPage = () => {
                 fechaExpedicion: new Date(f.fechaExpedicion).toLocaleString(),
                 clienteNombre: f.clienteNombre,
                 clienteNIF: f.clienteNIF,
-                productos: JSON.stringify(f.productos),  // Incluido JSON string de productos
+                productos: JSON.stringify(Array.isArray(f.productos) ? f.productos : []),  // Incluido JSON string de productos
                 importeTotal: f.importeTotal,
-                hash: f.hash,
+                hash: f.hash ?? f.hashFactura,
                 hashAnterior: f.hashAnterior,
                 xmlFirmado: f.xmlFirmado ? f.xmlFirmado.replace(/\n/g, ' ') : '',
             }))
@@ -148,7 +156,7 @@ const FacturasPage = () => {
         facturasFiltradas.forEach((f, index) => {
             const startY = 30 + index * 60; // Ajusta según contenido y espacio
             doc.text(`Número: ${f.numeroFactura}`, 14, startY);
-            doc.text(`Fecha: ${new Date(f.fechaExpedicion).toLocaleString()}`, 14, startY + 6);
+            doc.text(`Fecha: ${new Date(f.fechaExpedicion).toLocaleString('es-ES')}`, 14, startY + 6);
             doc.text(`Cliente: ${f.clienteNombre || "-"}`, 14, startY + 12);
             doc.text(`NIF: ${f.clienteNIF || "-"}`, 14, startY + 18);
             doc.text(`Importe: ${f.importeTotal} €`, 14, startY + 24);
@@ -158,7 +166,11 @@ const FacturasPage = () => {
             autoTable(doc, {
                 startY: startY + 36,
                 head: [["Producto", "Cantidad", "Precio"]],
-                body: f.productos.map(p => [p.nombre, p.cantidad.toString(), p.precio.toFixed(2)]),
+                body: (Array.isArray(f.productos) ? f.productos : []).map(p => [
+                    p.nombre,
+                    String(p.cantidad ?? ''),
+                    (typeof p.precio === 'number' ? p.precio.toFixed(2) : '')
+                ]),
                 styles: { fontSize: 7 },
                 margin: { left: 14, right: 14 }
             });
@@ -215,16 +227,16 @@ const FacturasPage = () => {
                 </thead>
                 <tbody>
                     {facturasFiltradas.map((f) => (
-                        <tr key={f._id}>
+                        <tr key={f.idRegistro ?? f._id}>
                             <td>{f.numeroFactura}</td>
-                            <td>{new Date(f.fechaExpedicion).toLocaleString()}</td>
+                            <td>{new Date(f.fechaExpedicion).toLocaleString('es-ES')}</td>
                             <td>{f.clienteNombre || "-"}</td>
                             <td>{f.clienteNIF || "-"}</td>
                             <td>{f.importeTotal} €</td>
                             <td style={{ wordBreak: "break-word" }}>{f.hash}</td>
                             <td style={{ wordBreak: "break-word" }}>{f.hashAnterior}</td>
                             <td>
-                                <button onClick={() => iniciarRectificacion(f._id)}>Rectificar</button>
+                                <button onClick={() => iniciarRectificacion(f.idRegistro ?? f._id)}>Rectificar</button>
                             </td>
                         </tr>
                     ))}

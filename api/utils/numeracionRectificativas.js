@@ -1,8 +1,8 @@
-import FacturaHash from '../src/models/FacturaHash.js';
+import registroVerifactus from '../src/models/RegistroVerifactu.js';
 
 export async function generarNumeroFacturaRectificativa() {
   // Buscar la última factura rectificativa (que empiece con "R-" o tu prefijo)
-  const ultimaRectificativa = await FacturaHash.findOne({
+  const ultimaRectificativa = await registroVerifactus.findOne({
     numeroFactura: { $regex: /^R-/ }
   }).sort({ createdAt: -1 }).lean();
 
