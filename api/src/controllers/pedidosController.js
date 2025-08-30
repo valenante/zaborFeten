@@ -11,7 +11,6 @@ import { io } from '../../index.js';
 
 // Crear un nuevo pedido
 import axios from 'axios';
-import e from 'express';
 
 const IMPRESION_SERVER = process.env.IMPRESION_SERVER
 
@@ -663,21 +662,30 @@ export const actualizarPedido = async (req, res) => {
 
   try {
     const pedido = await Pedido.findById(id);
+    if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
 
-    if (!pedido) {
-      return res.status(404).json({ error: 'Pedido no encontrado' });
+    // Actualizar campos permitidos
+    if (productos) { 
+      pedido.productos = productos;
+      pedido.markModified('productos');           // 👈 asegura persistencia de subdocs
     }
-
-    // Actualizar los campos permitidos
-    if (productos) pedido.productos = productos;
-    if (total) pedido.total = parseFloat(total.toFixed(2));
-    if (comensales) pedido.comensales = comensales;
-    if (alergias) pedido.alergias = alergias;
+    if (total !== undefined) pedido.total = Number((Number(total) || 0).toFixed(2));
+    if (comensales !== undefined) pedido.comensales = comensales;
+    if (alergias !== undefined) pedido.alergias = alergias;
     if (pan !== undefined) pedido.pan = pan;
-    if (estado) pedido.estado = estado;
+    if (estado !== undefined) pedido.estado = estado;
 
-    // Guardar los cambios
     await pedido.save();
+
+    // 👇 Evento simple, global, sin rooms ni historias
+    req.io.emit('cocina:refresh', {
+      source: 'pedido:update',
+      pedidoId: pedido._id.toString(),
+      estado: pedido.estado,
+      ts: Date.now(),
+    });
+
+    console.log('[socket] emit cocina:refresh', { source: 'pedido:update', pedidoId: pedido._id.toString(), estado: pedido.estado, ts: Date.now() });
 
     res.status(200).json({ message: 'Pedido actualizado con éxito', pedido });
   } catch (error) {

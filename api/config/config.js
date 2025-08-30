@@ -32,9 +32,9 @@ export const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: false,
+    httpOnly: true,
     secure: false, // Solo true en producción
-    sameSite: isProduction ? 'None' : 'Lax',
+    sameSite: 'Lax' ? 'None' : 'Lax',
     maxAge: 5 * 60 * 60 * 1000, // ⏱️ 5 horas en milisegundos
   },
   store: MongoStore.create({

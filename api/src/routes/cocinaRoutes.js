@@ -8,6 +8,7 @@ marcarItemListo
 } from '../controllers/cocinaController.js';
 
 import { requireEstacion } from '../middlewares/cocinaPermisos.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
 
 
 router.get('/items', listarItemsCocina);
@@ -51,6 +52,7 @@ router.get('/items', listarItemsCocina);
   */
 router.post(
   '/:pedidoId/items/:itemId/solicitar',
+  authMiddleware,
   solicitarItem
 );
 
@@ -77,7 +79,8 @@ router.post(
   *     tags: [Cocina]
   */
 router.post(
-  '/:pedidoId/items/:itemId/listo',
+  '/:pedidoId/items/:itemId/estado',
+  authMiddleware,
   requireEstacion(['frio','frito','plancha']),
   marcarItemListo
 );

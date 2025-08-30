@@ -11,7 +11,6 @@ import { parseCocinaCommand } from '../../Voice/intentsCocina';
 import './Cocina.css';
 
 const ESTACIONES = ['frito', 'frio', 'plancha'];
-const ROOM = (e) => `cocina:${e}`;
 
 
 // Helpers de formateo local (para consultas por voz)
@@ -105,13 +104,32 @@ const Cocina = () => {
     localStorage.setItem('cocina_estacion', val);
   };
 
-  // Unirte/salirte del room de la estación (si tu server maneja room:join/room:leave)
   useEffect(() => {
     if (!socket) return;
-    const room = ROOM(estacion);
-    socket.emit('room:join', { room });
-    return () => socket.emit('room:leave', { room });
-  }, [socket, estacion]);
+
+    let timer = null;
+    const handleRefresh = () => {
+      // pequeño debounce por si llegan varios eventos seguidos
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        cargarPedidos();           // 👈 rehace GET y los checkboxes se actualizan
+      }, 120);
+    };
+
+    socket.on('cocina:refresh', handleRefresh);
+
+    return () => {
+      socket.off('cocina:refresh', handleRefresh);
+      clearTimeout(timer);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const any = (e, ...a) => console.log('📡', e, ...a);
+    socket.onAny(any);
+    return () => socket.offAny(any);
+  }, [socket]);
 
 
   const cargarMesas = async () => {
@@ -130,25 +148,18 @@ const Cocina = () => {
     return `${diferencia}m`;
   };
 
-  const empezarItem = async (pedidoId, itemId) => {
-    try {
-      await api.post(`/cocina/${pedidoId}/items/${itemId}/empezar`);
-      // no recargues: te llegará un socket 'kitchen:update'. Si no, descomenta la siguiente línea:
-      // await cargarPedidos();
-    } catch (error) {
-      logger.error('Error al empezar item:', error);
-    }
-  };
 
   const marcarItemListo = async (pedidoId, itemId) => {
     try {
-      await api.post(`/cocina/${pedidoId}/items/${itemId}/listo`);
-      // idem arriba
-      // await cargarPedidos();
-    } catch (error) {
-      logger.error('Error al marcar item listo:', error);
+      const pedido = pedidos.find(p => p._id === pedidoId);
+      const item = pedido?.productos.find(x => x._id === itemId);
+      const next = (item?.workflow?.estado === 'listo') ? 'pendiente' : 'listo';
+      await api.post(`/cocina/${pedidoId}/items/${itemId}/estado`, { estado: next });
+    } catch (err) {
+      logger.error('Error al cambiar estado item:', err);
     }
   };
+
 
   const calcularResumenProductos = (listaPedidos) => {
     const resumen = {};
@@ -187,20 +198,43 @@ const Cocina = () => {
 
     const manejarNuevoPedido = () => cargarPedidos();
 
-    const manejarKitchenUpdate = (payload) => {
-      if (!payload || !payload.type) return;
+    const patchItem = (pedidoId, item) => {
+      setPedidos(prev => prev.map(p =>
+        p._id !== pedidoId ? p : ({
+          ...p,
+          productos: p.productos.map(it =>
+            it._id === item._id
+              ? { ...it, workflow: { ...(it.workflow || {}), ...(item.workflow || {}) } }
+              : it
+          )
+        })
+      ));
+    };
 
-      // Opcional: si quieres evitar recargar, puedes parchear en memoria el estado del item en 'pedidos'
-      // Para simplificar, al menos disparamos el highlight en eventos clave:
-      if (payload.type === 'itemSolicitado') {
-        pushHighlight(`${payload.pedidoId}:${payload.item?._id}`);
-      } else if (payload.type === 'itemEnPreparacion' || payload.type === 'itemListo') {
-        // podrías también marcar cambios si quieres
+    const handleKitchenUpdate = (ev) => {
+      if (!ev || !ev.type) return;
+
+      if (ev.type === 'itemEstadoCambiado' && ev.pedidoId && ev.item?._id) {
+        patchItem(ev.pedidoId, ev.item);         // ✅ parche inmediato
+        return;
+      }
+
+      if (ev.type === 'itemSolicitado' && ev.pedidoId && ev.item?._id) {
+        patchItem(ev.pedidoId, { ...ev.item, workflow: { ...(ev.item.workflow || {}), estado: 'solicitado' } });
+        pushHighlight(`${ev.pedidoId}:${ev.item._id}`);
+        return;
+      }
+
+      // Backwards-compat si aún emites eventos viejos
+      if (ev.type === 'itemListo' && ev.pedidoId && ev.item?._id) {
+        patchItem(ev.pedidoId, { ...ev.item, workflow: { ...(ev.item.workflow || {}), estado: 'listo' } });
+        return;
       }
     };
 
     socket.on("nuevoPedido", manejarNuevoPedido);
-    socket.on("kitchen:update", manejarKitchenUpdate);
+    socket.on("kitchen:update", handleKitchenUpdate);
+
     socket.on("nuevaComanda", (payload) => {
       if (payload?.area !== 'cocina') return;
       encolarLectura({ ...payload, tipoLectura: 'comanda' });
@@ -208,10 +242,11 @@ const Cocina = () => {
 
     return () => {
       socket.off("nuevoPedido", manejarNuevoPedido);
-      socket.off("kitchen:update", manejarKitchenUpdate);
+      socket.off("kitchen:update", handleKitchenUpdate); // ✅ quitamos el MISMO handler
       socket.off("nuevaComanda");
     };
   }, [socket, encolarLectura]);
+
 
   useEffect(() => {
     if (!soportado) return;
@@ -219,35 +254,21 @@ const Cocina = () => {
     iniciarContinua();
 
     onResultado(async ({ text, raw, hadHotword, inHotWindow }) => {
-      // Solo procesa si hubo hotword o estás dentro de la ventana caliente
       if (!hadHotword && !inHotWindow) return;
 
       const texto = (text || "").trim();
-      console.log("🎙️ Reconocido por cocina:", { texto, raw, hadHotword, inHotWindow });
-
       const intent = parseCocinaCommand(texto);
-      console.info('[VOICE][COCINA]', intent);
 
       if (intent.type === 'NONE') {
         encolarLectura({
-          area: 'cocina',
-          mesa: '',
-          itemsTexto: [],
-          notas: 'No te he entendido.',
-          lecturaKey: `na-${Date.now()}`
+          area: 'cocina', mesa: '', itemsTexto: [], notas: 'No te he entendido.', lecturaKey: `na-${Date.now()}`
         });
         return;
       }
 
       if (intent.type === 'RESUMEN_PENDIENTES') {
         const t = resumenPendientesTexto(pedidos);
-        encolarLectura({
-          area: 'cocina',
-          mesa: '',
-          itemsTexto: [t],
-          notas: '',
-          lecturaKey: `resumen-${Date.now()}`
-        });
+        encolarLectura({ area: 'cocina', mesa: '', itemsTexto: [t], notas: '', lecturaKey: `resumen-${Date.now()}` });
         return;
       }
 
@@ -255,40 +276,19 @@ const Cocina = () => {
       const reMencionaPlato = /\bplato\b/i;
       const mesaNum = extraerNumeroMesa(texto);
 
-      // ✅ Ya no exigimos que empiece por “cocina …”
       if (rePedidoListo.test(texto) && mesaNum != null && !reMencionaPlato.test(texto)) {
-        // → INTENT: MARCAR_PEDIDO_LISTO
         const pedido = pedidos.find(p => p.mesa?.numero === mesaNum && p.estado !== 'listo');
         if (!pedido) {
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNum,
-            itemsTexto: [],
-            notas: `No encontré pedido pendiente en la mesa ${mesaNum}.`,
-            lecturaKey: `no-pedido-${mesaNum}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNum, itemsTexto: [], notas: `No encontré pedido pendiente en la mesa ${mesaNum}.`, lecturaKey: `no-pedido-${mesaNum}-${Date.now()}` });
           return;
         }
         try {
           await marcarPedidoComoListo(pedido._id);
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNum,
-            itemsTexto: [`Pedido de la mesa ${mesaNum} marcado listo.`],
-            notas: '',
-            lecturaKey: `ok-pedido-${mesaNum}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNum, itemsTexto: [`Pedido de la mesa ${mesaNum} marcado listo.`], notas: '', lecturaKey: `ok-pedido-${mesaNum}-${Date.now()}` });
         } catch (e) {
-          console.error(e);
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNum,
-            itemsTexto: [],
-            notas: `No pude marcar listo el pedido de la mesa ${mesaNum}.`,
-            lecturaKey: `err-pedido-${mesaNum}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNum, itemsTexto: [], notas: `No pude marcar listo el pedido de la mesa ${mesaNum}.`, lecturaKey: `err-pedido-${mesaNum}-${Date.now()}` });
         }
-        return; // 🔚 Importante: salimos, no seguimos al fallback
+        return;
       }
 
       if (intent.type === 'CONSULTAR_MESA') {
@@ -298,59 +298,26 @@ const Cocina = () => {
           p.productos.filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo')
         );
         if (productos.length === 0) {
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNumero,
-            itemsTexto: [],
-            notas: `La mesa ${mesaNumero} no tiene productos pendientes.`,
-            lecturaKey: `consulta-empty-${mesaNumero}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `La mesa ${mesaNumero} no tiene productos pendientes.`, lecturaKey: `consulta-empty-${mesaNumero}-${Date.now()}` });
           return;
         }
         const frases = productos.map(formatearProductoCliente);
-        encolarLectura({
-          area: 'cocina',
-          mesa: mesaNumero,
-          itemsTexto: frases,
-          notas: '',
-          lecturaKey: `consulta-${mesaNumero}-${Date.now()}`
-        });
+        encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: frases, notas: '', lecturaKey: `consulta-${mesaNumero}-${Date.now()}` });
         return;
       }
 
       if (intent.type === 'MARCAR_PEDIDO_LISTO') {
         const mesaNumero = intent.mesa;
         const pedido = findPedidoPendienteByMesa(pedidos, mesaNumero);
-
         if (!pedido) {
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNumero,
-            itemsTexto: [],
-            notas: `No encontré pedido pendiente en la mesa ${mesaNumero}.`,
-            lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No encontré pedido pendiente en la mesa ${mesaNumero}.`, lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}` });
           return;
         }
-
         try {
           await marcarPedidoComoListo(pedido._id);
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNumero,
-            itemsTexto: [`Pedido de la mesa ${mesaNumero} marcado listo.`],
-            notas: '',
-            lecturaKey: `ok-pedido-${mesaNumero}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [`Pedido de la mesa ${mesaNumero} marcado listo.`], notas: '', lecturaKey: `ok-pedido-${mesaNumero}-${Date.now()}` });
         } catch (e) {
-          console.error(e);
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNumero,
-            itemsTexto: [],
-            notas: `No pude marcar listo el pedido de la mesa ${mesaNumero}.`,
-            lecturaKey: `err-pedido-${mesaNumero}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No pude marcar listo el pedido de la mesa ${mesaNumero}.`, lecturaKey: `err-pedido-${mesaNumero}-${Date.now()}` });
         }
         return;
       }
@@ -359,29 +326,18 @@ const Cocina = () => {
         const mesaNumero = intent.mesa;
         const pedido = findPedidoPendienteByMesa(pedidos, mesaNumero);
         if (!pedido) {
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNumero,
-            itemsTexto: [],
-            notas: `No encontré pedido pendiente en la mesa ${mesaNumero}.`,
-            lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`, lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}` });
           return;
         }
         const pr = findProductoPendienteEnPedido(pedido, { idx: intent.idx, nombre: intent.nombre });
         if (!pr) {
-          encolarLectura({
-            area: 'cocina',
-            mesa: mesaNumero,
-            itemsTexto: [],
-            notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`,
-            lecturaKey: `no-prod-${mesaNumero}-${Date.now()}`
-          });
+          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`, lecturaKey: `no-prod-${mesaNumero}-${Date.now()}` });
           return;
         }
         try {
-          await api.put(`/pedidos/${pedido._id}/producto/${pr._id}`, { estadoPreparacion: 'listo' });
-          await cargarPedidos();
+          // usa el endpoint unificado que sincroniza workflow.estado + estadoPreparacion y emite el socket
+          await api.post(`/cocina/${pedido._id}/items/${pr._id}/estado`, { estado: 'listo' });
+
           const frase = formatearProductoCliente(pr);
           encolarLectura({
             area: 'cocina',
@@ -403,33 +359,21 @@ const Cocina = () => {
       }
     });
 
-    onFin(() => {
-      // opcional: actualizar UI, apagar un loader, etc.
-    });
-
+    onFin(() => { });
     onError((e) => {
       console.error("❌ Error en reconocimiento de voz:", e);
-      encolarLectura({
-        area: "cocina",
-        mesa: "",
-        items: [],
-        notas: "Ha ocurrido un error con el micrófono.",
-        lecturaKey: `error-mic-${Date.now()}`
-      });
+      encolarLectura({ area: "cocina", mesa: "", items: [], notas: "Ha ocurrido un error con el micrófono.", lecturaKey: `error-mic-${Date.now()}` });
     });
 
-    // Al desmontar, corta la escucha continua
     return () => detenerContinua();
   }, [soportado, iniciarContinua, detenerContinua, onResultado, onFin, onError, pedidos, encolarLectura]);
 
   // === NUEVO: deriva si esta pantalla es la central (frito)
-  const isCentral = estacion === 'frito';
+  const isCentral = (estacion || '').toLowerCase().startsWith('frito');
 
-  // === NUEVO: quién puede qué
-  const puedeSolicitar = (estado) => estado === 'pendiente';           // Central solo solicita si está pendiente
-  const puedeListo = (estado) => estado !== 'listo';                   // Estaciones pueden marcar listo (usamos autopromoción en backend)
+  const estadoItem = (p) => (p?.workflow?.estado ?? 'pendiente');          // default
+  const solicitadoADe = (p) => (p?.workflow?.solicitadoA ?? p?.solicitadoA ?? null);
 
-  // === NUEVO: llamar API para solicitar a una estación
   const solicitar = async ({ pedidoId, itemId, destino }) => {
     try {
       await api.post(`/cocina/${pedidoId}/items/${itemId}/solicitar`, {
@@ -502,7 +446,7 @@ const Cocina = () => {
   const marcarPedidoComoListo = async (pedidoId) => {
     try {
       await api.put(`/pedidos/${pedidoId}`, { estado: 'listo' });
-      cargarPedidos();
+      // ✅ NO llames cargarPedidos(); llegará evento del back (añade uno si aún no lo tienes)
     } catch (error) {
       logger.error('Error al marcar pedido como listo:', error);
     }
@@ -514,7 +458,7 @@ const Cocina = () => {
     const interval = setInterval(() => {
       cargarPedidos();
       cargarMesas();
-    }, 30000);
+    }, 180000); // cada 180s
     return () => clearInterval(interval);
   }, []);
 
@@ -630,55 +574,62 @@ const Cocina = () => {
                         <div key={seccion} className="seccion-pedido--cocina">
                           <h4 className="seccion-titulo--cocina">{seccion.toUpperCase()}</h4>
                           <ul className="productos-list--cocina">
-                            {productosAgrupados[seccion].map((producto) => (
-                              <li key={producto._id} className={
-                                "producto-item--cocina" +
-                                (highlight.has(`${pedido._id}:${producto._id}`) ? " flash-solicitado" : "")
-                              }>
-                                <label>
-                                  <input
-                                    type="checkbox"
-                                    checked={producto.workflow?.estado === 'listo'}
-                                    onChange={() => marcarItemListo(pedido._id, producto._id)} // si usas por-pedido, mantenlo
-                                    disabled={isCentral} // la central no marca listo desde aquí
-                                  />
-                                  <span style={{ color: producto.tipoPlato === 'individual' ? 'green' : 'purple' }}>
-                                    {producto.cantidad}x {producto.tipoPrecio !== 'precioBase' && `${producto.tipoPrecio} `}
-                                    {producto.producto?.nombre || producto.nombre || 'Producto no disponible'}
-                                    {/* BADGE de solicitado */}
-                                    {producto.workflow?.estado === 'solicitado' && (
-                                      <span className="badge-solicitado">SOLICITADO</span>
-                                    )}
-                                  </span>
-                                </label>
+                            {productosAgrupados[seccion].map((producto) => {
+                              // ✅ AHORA sí: variables por item
+                              const estado = producto?.workflow?.estado ?? 'pendiente';
+                              const solicitadoA = producto?.workflow?.solicitadoA ?? producto?.solicitadoA ?? null;
+                              const destino = producto?.estacion || 'frio'; // estación del plato
+                              const disabledSolicitar = !((estacion || '').toLowerCase().startsWith('frito') && estado === 'pendiente');
 
-                                {/* … resto de detalles (adicionales, alergias, etc.) … */}
+                              // 🔎 DEBUG (déjalo temporalmente para ver por qué se deshabilita)
+                              console.log('BTN Solicitar', {
+                                mesa: pedido.mesa?.numero,
+                                nombre: producto.producto?.nombre,
+                                estacionPantalla: estacion,
+                                isCentral: (estacion || '').toLowerCase().startsWith('frito'),
+                                estado, solicitadoA, destino, disabledSolicitar
+                              });
 
-                                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                                  {/* Acciones CENTRAL (Fritos) → solicitar a FRÍO o PLANCHA */}
+                              return (
+                                <li key={producto._id} className={
+                                  "producto-item--cocina" +
+                                  (highlight.has(`${pedido._id}:${producto._id}`) ? " flash-solicitado" : "")
+                                }>
+                                  <label>
+                                    <input
+                                      type="checkbox"
+                                      checked={producto.workflow?.estado === 'listo'}
+                                      onChange={() => marcarItemListo(pedido._id, producto._id)}
+                                    />
+                                    <span style={{ color: producto.tipoPlato === 'individual' ? 'green' : 'purple' }}>
+                                      {producto.cantidad}x {producto.tipoPrecio !== 'precioBase' && `${producto.tipoPrecio} `}
+                                      {producto.producto?.nombre || producto.nombre || 'Producto no disponible'}
+                                      {producto.workflow?.estado === 'solicitado' && (
+                                        <span className="badge-solicitado">SOLICITADO</span>
+                                      )}
+                                    </span>
+                                  </label>
+
+                                  {/* Botón Solicitar: SOLO en central */}
                                   {isCentral && (
-                                    <>
+                                    <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
                                       <button
                                         className="btn--cocina btn--ghost"
-                                        onClick={() => solicitar({ pedidoId: pedido._id, itemId: producto._id, destino: 'frio' })}
-                                        disabled={!puedeSolicitar(producto.workflow?.estado)}
-                                        title="Solicitar a Frío"
+                                        onClick={() => solicitar({ pedidoId: pedido._id, itemId: producto._id, destino })}
+                                        disabled={disabledSolicitar}
+                                        title={
+                                          disabledSolicitar
+                                            ? `No disponible (${estado}${solicitadoA ? ' · solicitado' : ''})`
+                                            : 'Solicitar'
+                                        }
                                       >
-                                        Solicitar Frío
+                                        Solicitar
                                       </button>
-                                      <button
-                                        className="btn--cocina btn--ghost"
-                                        onClick={() => solicitar({ pedidoId: pedido._id, itemId: producto._id, destino: 'plancha' })}
-                                        disabled={!puedeSolicitar(producto.workflow?.estado)}
-                                        title="Solicitar a Plancha"
-                                      >
-                                        Solicitar Plancha
-                                      </button>
-                                    </>
+                                    </div>
                                   )}
-                                </div>
-                              </li>
-                            ))}
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       ))

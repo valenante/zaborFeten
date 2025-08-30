@@ -9,7 +9,8 @@ dotenv.config();
 const datosToken = (user) => ({
   id: user.id?.toString(),
   role: user.role,
-  name: user.name
+  name: user.name,
+  estacion: user.estacion
 });
 
 export const generarAccessToken = (user) => {
@@ -52,7 +53,8 @@ export const renovarToken = async (req, res) => {
     const user = {
       id: decoded.id,
       role: decoded.role,
-      name: decoded.name
+      name: decoded.name,
+      estacion: decoded.estacion
     };
 
     const newAccessToken = generarAccessToken(user);
@@ -181,7 +183,9 @@ export const login = async (req, res) => {
       id: user._id,
       name: user.name,
       role: user.role,
+      estacion: user.estacion,
     };
+
     await req.session.save();
 
     const accessToken = generarAccessToken(user);
