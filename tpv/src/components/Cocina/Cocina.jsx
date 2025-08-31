@@ -581,15 +581,6 @@ const Cocina = () => {
                               const destino = producto?.estacion || 'frio'; // estación del plato
                               const disabledSolicitar = !((estacion || '').toLowerCase().startsWith('frito') && estado === 'pendiente');
 
-                              // 🔎 DEBUG (déjalo temporalmente para ver por qué se deshabilita)
-                              console.log('BTN Solicitar', {
-                                mesa: pedido.mesa?.numero,
-                                nombre: producto.producto?.nombre,
-                                estacionPantalla: estacion,
-                                isCentral: (estacion || '').toLowerCase().startsWith('frito'),
-                                estado, solicitadoA, destino, disabledSolicitar
-                              });
-
                               return (
                                 <li key={producto._id} className={
                                   "producto-item--cocina" +

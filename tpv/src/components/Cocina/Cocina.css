@@ -246,6 +246,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: var(--pad) calc(var(--pad) * 1.6);
+    margin: 1vh 0vh;
     border-radius: var(--borde-redondeado);
     border: 1px solid transparent;
     font-family: var(--fuente-principal);
