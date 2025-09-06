@@ -23,13 +23,17 @@
   /* Sombra más intensa */
 }
 
-/* Contenedor principal de contenido */
 .producto-card-content-prodCard {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  /* 👈 apilar contenido verticalmente */
+  justify-content: center;
+  /* centrado vertical */
   align-items: center;
+  /* centrado horizontal */
   gap: 20px;
-  /* Espaciado entre columnas */
+  text-align: center;
+  /* centra texto interno */
 }
 
 /* Columna izquierda: Nombre y descripción */
@@ -180,20 +184,24 @@ button.cancelar-btn:hover {
 
 /* Imagen arriba */
 .producto-img-top {
-  width: 30vh;
+  width: 100%;
   height: 22vh;
-  /* 👈 altura fija para todas */
   aspect-ratio: 4 / 3;
-  /* Usa 1/1 si prefieres cuadrada */
   overflow: hidden;
-  border-radius: 12px;
-  background: #f3f4f6;
+  display: flex;
+  /* 👈 añadimos flexbox */
+  justify-content: center;
+  /* 👈 centramos horizontal */
+  align-items: center;
+  /* 👈 centramos vertical */
 }
 
 .producto-img-top img {
-  width: 100%;
+  width: 24vh;
   height: 100%;
+  border-radius: 12px;
   object-fit: cover;
+  /* 👈 mantiene proporción */
   display: block;
 }
 
@@ -211,12 +219,18 @@ button.cancelar-btn:hover {
   line-height: 1.45;
 }
 
-/* Footer: precio + botón */
 .producto-footer {
   display: flex;
+  flex-direction: column;
+  /* 👈 apilados verticalmente */
   align-items: center;
+  /* centrados horizontal */
   gap: 12px;
+  width: 100%;
+  /* para que ocupe todo el ancho */
+  text-align: center;
 }
+
 
 .producto-precio {
   font-weight: 700;

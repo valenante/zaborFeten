@@ -268,7 +268,7 @@ export const cerrarMesa = async (req, res) => {
     const productos = [...productosPlatos, ...productosBebidas];
 
     // ✅ EMITIR FACTURA COMPLETA
-    const hashFactura = await emitirFacturaBase({
+    const { hashFactura } = await emitirFacturaBase({
       numeroFactura,
       fechaExpedicion: ahora,
       clienteNombre: clienteNombre || 'Consumidor Final',
@@ -286,7 +286,7 @@ export const cerrarMesa = async (req, res) => {
       clienteNIF: clienteNIF || 'N/A',
       motivo: 'Generación de la factura al cierre de la mesa',
       importeTotal: totalMesa,
-      hashFactura: hashFactura.hashFactura,
+      hashFactura,
     }).save();
 
     const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: 'activa' });
@@ -327,10 +327,10 @@ export const cerrarMesa = async (req, res) => {
         fechaExpedicion: ahora.toISOString(),
         productos,
         total: totalMesa,
-        hash: hashFactura.hash,
+        hash: hashFactura,
         camarero: camarero || '',
       },
-      
+
     });
   } catch (error) {
     logger.error('❌ Error al cerrar la mesa:', error);

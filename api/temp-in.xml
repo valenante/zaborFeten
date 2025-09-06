@@ -13,8 +13,8 @@
         <sf:Periodo>09</sf:Periodo>
       </sf:PeriodoLiquidacion>
       <sf:IDFactura>
-        <sf:NumSerieFacturaEmisor>2025-0017</sf:NumSerieFacturaEmisor>
-        <sf:FechaExpedicionFacturaEmisor>2025-09-04</sf:FechaExpedicionFacturaEmisor>
+        <sf:NumSerieFacturaEmisor>2025-0035</sf:NumSerieFacturaEmisor>
+        <sf:FechaExpedicionFacturaEmisor>2025-09-06</sf:FechaExpedicionFacturaEmisor>
       </sf:IDFactura>
       <sf:FacturaExpedida>
         <sf:DescripcionFactura>Factura electrónica TPV</sf:DescripcionFactura>
@@ -24,21 +24,15 @@
             <sf:NIF>N/A</sf:NIF>
           </sf:IDDestinatario>
         </sf:Destinatarios>
-        <sf:ImporteTotal>7.11</sf:ImporteTotal>
+        <sf:ImporteTotal>6.60</sf:ImporteTotal>
         <sf:DetallesFactura>
       <sf:DetalleLinea>
-        <sf:Descripcion>Calamares Fritos</sf:Descripcion>
+        <sf:Descripcion>Lagrimitas de pollo</sf:Descripcion>
         <sf:Cantidad>1</sf:Cantidad>
-        <sf:ImporteUnitario>4.50</sf:ImporteUnitario>
-        <sf:ImporteTotal>4.50</sf:ImporteTotal>
-      </sf:DetalleLinea>
-      <sf:DetalleLinea>
-        <sf:Descripcion>Pollo al Curry</sf:Descripcion>
-        <sf:Cantidad>1</sf:Cantidad>
-        <sf:ImporteUnitario>2.61</sf:ImporteUnitario>
-        <sf:ImporteTotal>2.61</sf:ImporteTotal>
+        <sf:ImporteUnitario>6.60</sf:ImporteUnitario>
+        <sf:ImporteTotal>6.60</sf:ImporteTotal>
       </sf:DetalleLinea></sf:DetallesFactura>
-        <sf:Huella>xPhxTO+d+x/7WkxVAMFSKlBn/2KxM1SJe606W2FxK3Q=</sf:Huella>
+        <sf:Huella>pYWnS0uR5wFV/BUa1x5D1amyiNJF/AweB+9jkh/93iE=</sf:Huella>
       </sf:FacturaExpedida>
     </sf:RegistroLRFacturasEmitidas>
   </sf:SuministroLRFacturasEmitidas>
