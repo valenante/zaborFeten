@@ -5,6 +5,7 @@ import * as logger from '../../utils/logger';
 import "./Navbar.css";
 import logo from "../../images/LovePizzaLogo.png";
 import CerrarCajaModal from "../Caja/CerrarCajaModal"; // 👈 IMPORTANTE
+import PasswordModal from "../Password/PasswordModal"; // 👈 importa tu modal
 
 const mostrarBarra = process.env.REACT_APP_BARRA === 'true';
 const mostrarCocina = process.env.REACT_APP_COCINA === 'true';
@@ -17,6 +18,8 @@ const Navbar = () => {
   });
   const [cajaAbierta, setCajaAbierta] = useState(false);
   const [mostrarCerrarCaja, setMostrarCerrarCaja] = useState(false); // 👈 estado modal
+  const [mostrarPassword, setMostrarPassword] = useState(false); // 👈 nuevo estado
+
 
   const handleSelectChange = (e) => {
     const path = e.target.value;
@@ -24,6 +27,12 @@ const Navbar = () => {
     // 👇 Intercepta la opción especial para abrir el modal
     if (path === "cerrarCaja") {
       if (cajaAbierta) setMostrarCerrarCaja(true);
+      setSelectValue("");
+      return;
+    }    
+    
+    if (path === "password") {
+      setMostrarPassword(true); // 👈 abre modal de contraseña
       setSelectValue("");
       return;
     }
@@ -88,7 +97,7 @@ const Navbar = () => {
             <option value="/tpv/admin">Firma Digital</option>
             <option value="/tpv/estadisticas">Estadísticas</option>
             <option value="/tpv/eliminaciones">Eliminaciones</option>
-            <option value="/tpv/contraseña">Contraseña</option>
+            <option value="password">Contraseña</option> 
             <option value="/tpv/cajaDiaria">Caja Diaria</option>
             <option value="cerrarCaja" disabled={!cajaAbierta}>
               {cajaAbierta ? "Cerrar Caja" : "Cerrar Caja (cerrada)"}
@@ -123,7 +132,7 @@ const Navbar = () => {
             <option value="/tpv/admin">Firma Digital</option>
             <option value="/tpv/estadisticas">Estadísticas</option>
             <option value="/tpv/eliminaciones">Eliminaciones</option>
-            <option value="/tpv/contraseña">Contraseña</option>
+            <option value="password">Contraseña</option> 
             <option value="/tpv/cajaDiaria">Caja Diaria</option>
             <option value="cerrarCaja" disabled={!cajaAbierta}>
               {cajaAbierta ? "Cerrar Caja" : "Cerrar Caja (cerrada)"}
@@ -157,6 +166,10 @@ const Navbar = () => {
       {/* 👇 Render del modal al pulsar "Cerrar Caja" */}
       {mostrarCerrarCaja && (
         <CerrarCajaModal onClose={() => setMostrarCerrarCaja(false)} />
+      )}
+
+      {mostrarPassword && (
+        <PasswordModal onClose={() => setMostrarPassword(false)} />
       )}
     </nav>
   );

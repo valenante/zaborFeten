@@ -88,12 +88,13 @@
 }
 
 .boton-cancelar--cerrar-caja {
-  background-color: var(--gris);
+  background-color: var(--color-secundario);
   color: var(--blanco);
 }
 
 .boton-cancelar--cerrar-caja:hover {
-  background-color: var(--gris-oscuro);
+  background-color: var(--color-principal);
+  transform: scale(1.03);
 }
 
 .boton-confirmar--cerrar-caja.retirar {
@@ -104,10 +105,6 @@
 .boton-confirmar--cerrar-caja.integrar {
   background-color: var(--color-secundario);
   color: var(--blanco);
-}
-
-.boton-confirmar--cerrar-caja:hover {
-  transform: scale(1.03);
 }
 
 .error--cerrar-caja {
