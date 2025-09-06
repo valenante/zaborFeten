@@ -19,8 +19,6 @@
 .producto-card-prodCard:hover {
   transform: translateY(-5px);
   /* Pequeño desplazamiento al pasar el mouse */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  /* Sombra más intensa */
 }
 
 .producto-card-content-prodCard {
@@ -314,7 +312,6 @@ button.agregar-btn:active {
     grid-template-rows: auto auto auto;
     gap: 10px;
     border-radius: 8px;
-    background: white;
     max-width: 350px;
     margin: auto;
   }

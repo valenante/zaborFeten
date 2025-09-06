@@ -79,6 +79,8 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
       if (!mesaId) return;
       const resPlatos = await api.get(`/pedidos/mesa/${mesaId}`);
 
+      console.log("Pedidos de la mesa:", resPlatos.data);
+
       // Combinar pedidos y bebidas
       const pedidosCombinados = [...resPlatos.data];
       setPedidosMesa(pedidosCombinados);
