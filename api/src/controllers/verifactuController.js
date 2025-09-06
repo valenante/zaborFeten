@@ -60,7 +60,7 @@ ${xmlFirmado}
 }
 
 
-export const enviarAEATPruebas = async (req, res) => {
+export const enviarAEAT = async (req, res) => {
   try {
     let { xml } = req.body;
     if (!xml || typeof xml !== "string") {

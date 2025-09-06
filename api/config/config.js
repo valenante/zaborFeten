@@ -8,8 +8,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 // Configuración de CORS
 export const corsOptions = {
   origin: [
@@ -17,12 +15,14 @@ export const corsOptions = {
     'http://localhost:3001',
     'http://localhost:3002',
     'https://valenante.info',
+    'http://192.168.1.150:3000',
     'http://192.168.1.150:3001',
     "http://192.168.1.150:3002"
+
     // Otros dominios permitidos (IPs locales si las usás en desarrollo)
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Cart-ID'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Cart-ID', 'x-token-lider'],
   credentials: true,
 };
 

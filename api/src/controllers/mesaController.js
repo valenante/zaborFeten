@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid'; // Generador de UUID
 import EventoFactura from '../models/EventosFactura.js';
 import { obtenerNumeroFactura } from '../services/numeroFacturaServices.js';
 import { emitirFacturaBase } from '../../utils/emitirFactura.js';
+import { abrirCajon } from './imprimirController.js'; // Importar la función para abrir el cajón
 
 
 export const verificarTokenLider = async (req, res) => {
@@ -244,6 +245,8 @@ export const cerrarMesa = async (req, res) => {
       await nuevaCaja.save();
     }
 
+    await abrirCajon();
+
     const numeroFactura = await obtenerNumeroFactura();
 
     const productosPlatos = mesa.pedidos.flatMap((pedido) =>
@@ -283,7 +286,7 @@ export const cerrarMesa = async (req, res) => {
       clienteNIF: clienteNIF || 'N/A',
       motivo: 'Generación de la factura al cierre de la mesa',
       importeTotal: totalMesa,
-      hashFactura: hashFactura.hash,
+      hashFactura: hashFactura.hashFactura,
     }).save();
 
     const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: 'activa' });

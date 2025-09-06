@@ -105,13 +105,6 @@ const ProductoDetalle = ({ producto, cerrarModal }) => {
     setCantidad((prev) => Math.max(1, prev + incremento));
   };
 
-  const manejarOpciones = (tipo, opcion) => {
-    setOpcionesSeleccionadas((prev) => ({
-      ...prev,
-      [tipo]: opcion,
-    }));
-  };
-
   const manejarIngrediente = (ingrediente, seleccionado) => {
     if (seleccionado) {
       setIngredientesSeleccionados((prev) => [...prev, ingrediente]);
@@ -221,33 +214,6 @@ const ProductoDetalle = ({ producto, cerrarModal }) => {
             </li>
           ))}
         </ul>
-
-        {producto.opcionesPersonalizables.length > 0 && (
-          <>
-            <h4>
-              <Trans>Opciones:</Trans>
-            </h4>
-            {producto.opcionesPersonalizables.map((opcion) => (
-              <div key={opcion.tipo}>
-                <h5>
-                  <Trans>{opcion.tipo}</Trans>
-                </h5>
-                {opcion.opciones.map((op) => (
-                  <label key={op}>
-                    <input
-                      type="radio"
-                      name={opcion.tipo}
-                      value={op}
-                      checked={opcionesSeleccionadas[opcion.tipo] === op}
-                      onChange={() => manejarOpciones(opcion.tipo, op)}
-                    />
-                    <Trans>{op}</Trans>
-                  </label>
-                ))}
-              </div>
-            ))}
-          </>
-        )}
 
         <h4>
           <Trans>Cantidad:</Trans>

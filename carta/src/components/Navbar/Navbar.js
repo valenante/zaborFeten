@@ -142,7 +142,13 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
 
             <button className="navbar-btn me-3" onClick={mostrarBebidas}>
               {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
+            </button>            
+            
+            {numeroMesa && (
+              <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
+              <Trans id="mi-pedido">Mi pedido</Trans>
             </button>
+            )}
 
             {pedidosListos && (
               <button className="navbar-check" onClick={manejarPedirCuenta}>
@@ -150,9 +156,7 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
               </button>
             )}
 
-            <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
-              <Trans id="mi-pedido">Mi pedido</Trans>
-            </button>
+
 
 
             <div className="idiomas-navbar ms-auto">
@@ -177,10 +181,12 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
             </div>
 
             {numeroMesa && (
-              <div className="carrito-icono">
-                <CarritoIcono abrirModal={() => setMostrarModal(true)} />
-              </div>
-            )}
+                <>
+                  <div className="carrito-icono">
+                    <CarritoIcono abrirModal={() => setMostrarModal(true)} />
+                  </div>
+                </>
+              )}
           </div>
         </div>
       ) : (
@@ -228,16 +234,22 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
                 ))}
               </select>
 
+              {numeroMesa && (
+                <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
+                  <Trans id="mi-pedido">Mi pedido</Trans>
+                </button>
+              )}
+
               <button className="navbar-btn" onClick={mostrarBebidas}>
                 {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
-              </button> <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
-                <Trans id="mi-pedido">Mi pedido</Trans>
               </button>
 
               {numeroMesa && (
-                <div className="carrito-icono">
-                  <CarritoIcono abrirModal={() => setMostrarModal(true)} />
-                </div>
+                <>
+                  <div className="carrito-icono">
+                    <CarritoIcono abrirModal={() => setMostrarModal(true)} />
+                  </div>
+                </>
               )}
             </div>
 

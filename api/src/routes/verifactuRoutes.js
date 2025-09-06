@@ -1,6 +1,8 @@
 // routes/verifactuRoutes.js
 import express, { Router } from 'express';
-import { crearRegistroAlta, crearRegistroAnulacion, verificarFirma, enviarAEATPruebas } from '../controllers/verifactuController.js';
+import { crearRegistroAlta, crearRegistroAnulacion, verificarFirma, enviarAEAT } from '../controllers/verifactuController.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { requireVerifactuEnabled } from '../middlewares/verifactuGate.js';
 
 
 const router = Router();
@@ -34,7 +36,7 @@ router.post(
   }
 );
 
-router.post("/pre/enviar", enviarAEATPruebas);
+router.post("/pre/enviar", authMiddleware, requireVerifactuEnabled, enviarAEAT);
 
 
 export default router;

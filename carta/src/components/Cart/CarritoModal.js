@@ -15,6 +15,7 @@ const CarritoModal = ({ cerrarModal }) => {
   const { comensal } = useComensal();
   const { comensales } = comensal;
   const [mensajeAlerta, setMensajeAlerta] = useState(null);
+  const tokenLider = localStorage.getItem("tokenLider"); // el mismo que comparas en esLider()
 
   useEffect(() => {
     // Aquí estamos llamando a la función para obtener el ID de la mesa (asumiendo que la mesa es la 1, o puedes pasar otro número de mesa)
@@ -86,11 +87,6 @@ const CarritoModal = ({ cerrarModal }) => {
   };
 
   const enviarPedido = async () => {
-    if (!(await esLider())) {
-      setMensajeAlerta({ tipo: "error", mensaje: "Solo el líder puede enviar el pedido." });
-      return;
-    }
-
     try {
       const carritoId = localStorage.getItem(`carritoMongoId-${numeroMesa}`);
 
@@ -134,7 +130,11 @@ const CarritoModal = ({ cerrarModal }) => {
           total: productosPlatos.reduce((total, item) => total + item.total, 0),
           comensales,
         };
-        await api.post("/pedidos", pedidoPlatos);
+        await api.post(
+          "/pedidos",
+          pedidoPlatos,
+          { params: { mesa: Number(numeroMesa) } } // ← importante: número
+        );
 
         try {
           await enviarPedidoAImpresora(
@@ -165,8 +165,11 @@ const CarritoModal = ({ cerrarModal }) => {
           comensales,
         };
 
-        await api.post("/pedidosBebidas", pedidoBebidas);
-
+        await api.post(
+          "/pedidosBebidas",
+          pedidoBebidas,
+          { params: { mesa: Number(numeroMesa) } }
+        );
         try {
           await enviarPedidoAImpresora(
             numeroMesa,

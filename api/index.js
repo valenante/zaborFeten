@@ -66,6 +66,7 @@ import facturacionRoutes from './src/routes/facturacionRoutes.js';
 import verifactuRoutes from './src/routes/verifactuRoutes.js'; // Importar las rutas de VeriFactu
 import remisionRoutes from './src/routes/remisionRoutes.js';    // (Fichero de remisión Bloques 1+2)
 import eventosRoutes from './src/routes/eventosRoutes.js';      // (Eventos art. 9)
+import adminVerifactuRoutes from './src/routes/adminVerifactuRoutes.js'; // Importar las rutas de administración de VeriFactu
 // Configurar dotenv
 config();
 
@@ -89,8 +90,11 @@ app.use(cors(corsOptions));
 app.use(session(sessionConfig));
 
 // Middleware de seguridad
-app.use(helmet());
-
+app.use(
+  "/images",
+  helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }),
+  express.static(path.join(process.cwd(), "public", "images"))
+);
 // Configurar Socket.IO
 const io = configureSocketIO(server);
 
@@ -185,7 +189,7 @@ app.use('/api/v1/facturacion', facturacionRoutes);
 app.use('/api/v1/verifactu', verifactuRoutes); // Rutas de VeriFactu
 app.use('/api/v1/remision', remisionRoutes);   // Rutas de remisión
 app.use('/api/v1/eventos', eventosRoutes);     // Rutas de eventos
-
+app.use('/api/v1/admin', adminVerifactuRoutes); // Rutas de administración de VeriFactu
 // Middlewares de error
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -283,8 +283,17 @@ export const agregarProductoAlPedido = async (req, res) => {
     }
 
     // === Recalcular total de la mesa (evita errores por concurrencia)
-    const pedidos = await Pedido.find({ mesa: mesa._id });
-    const pedidosBebidas = await PedidoBebida.find({ mesa: mesa._id });
+    const pedidos = await Pedido.find({
+      mesa: mesa._id,
+      sesionId: sesionActiva._id,
+      estado: { $in: ['pendiente', 'listo'] }
+    });
+    
+    const pedidosBebidas = await PedidoBebida.find({
+      mesa: mesa._id,
+      sesionId: sesionActiva._id,
+      estado: { $in: ['pendiente', 'listo'] }
+    });
 
     const totalPedidos = pedidos.reduce((sum, p) => sum + (p.total || 0), 0);
     const totalBebidas = pedidosBebidas.reduce((sum, p) => sum + (p.total || 0), 0);
@@ -665,7 +674,7 @@ export const actualizarPedido = async (req, res) => {
     if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
 
     // Actualizar campos permitidos
-    if (productos) { 
+    if (productos) {
       pedido.productos = productos;
       pedido.markModified('productos');           // 👈 asegura persistencia de subdocs
     }

@@ -105,20 +105,6 @@
   /* Aumenta ligeramente el tamaño al pasar el mouse */
 }
 
-/* Columna derecha: Imagen */
-.producto-img-container-prodCard {
-  flex: 4;
-  /* Ocupa el 30% */
-  text-align: right;
-}
-
-.producto-img-container-prodCard img {
-  width: 35%;
-  height: auto;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
 .checkbox-detalle {
   margin-right: 1vh;
 }
@@ -176,6 +162,110 @@ button.cancelar-btn:hover {
   /* Borde más oscuro */
 }
 
+/* ---- CARD ---- */
+.producto-card-prodCard {
+  margin-bottom: 2rem;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  color: #1f2937;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ---- LAYOUT DESKTOP (apilado) ---- */
+.producto-card-content-prodCard.producto-card--stack {
+  display: grid;
+  gap: 10px;
+}
+
+/* Imagen arriba */
+.producto-img-top {
+  width: 30vh;
+  height: 22vh;
+  /* 👈 altura fija para todas */
+  aspect-ratio: 4 / 3;
+  /* Usa 1/1 si prefieres cuadrada */
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f3f4f6;
+}
+
+.producto-img-top img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Texto */
+.producto-title {
+  font-size: 1.05rem;
+  margin: 4px 0 0;
+  color: #1f2937;
+}
+
+.producto-desc {
+  font-size: .95rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Footer: precio + botón */
+.producto-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.producto-precio {
+  font-weight: 700;
+  color: #111827;
+}
+
+.producto-precio-boton select {
+  padding: 6px 10px;
+  font-size: .95rem;
+  min-width: 160px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+
+.producto-precio-boton select:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 0 0 3px rgba(106, 13, 173, .12);
+}
+
+.producto-precio-boton select:focus {
+  outline: none;
+  border-color: var(--color-principal);
+  box-shadow: 0 0 0 3px rgba(106, 13, 173, .25);
+}
+
+/* Botón agregar */
+.agregar-carrito-btn-prodCard {
+  background: var(--color-principal);
+  color: #fff;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .08s ease, filter .2s ease;
+}
+
+.agregar-carrito-btn-prodCard:hover {
+  filter: brightness(1.03);
+}
+
+.agregar-carrito-btn-prodCard:active {
+  transform: scale(.98);
+}
+
+
 /* Botón de agregar al carrito */
 button.agregar-btn {
   background-color: var(--color-principal);
@@ -203,8 +293,48 @@ button.agregar-btn:active {
   /* Efecto de presión */
 }
 
-/* Estructura general en pantallas pequeñas */
+/* ---- MÓVIL ---- */
 @media (max-width: 768px) {
+  .producto-grid-pequeno {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 10px;
+    border-radius: 8px;
+    background: white;
+    max-width: 350px;
+    margin: auto;
+  }
+
+  .producto-nombre {
+    font-size: 1.5rem;
+    color: var(--color-principal);
+    margin-bottom: 10px;
+  }
+
+  .producto-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .producto-img-container img {
+    width: 100%;
+    border-radius: 10px;
+    height: auto;
+    object-fit: cover;
+  }
+
+  .producto-precio-boton {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .producto-precio {
+    font-weight: bold;
+    color: var(--color-principal);
+  }
+
   .producto-grid-pequeno {
     display: grid;
     grid-template-rows: auto auto auto;
@@ -251,25 +381,25 @@ button.agregar-btn:active {
     border-radius: 5px;
   }
 
-  .producto-precio-boton{
+  .producto-precio-boton {
     display: flex;
     justify-content: space-between;
-    }
+  }
 
-    .producto-precio {
-      display: block;
-      font-weight: bold;
-      color: var(--color-principal);
-    }
-    
-    /* Tamaño grande para precioBase */
-    .precio-grande {
-      font-size: 1.4rem;
-    }
-    
-    /* Tamaño pequeño para select */
-    .precio-pequeno select {
-      font-size: 1rem;
-    }
-    
+  .producto-precio {
+    display: block;
+    font-weight: bold;
+    color: var(--color-principal);
+  }
+
+  /* Tamaño grande para precioBase */
+  .precio-grande {
+    font-size: 1.4rem;
+  }
+
+  /* Tamaño pequeño para select */
+  .precio-pequeno select {
+    font-size: 1rem;
+  }
+
 }

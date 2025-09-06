@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sum:RegFactuSistemaFacturacion
+    xmlns:sum="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd"
+    xmlns:sum1="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd">
+
+    <sum:Cabecera>
+        <sum1:ObligadoEmision>
+            <sum1:NombreRazon>{{emisor.nombre}}</sum1:NombreRazon>
+            <sum1:NIF>{{emisor.nif}}</sum1:NIF>
+        </sum1:ObligadoEmision>
+    </sum:Cabecera>
+
+    <sum:RegistroFactura>
+        <sum1:RegistroAnulacion>
+            <sum1:IDVersion>1.0</sum1:IDVersion>
+            <sum1:SinRegistroPrevio>S</sum1:SinRegistroPrevio>
+            <sum1:IDFactura>
+                <sum1:IDEmisorFacturaAnulada>{{emisor.nif}}</sum1:IDEmisorFacturaAnulada>
+                <sum1:NumSerieFacturaAnulada>{{factura.serie}}</sum1:NumSerieFacturaAnulada>
+                <sum1:FechaExpedicionFacturaAnulada>{{factura.fecha}}</sum1:FechaExpedicionFacturaAnulada>
+            </sum1:IDFactura>
+        </sum1:RegistroAnulacion>
+    </sum:RegistroFactura>
+</sum:RegFactuSistemaFacturacion>

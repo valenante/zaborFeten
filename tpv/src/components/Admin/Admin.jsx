@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../utils/api'; // ajustá la ruta según tu estructura
 import './Admin.css';
 
@@ -6,6 +6,38 @@ const Admin = () => {
   const [archivo, setArchivo] = useState(null);
   const [password, setPassword] = useState('');
   const [mensaje, setMensaje] = useState('');
+
+  // === NUEVO: estado VeriFactu
+  const [verifactuEnabled, setVerifactuEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Obtener estado inicial de VeriFactu
+  const fetchVerifactu = async () => {
+    try {
+      const res = await api.get('/admin/verifactu');
+      setVerifactuEnabled(!!res.data.enabled);
+    } catch (e) {
+      console.error("Error obteniendo estado VeriFactu:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchVerifactu();
+  }, []);
+
+  // Toggle VeriFactu
+  const toggleVerifactu = async () => {
+    setLoading(true);
+    try {
+      const next = !verifactuEnabled;
+      const res = await api.post('/admin/verifactu/toggle', { enabled: next });
+      setVerifactuEnabled(!!res.data.enabled);
+    } catch (e) {
+      console.error("Error al cambiar VeriFactu:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -29,7 +61,6 @@ const Admin = () => {
   };
 
   const handleDescargarDeclaracion = () => {
-    // Descarga directa (fuera de axios porque es una descarga de archivo PDF)
     window.open(`${process.env.REACT_APP_API_URL}/firma/declaracion-responsable`, '_blank');
   };
 
@@ -70,6 +101,25 @@ const Admin = () => {
       <div className="admin-boton-contenedor">
         <button onClick={handleDescargarDeclaracion} className="admin-boton-secundario">
           Descargar Declaración Responsable
+        </button>
+      </div>
+
+      <hr className="admin-separador" />
+
+      {/* === NUEVO: Botón VeriFactu === */}
+      <div className="admin-boton-contenedor">
+        <p>
+          Estado VeriFactu:{" "}
+          <b style={{ color: verifactuEnabled ? "green" : "tomato" }}>
+            {verifactuEnabled ? "ACTIVADO" : "DESACTIVADO"}
+          </b>
+        </p>
+        <button
+          onClick={toggleVerifactu}
+          disabled={loading}
+          className={`admin-boton-${verifactuEnabled ? "secundario" : "primario"}`}
+        >
+          {verifactuEnabled ? "Desactivar VeriFactu" : "Activar VeriFactu"}
         </button>
       </div>
     </div>

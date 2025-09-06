@@ -154,3 +154,16 @@ export const imprimirCuenta = async (req, res) => {
     res.status(500).json({ error: 'Error al imprimir cuenta' });
   }
 };
+
+// 👇 Añade este helper junto a tus otras funciones
+export const abrirCajon = async () => {
+  const base = IMPRESION_SERVER || 'http://127.0.0.1:4000';
+  try {
+    const { data } = await axios.post(`${base}/abrir-cajon`);
+    logger.info(`Abrir cajón OK: ${data}`);
+    return true;
+  } catch (err) {
+    logger.warn(`No se pudo abrir el cajón: ${err?.message || err}`);
+    return false; // no rompemos el flujo de cierre
+  }
+};

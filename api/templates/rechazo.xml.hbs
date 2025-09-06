@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sum:RegFactuSistemaFacturacion
+    xmlns:sum="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd"
+    xmlns:sum1="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd">
+
+    <sum:Cabecera>
+        <sum1:ObligadoEmision>
+            <sum1:NombreRazon>{{emisor.nombre}}</sum1:NombreRazon>
+            <sum1:NIF>{{emisor.nif}}</sum1:NIF>
+        </sum1:ObligadoEmision>
+    </sum:Cabecera>
+
+    <sum:RegistroFactura>
+        <sum1:RegistroAlta>
+            <sum1:IDVersion>1.0</sum1:IDVersion>
+            <sum1:IDFactura>
+                <sum1:IDEmisorFactura>{{emisor.nif}}</sum1:IDEmisorFactura>
+                <sum1:NumSerieFactura>{{factura.serie}}</sum1:NumSerieFactura>
+                <sum1:FechaExpedicionFactura>{{factura.fecha}}</sum1:FechaExpedicionFactura>
+            </sum1:IDFactura>
+
+            <sum1:NombreRazonEmisor>{{emisor.nombre}}</sum1:NombreRazonEmisor>
+            <sum1:TipoFactura>F1</sum1:TipoFactura>
+            <sum1:DescripcionOperacion>{{factura.descripcion}}</sum1:DescripcionOperacion>
+
+            <sum1:Destinatarios>
+                <sum1:IDDestinatario>
+                    <sum1:NombreRazon>{{destinatario.nombre}}</sum1:NombreRazon>
+                    <sum1:NIF>{{destinatario.nif}}</sum1:NIF>
+                </sum1:IDDestinatario>
+            </sum1:Destinatarios>
+
+            <sum1:Desglose>
+                <sum1:DetalleDesglose>
+                    <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+                    <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+                    <sum1:TipoImpositivo>{{factura.iva}}</sum1:TipoImpositivo>
+                    <sum1:BaseImponibleOimporteNoSujeto>{{factura.base}}</sum1:BaseImponibleOimporteNoSujeto>
+                    <sum1:CuotaRepercutida>{{factura.cuota}}</sum1:CuotaRepercutida>
+                </sum1:DetalleDesglose>
+            </sum1:Desglose>
+
+            <sum1:CuotaTotal>{{factura.cuota}}</sum1:CuotaTotal>
+            <sum1:ImporteTotal>{{factura.total}}</sum1:ImporteTotal>
+
+            <sum1:Subsanacion>S</sum1:Subsanacion>
+            <sum1:RechazoPrevio>X</sum1:RechazoPrevio>
+        </sum1:RegistroAlta>
+    </sum:RegistroFactura>
+
+</sum:RegFactuSistemaFacturacion>

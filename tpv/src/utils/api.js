@@ -13,6 +13,9 @@ const api = axios.create({
   withCredentials: true,
 });
 
+export const getVerifactu = () => api.get('/admin/verifactu');
+export const toggleVerifactu = (enabled) => api.post('/admin/verifactu/toggle', { enabled });
+
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => response, 
