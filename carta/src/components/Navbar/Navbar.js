@@ -90,12 +90,17 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
   };
 
   useEffect(() => {
-    if (socket) {
-      socket.on("nuevoPedido", cargarPedidosMesa);
-      return () => socket.off("nuevoPedido", cargarPedidosMesa);
-    }
-  }, [socket]);
+    if (!socket || !mesaId) return;
 
+    const handleNuevoPedido = (data) => {
+      if (data.mesaId === mesaId) {
+        cargarPedidosMesa(); // 🔄 recarga pedidos con mesaId actual
+      }
+    };
+
+    socket.on("nuevoPedido", handleNuevoPedido);
+    return () => socket.off("nuevoPedido", handleNuevoPedido);
+  }, [socket, mesaId]); // 👈 ahora depende del mesaId
 
   const handleCategoriaChange = (event) => {
     setCategoriaSeleccionada(event.target.value);
@@ -144,12 +149,12 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
 
             <button className="navbar-btn me-3" onClick={mostrarBebidas}>
               {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
-            </button>            
-            
+            </button>
+
             {numeroMesa && (
               <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
-              <Trans id="mi-pedido">Mi pedido</Trans>
-            </button>
+                <Trans id="mi-pedido">Mi pedido</Trans>
+              </button>
             )}
 
             {pedidosListos && (
@@ -183,12 +188,12 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
             </div>
 
             {numeroMesa && (
-                <>
-                  <div className="carrito-icono">
-                    <CarritoIcono abrirModal={() => setMostrarModal(true)} />
-                  </div>
-                </>
-              )}
+              <>
+                <div className="carrito-icono">
+                  <CarritoIcono abrirModal={() => setMostrarModal(true)} />
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : (

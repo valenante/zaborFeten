@@ -57,6 +57,7 @@ const CarritoModal = ({ cerrarModal }) => {
 
       if (carritoEliminado) {
         localStorage.removeItem("carritoMongoId");
+        cargarCarrito();
       } else {
         cargarCarrito();
       }

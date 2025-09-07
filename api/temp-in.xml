@@ -13,8 +13,8 @@
         <sf:Periodo>09</sf:Periodo>
       </sf:PeriodoLiquidacion>
       <sf:IDFactura>
-        <sf:NumSerieFacturaEmisor>2025-0035</sf:NumSerieFacturaEmisor>
-        <sf:FechaExpedicionFacturaEmisor>2025-09-06</sf:FechaExpedicionFacturaEmisor>
+        <sf:NumSerieFacturaEmisor>2025-0040</sf:NumSerieFacturaEmisor>
+        <sf:FechaExpedicionFacturaEmisor>2025-09-07</sf:FechaExpedicionFacturaEmisor>
       </sf:IDFactura>
       <sf:FacturaExpedida>
         <sf:DescripcionFactura>Factura electrónica TPV</sf:DescripcionFactura>
@@ -24,15 +24,27 @@
             <sf:NIF>N/A</sf:NIF>
           </sf:IDDestinatario>
         </sf:Destinatarios>
-        <sf:ImporteTotal>6.60</sf:ImporteTotal>
+        <sf:ImporteTotal>20.40</sf:ImporteTotal>
         <sf:DetallesFactura>
       <sf:DetalleLinea>
-        <sf:Descripcion>Lagrimitas de pollo</sf:Descripcion>
+        <sf:Descripcion>Ensalada Fetén de Pollo</sf:Descripcion>
         <sf:Cantidad>1</sf:Cantidad>
-        <sf:ImporteUnitario>6.60</sf:ImporteUnitario>
-        <sf:ImporteTotal>6.60</sf:ImporteTotal>
+        <sf:ImporteUnitario>12.90</sf:ImporteUnitario>
+        <sf:ImporteTotal>12.90</sf:ImporteTotal>
+      </sf:DetalleLinea>
+      <sf:DetalleLinea>
+        <sf:Descripcion>Piruletas de Langostinos</sf:Descripcion>
+        <sf:Cantidad>1</sf:Cantidad>
+        <sf:ImporteUnitario>4.50</sf:ImporteUnitario>
+        <sf:ImporteTotal>4.50</sf:ImporteTotal>
+      </sf:DetalleLinea>
+      <sf:DetalleLinea>
+        <sf:Descripcion>San Miguel Radler</sf:Descripcion>
+        <sf:Cantidad>1</sf:Cantidad>
+        <sf:ImporteUnitario>3.00</sf:ImporteUnitario>
+        <sf:ImporteTotal>3.00</sf:ImporteTotal>
       </sf:DetalleLinea></sf:DetallesFactura>
-        <sf:Huella>pYWnS0uR5wFV/BUa1x5D1amyiNJF/AweB+9jkh/93iE=</sf:Huella>
+        <sf:Huella>IY472eKMSKYWRo+qjjNcRHeUUASRJCyKV+0ujrXh4n4=</sf:Huella>
       </sf:FacturaExpedida>
     </sf:RegistroLRFacturasEmitidas>
   </sf:SuministroLRFacturasEmitidas>

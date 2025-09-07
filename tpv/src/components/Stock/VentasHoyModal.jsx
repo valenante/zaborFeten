@@ -23,9 +23,18 @@ const VentasHoyModal = ({ onClose }) => {
     fetchData();
   }, []);
 
-  const platos = useMemo(() => data.items.filter((it) => it.tipo === "plato"), [data.items]);
-  const bebidas = useMemo(() => data.items.filter((it) => it.tipo !== "plato"), [data.items]);
+  const platos = useMemo(
+    () => data.items.filter((it) => it.tipo !== "bebida"),
+    [data.items]
+  );
+
+  const bebidas = useMemo(
+    () => data.items.filter((it) => it.tipo === "bebida"),
+    [data.items]
+  );
+
   const visible = tab === "plato" ? platos : bebidas;
+
 
   const renderTabla = (items) => (
     <div className="ventas-modal__tabla">

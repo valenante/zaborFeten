@@ -374,26 +374,73 @@ export const obtenerMesaPorNumero = async (req, res) => {
   }
 };
 
+// controllers/mesasCerradas.js
 export const obtenerMesasCerradas = async (req, res) => {
   try {
-    const mesasCerradas = await MesaCerrada.find({})
-      .populate({
-        path: 'pedidos', // Relación con pedidos
-        populate: {
-          path: 'productos', // Relación con productos dentro de los pedidos
-          select: 'producto cantidad total', // Selecciona los campos relevantes
-          populate: {
-            path: 'producto', // Relación con el nombre del producto
-            select: 'nombre', // Solo obtén el nombre del producto
-          },
-        },
-      })
-      .sort({ cierre: -1 }); // Ordenar por cierre descendente
+    const { id } = req.query;
 
-    res.status(200).json(mesasCerradas);
-  } catch (error) {
-    logger.error('Error al obtener las mesas cerradas:', error);
-    res.status(500).json({ error: 'Error al obtener las mesas cerradas.' });
+    const baseQuery = id ? MesaCerrada.findById(id) : MesaCerrada.find({}).sort({ cierre: -1 });
+    const mcRaw = await baseQuery
+      .populate({ path: 'pedidos', populate: { path: 'productos.producto' } })
+      .populate({ path: 'pedidoBebidas', populate: { path: 'productos.producto' } })
+      .lean();
+
+    const normalizar = (mc) => {
+      const itemsPlatos = (mc.pedidos || []).flatMap(p =>
+        (p.productos || []).map(i => {
+          const precioUnit = i.precioSeleccionado ?? i.precioFinal ?? (typeof i.total === 'number' ? i.total : 0);
+          const cantidad = i.cantidad || 1;
+          return {
+            tipo: i.tipo || 'plato',
+            nombre: i.producto?.nombre || i.nombre || 'Producto',
+            cantidad,
+            precio: Number((precioUnit || 0).toFixed(2)),
+            subtotal: Number(((precioUnit || 0) * cantidad).toFixed(2)),
+          };
+        })
+      );
+
+      const itemsBebidas = (mc.pedidoBebidas || []).flatMap(p =>
+        (p.productos || []).map(i => {
+          const precioUnit = i.precioSeleccionado ?? (typeof i.total === 'number' ? i.total : 0);
+          const cantidad = i.cantidad || 1;
+          return {
+            tipo: i.tipo || 'bebida',
+            nombre: i.producto?.nombre || i.nombre || 'Bebida',
+            cantidad,
+            precio: Number((precioUnit || 0).toFixed(2)),
+            subtotal: Number(((precioUnit || 0) * cantidad).toFixed(2)),
+          };
+        })
+      );
+
+      return {
+        _id: mc._id,
+        numero: mc.numero,
+        inicio: mc.inicio,
+        cierre: mc.cierre,
+        total: Number((mc.total || 0).toFixed(2)),
+        metodoPago: {
+          efectivo: Number((mc.metodoPago?.efectivo || 0).toFixed(2)),
+          tarjeta: Number((mc.metodoPago?.tarjeta || 0).toFixed(2)),
+          propina: Number((mc.metodoPago?.propina || 0).toFixed(2)),
+        },
+        pedidosIds: (mc.pedidos || []).map(p => p._id),
+        pedidoBebidasIds: (mc.pedidoBebidas || []).map(p => p._id),
+        items: [...itemsPlatos, ...itemsBebidas],
+      };
+    };
+
+    if (id) {
+      if (!mcRaw) return res.status(404).json({ error: 'Mesa cerrada no encontrada' });
+      return res.json(normalizar(mcRaw)); // 👈 objeto
+    }
+
+    const mesas = mcRaw || [];
+    return res.json(mesas.map(normalizar)); // 👈 array
+  } catch (err) {
+    console.error('Error al obtener mesas cerradas:', err);
+    return res.status(500).json({ error: 'Error al obtener las mesas cerradas' });
   }
 };
 

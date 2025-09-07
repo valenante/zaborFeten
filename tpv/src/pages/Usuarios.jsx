@@ -1,8 +1,14 @@
 import React, { useState } from "react";
 import api from "../utils/api";
-import AlertaMensaje from "../components/AlertaMensaje/AlertaMensaje"; // Componente para mostrar alertas
-import * as logger from '../utils/logger';
+import AlertaMensaje from "../components/AlertaMensaje/AlertaMensaje";
+import * as logger from "../utils/logger";
 import "../styles/Usuarios.css";
+
+const ESTACIONES = [
+  { value: "frito", label: "Frito" },
+  { value: "plancha", label: "Plancha" },
+  { value: "frio", label: "Frío" },
+];
 
 const CrearUsuario = () => {
   const [formData, setFormData] = useState({
@@ -10,27 +16,27 @@ const CrearUsuario = () => {
     password: "",
     confirmPassword: "",
     role: "",
+    estacion: "", // 👈 nuevo
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [mensajeAlerta, setMensajeAlerta] = useState(null);
 
-  // Validaciones
-  const validateField = (name, value) => {
+  const validateField = (name, value, ctx = formData) => {
     let error = "";
     switch (name) {
-      case "nombre":
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(value)) {
+      case "name":
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value || "")) {
           error = "El nombre solo puede contener letras y espacios.";
         }
         break;
-      case "contraseña":
-        if (value.length < 8 || !/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
+      case "password":
+        if (!value || value.length < 8 || !/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
           error = "La contraseña debe tener al menos 8 caracteres, una letra y un número.";
         }
         break;
-      case "confirmarContraseña":
-        if (value !== formData.contraseña) {
+      case "confirmPassword":
+        if (value !== ctx.password) {
           error = "Las contraseñas no coinciden.";
         }
         break;
@@ -39,28 +45,47 @@ const CrearUsuario = () => {
           error = "El role seleccionado no es válido.";
         }
         break;
+      case "estacion":
+        if (ctx.role === "cocinero" && !value) {
+          error = "Selecciona una estación para el cocinero.";
+        }
+        break;
       default:
         break;
     }
     return error;
   };
 
-  // Manejar cambios en los campos
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+  const validateAll = () => {
+    const nextErrors = {};
+    Object.keys(formData).forEach((k) => {
+      const e = validateField(k, formData[k], formData);
+      if (e) nextErrors[k] = e;
+    });
+    // si no es cocinero, limpiamos error de estación si quedó
+    if (formData.role !== "cocinero") delete nextErrors.estacion;
+    return nextErrors;
   };
 
-  // Manejar envío del formulario
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const next = { ...formData, [name]: value };
+    setFormData(next);
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value, next) }));
+
+    // Si cambia el rol a algo que no es cocinero, limpia estación y su error
+    if (name === "role" && value !== "cocinero") {
+      setFormData((p) => ({ ...p, estacion: "" }));
+      setErrors((p) => {
+        const { estacion, ...rest } = p;
+        return rest;
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = {};
-    Object.keys(formData).forEach((key) => {
-      const error = validateField(key, formData[key]);
-      if (error) newErrors[key] = error;
-    });
-
+    const newErrors = validateAll();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -68,16 +93,20 @@ const CrearUsuario = () => {
 
     setIsLoading(true);
     try {
-      await api.post("/auth/register", {
-        name: formData.nombre,
-        password: formData.contraseña,
+      const payload = {
+        name: formData.name,
+        password: formData.password,
         role: formData.role,
-      });
+        ...(formData.role === "cocinero" ? { estacion: formData.estacion } : {}),
+      };
+
+      await api.post("/auth/register", payload);
       setMensajeAlerta({ tipo: "exito", mensaje: "Usuario creado exitosamente" });
-      setFormData({ name: "", password: "", confirmPassword: "", role: "" });
+      setFormData({ name: "", password: "", confirmPassword: "", role: "", estacion: "" });
+      setErrors({});
     } catch (error) {
       logger.error("Error al crear el usuario:", error);
-      setMensajeAlerta({ tipo: "error", mensaje: "Error al crear el usuario" });
+      setMensajeAlerta({ tipo: "error", mensaje: error?.response?.data?.error || "Error al crear el usuario" });
     } finally {
       setIsLoading(false);
     }
@@ -86,38 +115,40 @@ const CrearUsuario = () => {
   return (
     <div className="crear-usuario--register">
       <h2 className="titulo--register">Crear Usuario</h2>
+
       <form onSubmit={handleSubmit} className="formulario--register">
         <input
           type="text"
-          name="nombre"
-          value={formData.nombre}
+          name="name"
+          value={formData.name}
           onChange={handleChange}
           className="input--register"
           placeholder="Nombre"
+          autoComplete="off"
         />
-        {errors.nombre && <p className="error--register">{errors.nombre}</p>}
+        {errors.name && <p className="error--register">{errors.name}</p>}
 
         <input
           type="password"
-          name="contraseña"
-          value={formData.contraseña}
+          name="password"
+          value={formData.password}
           onChange={handleChange}
           className="input--register"
           placeholder="Contraseña"
+          autoComplete="new-password"
         />
-        {errors.contraseña && <p className="error--register">{errors.contraseña}</p>}
+        {errors.password && <p className="error--register">{errors.password}</p>}
 
         <input
           type="password"
-          name="confirmarContraseña"
-          value={formData.confirmarContraseña}
+          name="confirmPassword"
+          value={formData.confirmPassword}
           onChange={handleChange}
           className="input--register"
           placeholder="Confirmar Contraseña"
+          autoComplete="new-password"
         />
-        {errors.confirmarContraseña && (
-          <p className="error--register">{errors.confirmarContraseña}</p>
-        )}
+        {errors.confirmPassword && <p className="error--register">{errors.confirmPassword}</p>}
 
         <select
           name="role"
@@ -132,21 +163,36 @@ const CrearUsuario = () => {
         </select>
         {errors.role && <p className="error--register">{errors.role}</p>}
 
-        <button
-          type="submit"
-          className="boton--register"
-          disabled={isLoading}
-        >
+        {/* 👇 Solo cuando es cocinero pedimos estación */}
+        {formData.role === "cocinero" && (
+          <>
+            <select
+              name="estacion"
+              value={formData.estacion}
+              onChange={handleChange}
+              className="select--register"
+            >
+              <option value="">Selecciona estación</option>
+              {ESTACIONES.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            {errors.estacion && <p className="error--register">{errors.estacion}</p>}
+          </>
+        )}
+
+        <button type="submit" className="boton--register" disabled={isLoading}>
           {isLoading ? "Creando..." : "Crear Usuario"}
         </button>
       </form>
+
       {mensajeAlerta && (
-              <AlertaMensaje
-                tipo={mensajeAlerta.tipo}
-                mensaje={mensajeAlerta.mensaje}
-                onClose={() => setMensajeAlerta(null)}
-              />
-            )}
+        <AlertaMensaje
+          tipo={mensajeAlerta.tipo}
+          mensaje={mensajeAlerta.mensaje}
+          onClose={() => setMensajeAlerta(null)}
+        />
+      )}
     </div>
   );
 };

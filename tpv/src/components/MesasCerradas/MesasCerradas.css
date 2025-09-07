@@ -243,6 +243,140 @@
   color: var(--blanco);
   font-weight: bold;
 }
+/* ===== Modal (mesas-cerradas) ===== */
+.modal-overlay--mesas-cerradas{
+  position: fixed; inset: 0;
+  background: rgba(17,24,39,.55);
+  display: grid; place-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-contenido--mesas-cerradas{
+  width: min(980px, 96vw);
+  max-height: 86vh;
+  background: var(--blanco);
+  border-radius: var(--borde-redondeado);
+  box-shadow: var(--sombra-suave);
+  overflow: hidden;                /* redondeo limpio */
+  display: flex; flex-direction: column;
+}
+
+/* Header del modal */
+.modal-contenido--mesas-cerradas > .modal-cerrar--mesas-cerradas{
+  align-self: flex-end;
+  margin: .75rem .75rem 0;
+  border: 0; background: transparent;
+  font-size: 1.25rem; line-height: 1;
+  color: #6b7280; cursor: pointer;
+}
+.modal-contenido--mesas-cerradas > .modal-cerrar--mesas-cerradas:hover{
+  color:#111827;
+}
+
+/* Cuerpo */
+.modal-contenido--mesas-cerradas h2{
+  margin: 0 1.25rem .25rem;
+  font-weight: 700;
+  color: var(--gris-oscuro);
+}
+.modal-contenido--mesas-cerradas p,
+.detalle-pagos--mesas-cerradas div{
+  margin: .25rem 1.25rem;
+  color:#374151;
+}
+
+/* Bloque totales */
+.detalle-pagos--mesas-cerradas{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap:.75rem;
+  margin: .5rem 1.25rem 1rem;
+}
+.detalle-pagos--mesas-cerradas div{
+  background: var(--gris-claro);
+  padding:.5rem .75rem;
+  border-radius:.5rem;
+  font-weight:600;
+}
+
+/* Tabla de productos del modal */
+.tabla-detalle--mesas-cerradas{
+  width: calc(100% - 2.5rem);
+  margin: .5rem 1.25rem 1.25rem;
+  border-collapse: collapse;
+  font-size: .95rem;
+  overflow: auto;
+}
+.tabla-detalle--mesas-cerradas thead th{
+  text-align: left;
+  background: var(--color-principal);
+  color: #fff;
+  padding:.6rem .7rem;
+  position: sticky; top:0;        /* cabezal fijo si desborda */
+}
+.tabla-detalle--mesas-cerradas tbody td{
+  padding:.55rem .7rem;
+  border-bottom:1px solid #e5e7eb;
+}
+.tabla-detalle--mesas-cerradas tbody tr:hover{
+  background:#f9fafb;
+}
+
+/* ===== Tabla de listado ===== */
+.tabla--mesas-cerradas{
+  width:100%;
+  border-collapse:collapse;
+  background: var(--blanco);
+  border-radius: var(--borde-redondeado);
+  overflow:hidden;
+  box-shadow: var(--sombra-suave);
+}
+.tabla--mesas-cerradas thead th{
+  text-align:left;
+  background: var(--color-principal);
+  color:#fff;
+  padding:.75rem .9rem;
+}
+.tabla--mesas-cerradas tbody td{
+  padding:.65rem .9rem;
+  border-bottom:1px solid #eef2f7;
+}
+.btn-detalle--mesas-cerradas{
+  background: var(--color-secundario);
+  color:#fff; border:0;
+  padding:.45rem .75rem;
+  border-radius:.45rem;
+  cursor:pointer;
+}
+.btn-detalle--mesas-cerradas:hover{
+  background: var(--color-secundario-hover);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px){
+  .detalle-pagos--mesas-cerradas{
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+@media (max-width: 560px){
+  .modal-contenido--mesas-cerradas{
+    width: 100%; max-height: 60vh;
+    overflow-y: auto;
+  }
+  .tabla-detalle--mesas-cerradas{
+    font-size: .88rem;
+    width: calc(100% - 1.5rem);
+    margin: .5rem .75rem 1rem;
+  }
+  .tabla--mesas-cerradas thead th,
+  .tabla--mesas-cerradas tbody td{
+    padding:.55rem .6rem;
+  }
+  .detalle-pagos--mesas-cerradas{
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 768px) {
   .detalle-mesa--mesadetalles {

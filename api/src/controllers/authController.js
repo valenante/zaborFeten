@@ -124,10 +124,10 @@ export const logout = async (req, res) => {
 };
 
 export const registro = async (req, res) => {
-  const { name, password, role } = req.body;
+  const { name, password, role, estacion } = req.body;
 
   try {
-    const nuevoUsuario = new User({ name, password, role });
+    const nuevoUsuario = new User({ name, password, role, estacion });
     await nuevoUsuario.save();
 
     const accessToken = generarAccessToken(nuevoUsuario);
@@ -153,6 +153,7 @@ export const registro = async (req, res) => {
         id: nuevoUsuario._id,
         name: nuevoUsuario.name,
         role: nuevoUsuario.role,
+        estacion: nuevoUsuario.estacion,
       },
       accessToken,
     });

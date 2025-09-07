@@ -503,7 +503,6 @@ const Cocina = () => {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {/* … tus botones de voz … */}
             <div className="cocina-selector">
-              <label htmlFor="estacion" style={{ marginRight: 8 }}>Pantalla:</label>
               <select id="estacion" value={estacion} onChange={onChangeEstacion}>
                 {ESTACIONES.map((e) => (
                   <option key={e} value={e}>
