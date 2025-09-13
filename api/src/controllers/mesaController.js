@@ -279,6 +279,8 @@ export const cerrarMesa = async (req, res) => {
       camarero: camarero || '',
     });
 
+    console.log(clienteNombre, clienteNIF, 'en cerrar mesa');
+
     await new EventoFactura({
       tipoEvento: 'creación',
       numeroFactura,

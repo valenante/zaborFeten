@@ -1,50 +1,202 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <sf:SuministroLRFacturasEmitidas xmlns:sf="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/tic/sede/verifactu/ws/ws-verifactu-v1.xsd">
-    <sf:Cabecera>
-      <sf:IDVersionSii>1.1</sf:IDVersionSii>
-      <sf:Titular>
-        <sf:NombreRazon>Nombre del Emisor</sf:NombreRazon>
-        <sf:NIF>12345678Z</sf:NIF>
-      </sf:Titular>
-    </sf:Cabecera>
-    <sf:RegistroLRFacturasEmitidas>
-      <sf:PeriodoLiquidacion>
-        <sf:Ejercicio>2025</sf:Ejercicio>
-        <sf:Periodo>09</sf:Periodo>
-      </sf:PeriodoLiquidacion>
-      <sf:IDFactura>
-        <sf:NumSerieFacturaEmisor>2025-0040</sf:NumSerieFacturaEmisor>
-        <sf:FechaExpedicionFacturaEmisor>2025-09-07</sf:FechaExpedicionFacturaEmisor>
-      </sf:IDFactura>
-      <sf:FacturaExpedida>
-        <sf:DescripcionFactura>Factura electrónica TPV</sf:DescripcionFactura>
-        <sf:Destinatarios>
-          <sf:IDDestinatario>
-            <sf:NombreRazon>Consumidor Final</sf:NombreRazon>
-            <sf:NIF>N/A</sf:NIF>
-          </sf:IDDestinatario>
-        </sf:Destinatarios>
-        <sf:ImporteTotal>20.40</sf:ImporteTotal>
-        <sf:DetallesFactura>
-      <sf:DetalleLinea>
-        <sf:Descripcion>Ensalada Fetén de Pollo</sf:Descripcion>
-        <sf:Cantidad>1</sf:Cantidad>
-        <sf:ImporteUnitario>12.90</sf:ImporteUnitario>
-        <sf:ImporteTotal>12.90</sf:ImporteTotal>
-      </sf:DetalleLinea>
-      <sf:DetalleLinea>
-        <sf:Descripcion>Piruletas de Langostinos</sf:Descripcion>
-        <sf:Cantidad>1</sf:Cantidad>
-        <sf:ImporteUnitario>4.50</sf:ImporteUnitario>
-        <sf:ImporteTotal>4.50</sf:ImporteTotal>
-      </sf:DetalleLinea>
-      <sf:DetalleLinea>
-        <sf:Descripcion>San Miguel Radler</sf:Descripcion>
-        <sf:Cantidad>1</sf:Cantidad>
-        <sf:ImporteUnitario>3.00</sf:ImporteUnitario>
-        <sf:ImporteTotal>3.00</sf:ImporteTotal>
-      </sf:DetalleLinea></sf:DetallesFactura>
-        <sf:Huella>IY472eKMSKYWRo+qjjNcRHeUUASRJCyKV+0ujrXh4n4=</sf:Huella>
-      </sf:FacturaExpedida>
-    </sf:RegistroLRFacturasEmitidas>
-  </sf:SuministroLRFacturasEmitidas>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:sum="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd"
+  xmlns:sum1="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd">
+
+  <soapenv:Header/>
+  <soapenv:Body>
+    <sum:RegFactuSistemaFacturacion>
+
+      <sum:Cabecera>
+        <sum1:ObligadoEmision>
+          <sum1:NombreRazon>undefined</sum1:NombreRazon>
+          <sum1:NIF>undefined</sum1:NIF>
+        </sum1:ObligadoEmision>
+      </sum:Cabecera>
+
+      <sum:RegistroFactura>
+        <sum1:RegistroAlta>
+          <sum1:IDVersion>1.0</sum1:IDVersion>
+
+          <sum1:IDFactura>
+            <sum1:IDEmisorFactura>undefined</sum1:IDEmisorFactura>
+            <sum1:NumSerieFactura>2025-0001</sum1:NumSerieFactura>
+            <sum1:FechaExpedicionFactura>undefined</sum1:FechaExpedicionFactura>
+          </sum1:IDFactura>
+
+          <sum1:NombreRazonEmisor>undefined</sum1:NombreRazonEmisor>
+          <sum1:TipoFactura>F1</sum1:TipoFactura>
+          <sum1:DescripcionOperacion>Factura de prueba VeriFactu</sum1:DescripcionOperacion>
+
+          <sum1:Destinatarios>
+            <sum1:IDDestinatario>
+              <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
+              <sum1:NIF>X6063327K</sum1:NIF>
+            </sum1:IDDestinatario>
+          </sum1:Destinatarios>
+
+          <sum1:Desglose>
+            
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          <sum1:DetalleDesglose>
+            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>undefined</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose>
+  
+          </sum1:Desglose>
+
+         <sum1:CuotaTotal>0.00</sum1:CuotaTotal>
+<sum1:ImporteTotal>0.00</sum1:ImporteTotal>
+
+
+          <sum1:Encadenamiento>
+            <sum1:RegistroAnterior>
+              <sum1:IDEmisorFactura>undefined</sum1:IDEmisorFactura>
+              <sum1:NumSerieFactura>NaN</sum1:NumSerieFactura>
+              <sum1:FechaExpedicionFactura>undefined</sum1:FechaExpedicionFactura>
+              <sum1:Huella>undefined</sum1:Huella>
+            </sum1:RegistroAnterior>
+          </sum1:Encadenamiento>
+
+          <sum1:SistemaInformatico>
+            <sum1:NombreRazon>undefined</sum1:NombreRazon>
+            <sum1:NIF>undefined</sum1:NIF>
+            <sum1:NombreSistemaInformatico>TPV Restaurante</sum1:NombreSistemaInformatico>
+            <sum1:IdSistemaInformatico>77</sum1:IdSistemaInformatico>
+            <sum1:Version>1.0.3</sum1:Version>
+            <sum1:NumeroInstalacion>383</sum1:NumeroInstalacion>
+            <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+            <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
+            <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
+          </sum1:SistemaInformatico>
+
+          <sum1:FechaHoraHusoGenRegistro>undefined</sum1:FechaHoraHusoGenRegistro>
+          <sum1:TipoHuella>01</sum1:TipoHuella>
+          <sum1:Huella>undefined</sum1:Huella>
+        </sum1:RegistroAlta>
+      </sum:RegistroFactura>
+    </sum:RegFactuSistemaFacturacion>
+  </soapenv:Body>
+</soapenv:Envelope>

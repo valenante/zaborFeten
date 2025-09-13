@@ -1,17 +1,37 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 
-export function generarHashFactura(factura, hashAnterior = '') {
-  const fechaFormateada = new Date(factura.fechaExpedicion).toISOString().slice(0, 10); // YYYY-MM-DD
+export function generarHashFactura({
+  numeroFactura,
+  fechaExpedicion,
+  tipoFactura = "F1",
+  cuotaTotal,
+  importeTotal,
+  idEmisor,
+  huellaAnterior = "",
+  fechaHoraRegistro
+}) {
+  // 👉 Fecha en formato DD-MM-YYYY
+  const fecha = new Date(fechaExpedicion);
+  const fechaExpedicionStr = fecha
+    .toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })
+    .replace(/\//g, "-"); // "10-09-2025"
 
-  const datos = [
-    factura.numeroFactura,
-    fechaFormateada,
-    factura.clienteNombre,
-    factura.clienteNIF,
-    Number(factura.importeTotal).toFixed(2),
-    hashAnterior || ''
-  ].join(''); // sin separador
+  // 👉 Normalizar valores numéricos a dos decimales
+  const cuota = Number(cuotaTotal).toFixed(2);
+  const importe = Number(importeTotal).toFixed(2);
 
-  const hash = crypto.createHash('sha256').update(datos).digest('base64');
-  return hash;
+  // 👉 Construir cadena AEAT
+  const cadena =
+    `IDEmisorFactura=${idEmisor}` +
+    `&NumSerieFactura=${numeroFactura}` +
+    `&FechaExpedicionFactura=${fechaExpedicionStr}` +
+    `&TipoFactura=${tipoFactura}` +
+    `&CuotaTotal=${cuota}` +
+    `&ImporteTotal=${importe}` +
+    `&Huella=${huellaAnterior || ""}` +
+    `&FechaHoraHusoGenRegistro=${fechaHoraRegistro}`;
+
+  console.log("📌 Cadena a hashear:", cadena);
+
+  return crypto.createHash("sha256").update(cadena, "utf8").digest("hex").toUpperCase();
 }
