@@ -126,14 +126,37 @@ const FacturasPage = () => {
     };
     const facturasFiltradas = facturas.filter(f => anioCoincide(f) && textoCoincide(f));
 
-    const exportarCSV = () => {
+    // 👇 añade esta función dentro de tu componente FacturasPage
+    const filtrarFacturas = () => {
+        return facturas.filter(f => {
+            const anioCoincide =
+                !filtroAnio ||
+                (f.fechaExpedicion && new Date(f.fechaExpedicion).getFullYear().toString() === filtroAnio);
+
+            const normaliza = (s) => (s || '').toString().toLowerCase();
+            const q = normaliza(busqueda);
+
+            const textoCoincide =
+                !q ||
+                normaliza(f.numeroFactura).includes(q) ||
+                normaliza(f.clienteNIF).includes(q) ||
+                normaliza(f.hash ?? f.hashFactura).includes(q) ||
+                normaliza(f.hashAnterior).includes(q);
+
+            return anioCoincide && textoCoincide;
+        });
+    };
+
+    const exportarCSV = async () => {
+        const facturasFiltradas = filtrarFacturas();
+
         const csv = Papa.unparse(
             facturasFiltradas.map(f => ({
                 numeroFactura: f.numeroFactura,
                 fechaExpedicion: new Date(f.fechaExpedicion).toLocaleString(),
                 clienteNombre: f.clienteNombre,
                 clienteNIF: f.clienteNIF,
-                productos: JSON.stringify(Array.isArray(f.productos) ? f.productos : []),  // Incluido JSON string de productos
+                productos: JSON.stringify(Array.isArray(f.productos) ? f.productos : []),
                 importeTotal: f.importeTotal,
                 hash: f.hash ?? f.hashFactura,
                 hashAnterior: f.hashAnterior,
@@ -147,14 +170,27 @@ const FacturasPage = () => {
         link.href = url;
         link.download = "facturas.csv";
         link.click();
+
+        // 👉 Crear evento 06 (EXPORT_FACTURAS)
+        try {
+            await api.post("/eventos/eventos/log", {
+                otNif: "X6063327K",
+                tipoEvento: "06", // EXPORT_FACTURAS
+                payload: { totalFacturas: facturasFiltradas.length, formato: "CSV" }
+            });
+            console.log("✅ Evento 06 (EXPORT_FACTURAS CSV) registrado");
+        } catch (err) {
+            console.error("❌ Error registrando evento 06:", err);
+        }
     };
 
-    const exportarPDF = () => {
+    const exportarPDF = async () => {
+        const facturasFiltradas = filtrarFacturas();
         const doc = new jsPDF({ orientation: "landscape" });
         doc.text("Facturas Encadenadas", 14, 20);
 
         facturasFiltradas.forEach((f, index) => {
-            const startY = 30 + index * 60; // Ajusta según contenido y espacio
+            const startY = 30 + index * 60;
             doc.text(`Número: ${f.numeroFactura}`, 14, startY);
             doc.text(`Fecha: ${new Date(f.fechaExpedicion).toLocaleString('es-ES')}`, 14, startY + 6);
             doc.text(`Cliente: ${f.clienteNombre || "-"}`, 14, startY + 12);
@@ -162,7 +198,6 @@ const FacturasPage = () => {
             doc.text(`Importe: ${f.importeTotal} €`, 14, startY + 24);
             doc.text(`Hash: ${f.hash}`, 14, startY + 30);
 
-            // Tabla productos
             autoTable(doc, {
                 startY: startY + 36,
                 head: [["Producto", "Cantidad", "Precio"]],
@@ -175,7 +210,6 @@ const FacturasPage = () => {
                 margin: { left: 14, right: 14 }
             });
 
-            // Opcional: agregar XML firmado al final de la última factura
             if (index === facturasFiltradas.length - 1 && f.xmlFirmado) {
                 doc.addPage();
                 doc.text("XML Firmado:", 14, 20);
@@ -185,7 +219,20 @@ const FacturasPage = () => {
         });
 
         doc.save("facturas.pdf");
+
+        // 👉 Crear evento 06 (EXPORT_FACTURAS)
+        try {
+            await api.post("/eventos/eventos/log", {
+                otNif: "X6063327K",
+                tipoEvento: "06", // EXPORT_FACTURAS
+                payload: { totalFacturas: facturasFiltradas.length, formato: "PDF" }
+            });
+            console.log("✅ Evento 06 (EXPORT_FACTURAS PDF) registrado");
+        } catch (err) {
+            console.error("❌ Error registrando evento 06:", err);
+        }
     };
+
 
     return (
         <div className="facturas-page">

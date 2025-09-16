@@ -60,7 +60,7 @@ export const listarFacturasEncadenadas = async (req, res) => {
   }
 };
 
-export const exportarFacturasCSV = async (_req, res) => {
+export const exportarFacturasCSV = async (req, res) => {
   try {
     const facturas = await RegistroVerifactu.find().sort({ createdAt: 1 });
     if (!facturas.length) {
@@ -78,6 +78,13 @@ export const exportarFacturasCSV = async (_req, res) => {
     ];
     const csv = new Parser({ fields }).parse(facturas);
 
+    // 👇 Registrar evento 06 (Exportación Facturas)
+    await buildRegistroEventoNode({
+      ot: { nif: 'X6063327K', nombreRazon: 'ANTENUCCI AGUILAR VALENTINO NAHUEL' },
+      tipoEvento: EVENT_TYPES.EXPORT_FACTURAS,
+      datos: { totalFacturas: facturas.length, formato: 'CSV' }
+    });
+
     res.header('Content-Type', 'text/csv');
     res.attachment('facturas.csv');
     res.send(csv);
@@ -86,6 +93,7 @@ export const exportarFacturasCSV = async (_req, res) => {
     res.status(500).json({ error: 'Error al exportar facturas.' });
   }
 };
+
 export const rectificarFactura = async (req, res) => {
   const { id } = req.params;
   const { motivo, importeTotal, clienteNombre, clienteNIF, productos = [] } = req.body;
