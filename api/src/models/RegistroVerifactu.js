@@ -5,7 +5,7 @@ const registroVerifactuSchema = new mongoose.Schema({
   fechaEnvio: { type: Date, default: Date.now },
   estado: {
     type: String,
-    enum: ['pendiente', 'enviado', 'aceptado', 'rechazado', 'error', 'generada'],
+    enum: ['pendiente', 'enviado', 'aceptado', 'rechazado', 'error', 'generada', 'INCORRECTO', 'ACEPTADO_CON_ERRORES', 'CORRECTO'],
     default: 'pendiente',
   },
   hashFactura: { type: String, required: true },

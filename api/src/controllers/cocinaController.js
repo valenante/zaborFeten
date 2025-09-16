@@ -67,8 +67,6 @@ export const solicitarItem = async (req, res) => {
       ts: Date.now(),
     });
 
-    console.log('[emit] cocina:refresh', { source: 'item:solicitar', pedidoId, itemId });
-
     return res.json({ ok: true, item });
   } catch (err) {
     console.error('[solicitarItem] error', err);
@@ -148,8 +146,6 @@ export const marcarItemListo = async (req, res) => {
       item.workflow.estado = 'pendiente';
       item.estadoPreparacion = 'pendiente';
     }
-
-    console.log('Item actualizado:', item);
 
     pedido.markModified('productos');
     await pedido.save();

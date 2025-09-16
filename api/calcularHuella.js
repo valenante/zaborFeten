@@ -36,11 +36,6 @@ const cadena =
   `&Huella=${HuellaAnterior}` +
   `&FechaHoraHusoGenRegistro=${FechaHoraHusoGenRegistro}`;
 
-console.log("Cadena a hashear:");
-console.log(cadena);
-
 // Calcula SHA-256 en hex mayúsculas
 const huella = crypto.createHash("sha256").update(cadena, "utf8").digest("hex").toUpperCase();
-
-console.log("\nHuella calculada:");
-console.log(huella);
+export default huella;

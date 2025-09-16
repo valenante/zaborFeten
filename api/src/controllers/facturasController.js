@@ -3,8 +3,9 @@ import crypto from 'crypto';
 import { Parser } from 'json2csv';
 import RegistroVerifactu from '../models/RegistroVerifactu.js';
 import EventoFactura from '../models/EventosFactura.js';
-import { emitirFacturaBase } from '../../utils/emitirFactura.js';
+import { emitirRegistroVerifactu } from '../../utils/emitirFactura.js';
 import { generarNumeroFacturaRectificativa } from '../../utils/numeracionRectificativas.js';
+import { generarProductoRectificativo } from '../../utils/generarProductoRectificativo.js';
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
 
 export const listarFacturasEncadenadas = async (req, res) => {
@@ -85,80 +86,101 @@ export const exportarFacturasCSV = async (_req, res) => {
     res.status(500).json({ error: 'Error al exportar facturas.' });
   }
 };
-
 export const rectificarFactura = async (req, res) => {
   const { id } = req.params;
-  const { motivo, importeTotal, clienteNombre, clienteNIF } = req.body;
+  const { motivo, importeTotal, clienteNombre, clienteNIF, productos = [] } = req.body;
 
   try {
-    const facturaOriginal = await registroVerifactus.findById(id);
+    // 1) Buscar la factura original
+    const facturaOriginal = await RegistroVerifactu.findById(id);
     if (!facturaOriginal)
-      return res.status(404).json({ error: 'Factura original no encontrada.' });
+      return res.status(404).json({ error: "Factura original no encontrada." });
 
     if (facturaOriginal.rectificada)
-      return res.status(400).json({ error: 'La factura ya fue rectificada.' });
+      return res.status(400).json({ error: "La factura ya fue rectificada." });
 
-    // Generar nuevo número para la factura rectificativa
+    // 2) Generar número para la factura rectificativa
     const nuevoNumeroFactura = await generarNumeroFacturaRectificativa();
 
-    const nuevaFactura = await emitirFacturaBase({
-      numeroFactura: nuevoNumeroFactura,
-      fechaExpedicion: new Date(), // Fecha actual
-      clienteNombre,
-      clienteNIF,
-      productos: [], // o con detalles si lo deseas
-      importeTotal,
-      hashAnterior: facturaOriginal.hash,
-      descripcionFactura: motivo || 'Rectificación de factura',
-      tipoComunicacion: 'A0', // Alta
+    // 3) Emitir la nueva factura rectificativa (TipoFactura=R1)
+    const nuevaFactura = await emitirRegistroVerifactu({
+      tipo: "alta",
+      datos: {
+        numeroFactura: nuevoNumeroFactura,
+        fechaExpedicion: new Date(),
+        clienteNombre,
+        clienteNIF,
+
+        productos: productos.length
+          ? productos
+          : generarProductoRectificativo(
+              importeTotal,
+              10,
+              motivo || "Rectificación de factura"
+            ),
+
+        importeTotal,
+        descripcionOperacion: motivo || "Rectificación de factura",
+
+        // Encadenamiento con la original
+        numFacturaAnterior: facturaOriginal.numeroFactura,
+        fechaFacturaAnterior: facturaOriginal.fechaExpedicion,
+        huellaAnterior: facturaOriginal.huellaTCR,
+
+        // Factura rectificativa
+        tipoFactura: "R1",         // 👈 tipo rectificativa
+        tipoRectificativa: "S",    // 👈 Sustitución (o "I" si es por diferencias)
+      },
     });
 
-    // Marcar la original como rectificada
+    // 4) Marcar la original como rectificada
     facturaOriginal.rectificada = true;
     facturaOriginal.facturaRectificativaId = nuevaFactura._id;
     await facturaOriginal.save();
 
-    // Registrar evento (ajusta si tienes modelo EventoFactura)
+    // 5) Registrar evento interno (opcional)
     await new EventoFactura({
-      tipoEvento: 'rectificación',
+      tipoEvento: "rectificacion",
       numeroFactura: nuevoNumeroFactura,
       clienteNombre,
       clienteNIF,
       motivo,
       importeTotal,
-      hashFactura: nuevaFactura.hash,
+      hashFactura: nuevaFactura.hashFactura,
       facturaOriginalId: facturaOriginal._id,
       facturaRectificativaId: nuevaFactura._id,
     }).save();
 
+    // 6) Intentar imprimir (opcional)
     try {
-      await axios.post('http://100.91.21.52:4000/imprimir-factura-rectificativa', {
+      await axios.post("http://100.91.21.52:4000/imprimir-factura-rectificativa", {
         numeroFactura: nuevoNumeroFactura,
         fechaExpedicion: nuevaFactura.fechaExpedicion,
         clienteNombre,
         clienteNIF,
         importeTotal,
         motivo,
-        hash: nuevaFactura.hash,
+        hash: nuevaFactura.hashFactura,
       });
     } catch (printError) {
-      logger.warn('⚠️ No se pudo imprimir la factura rectificativa:', printError.message);
-      // No interrumpir el flujo, sólo loguear
+      logger.warn("⚠️ No se pudo imprimir la factura rectificativa:", printError.message);
     }
+
     res.json({
-      message: 'Factura rectificativa generada correctamente.',
+      message: "Factura rectificativa generada correctamente.",
       facturaOriginal,
       facturaRectificativa: nuevaFactura,
     });
   } catch (error) {
-    logger.error('❌ Error al rectificar factura:', error);
-    res.status(500).json({ error: 'Error al rectificar la factura.' });
+    logger.error("❌ Error al rectificar factura:", error);
+    res.status(500).json({ error: "Error al rectificar la factura." });
   }
 };
+
 export const verificarFactura = async (req, res) => {
   const { hash } = req.params;
 
-  const factura = await registroVerifactus.findOne({ hash }).lean();
+  const factura = await RegistroVerifactu.findOne({ hash }).lean();
   if (!factura) return res.status(404).json({ error: 'Factura no encontrada' });
 
   const fecha = new Date(factura.fechaExpedicion).toISOString().slice(0, 10);

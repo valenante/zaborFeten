@@ -9,7 +9,7 @@ import logger from '../../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid'; // Generador de UUID
 import EventoFactura from '../models/EventosFactura.js';
 import { obtenerNumeroFactura } from '../services/numeroFacturaServices.js';
-import { emitirFacturaBase } from '../../utils/emitirFactura.js';
+import { emitirRegistroVerifactu } from "../../utils/emitirFactura.js";
 import { abrirCajon } from './imprimirController.js'; // Importar la función para abrir el cajón
 
 
@@ -173,7 +173,6 @@ export const abrirMesaCamarero = async (req, res) => {
     res.status(500).json({ error: 'Error al reabrir la mesa' });
   }
 };
-
 export const cerrarMesa = async (req, res) => {
   const { id } = req.params;
   const { metodoPago, clienteNombre, clienteNIF, camarero } = req.body;
@@ -181,14 +180,14 @@ export const cerrarMesa = async (req, res) => {
   try {
     const ahora = new Date();
     const mesa = await Mesa.findById(id)
-      .populate({ path: 'pedidos', populate: { path: 'productos.producto' } })
-      .populate({ path: 'pedidosBebidas', populate: { path: 'productos.producto' } });
+      .populate({ path: "pedidos", populate: { path: "productos.producto" } })
+      .populate({ path: "pedidosBebidas", populate: { path: "productos.producto" } });
 
-    if (!mesa) return res.status(404).json({ error: 'Mesa no encontrada' });
+    if (!mesa) return res.status(404).json({ error: "Mesa no encontrada" });
 
     const { efectivo = 0, tarjeta = 0, propina = 0 } = metodoPago || {};
-    const totalPagado = efectivo + tarjeta;
-    const totalMesa = mesa.total;
+    const totalPagado = Number((efectivo + tarjeta).toFixed(2));
+    const totalMesa = Number((mesa.total || 0).toFixed(2));
 
     if (totalPagado < totalMesa) {
       return res.status(400).json({
@@ -196,9 +195,45 @@ export const cerrarMesa = async (req, res) => {
       });
     }
 
-    const cambioCalculado = totalPagado - totalMesa;
-    const propinaCalculada = propina;
+    const cambioCalculado = Number((totalPagado - totalMesa).toFixed(2));
+    const propinaCalculada = Number((propina || 0).toFixed(2));
 
+    // --- Caja del día (sin mutar 'ahora')
+    const inicioDia = new Date(ahora); inicioDia.setHours(0, 0, 0, 0);
+    const finDia = new Date(ahora);    finDia.setHours(23, 59, 59, 999);
+
+    let caja = await Caja.findOne({
+      fechaApertura: { $gte: inicioDia, $lte: finDia },
+      estado: "abierta",
+    });
+
+    if (caja) {
+      const efectivoReal = Math.min(efectivo, totalMesa);
+      const tarjetaReal = Math.min(tarjeta, Math.max(totalMesa - efectivoReal, 0));
+      caja.detallesMetodoPago.efectivo += efectivoReal;
+      caja.detallesMetodoPago.tarjeta += tarjetaReal;
+      caja.detallesMetodoPago.propina += propinaCalculada;
+      caja.total += totalMesa;
+      caja.operaciones.push({
+        tipo: "cierre",
+        monto: totalMesa,
+        razon: `Cierre de la mesa número ${mesa.numero}`,
+      });
+      await caja.save();
+    } else {
+      caja = new Caja({
+        total: totalMesa,
+        detallesMetodoPago: { efectivo, tarjeta, propina: propinaCalculada },
+        operaciones: [{
+          tipo: "cierre",
+          monto: totalMesa,
+          razon: `Cierre de la mesa número ${mesa.numero}`,
+        }],
+      });
+      await caja.save();
+    }
+
+    // --- Guardar mesa cerrada antes de limpiar mesa
     const mesaCerrada = new MesaCerrada({
       numero: mesa.numero,
       pedidos: mesa.pedidos.map((p) => p._id),
@@ -209,99 +244,82 @@ export const cerrarMesa = async (req, res) => {
       comensales: mesa.comensales || 1,
       metodoPago: { efectivo, tarjeta, propina: propinaCalculada, cambio: cambioCalculado },
       sesionActiva: mesa.sesionActiva,
-      camarero: camarero || '',
+      camarero: camarero || "",
     });
-
     await mesaCerrada.save();
 
-    const inicioDia = new Date(ahora.setHours(0, 0, 0, 0));
-    const finDia = new Date(ahora.setHours(23, 59, 59, 999));
-
-    const caja = await Caja.findOne({ fechaApertura: { $gte: inicioDia, $lte: finDia }, estado: 'abierta' });
-
-    if (caja) {
-      const efectivoReal = Math.min(efectivo, totalMesa);
-      const tarjetaReal = Math.min(tarjeta, totalMesa - efectivoReal);
-      caja.detallesMetodoPago.efectivo += efectivoReal;
-      caja.detallesMetodoPago.tarjeta += tarjetaReal;
-      caja.detallesMetodoPago.propina += propinaCalculada;
-      caja.total += totalMesa;
-      caja.operaciones.push({
-        tipo: 'cierre',
-        monto: totalMesa,
-        razon: `Cierre de la mesa número ${mesa.numero}`,
-      });
-      await caja.save();
-    } else {
-      const nuevaCaja = new Caja({
-        total: totalMesa,
-        detallesMetodoPago: { efectivo, tarjeta, propina: propinaCalculada },
-        operaciones: [{
-          tipo: 'cierre',
-          monto: totalMesa,
-          razon: `Cierre de la mesa número ${mesa.numero}`,
-        }],
-      });
-      await nuevaCaja.save();
-    }
-
+    // --- Abrir cajón
     await abrirCajon();
 
+    // --- Número de factura
     const numeroFactura = await obtenerNumeroFactura();
 
+    // --- Productos "visibles" para impresión (nombre/cantidad/precio)
     const productosPlatos = mesa.pedidos.flatMap((pedido) =>
       pedido.productos.map((p) => ({
-        nombre: p.producto?.nombre || 'Producto desconocido',
+        nombre: p.producto?.nombre || "Producto desconocido",
         cantidad: p.cantidad,
         precio: p.precioSeleccionado || 0,
+        iva: p.producto?.iva ?? 10,
       }))
     );
-
     const productosBebidas = mesa.pedidosBebidas.flatMap((pedido) =>
       pedido.productos.map((p) => ({
-        nombre: p.producto?.nombre || 'Bebida sin nombre',
+        nombre: p.producto?.nombre || "Bebida",
         cantidad: p.cantidad,
         precio: p.precioSeleccionado || 0,
+        iva: p.producto?.iva ?? 10,
       }))
     );
-
     const productos = [...productosPlatos, ...productosBebidas];
 
-    // ✅ EMITIR FACTURA COMPLETA
-    const { hashFactura } = await emitirFacturaBase({
-      numeroFactura,
-      fechaExpedicion: ahora,
-      clienteNombre: clienteNombre || 'Consumidor Final',
-      clienteNIF: clienteNIF || 'N/A',
-      productos,
-      importeTotal: totalMesa,
-      mesaNumero: mesa.numero,
-      camarero: camarero || '',
+    // --- Productos para Veri*Factu (con base/cuota por línea)
+    const productosVF = productos.map((p) => {
+      const base = Number(((p.precio || 0) * (p.cantidad || 1)).toFixed(2));
+      const iva = Number(p.iva ?? 10);
+      const cuota = Number((base * iva / 100).toFixed(2));
+      return { nombre: p.nombre, cantidad: p.cantidad, precio: p.precio, iva, base, cuota };
     });
 
-    console.log(clienteNombre, clienteNIF, 'en cerrar mesa');
+    // ✅ EMITIR FACTURA VERI*FACTU (ALTA)
+    const facturaDoc = await emitirRegistroVerifactu({
+      tipo: "alta",
+      datos: {
+        numeroFactura,
+        fechaExpedicion: ahora.toISOString().split("T")[0], // yyyy-mm-dd
+        clienteNombre: clienteNombre || "Consumidor Final",
+        clienteNIF: clienteNIF,
+        productos: productosVF,
+        importeTotal: totalMesa,
+        mesaNumero: mesa.numero,
+        camarero: camarero || "",
+      },
+    });
 
+    // --- Registro interno de evento (opcional)
     await new EventoFactura({
-      tipoEvento: 'creación',
+      tipoEvento: "creacion",
       numeroFactura,
-      clienteNombre: clienteNombre || 'Consumidor Final',
-      clienteNIF: clienteNIF || 'N/A',
-      motivo: 'Generación de la factura al cierre de la mesa',
+      clienteNombre: clienteNombre || "Consumidor Final",
+      clienteNIF: clienteNIF || "N/A",
+      motivo: "Generación de la factura al cierre de la mesa",
       importeTotal: totalMesa,
-      hashFactura,
+      hashFactura: facturaDoc.hashFactura || facturaDoc.huellaTCR,
     }).save();
 
-    const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: 'activa' });
+    // --- Cerrar sesión activa de mesa (si existe)
+    const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: "activa" });
     if (sesionActiva) {
-      sesionActiva.estado = 'cerrada';
+      sesionActiva.estado = "cerrada";
       sesionActiva.cierre = ahora;
       await sesionActiva.save();
     }
 
+    // --- Limpiar mesa
     await Mesa.updateOne(
       { _id: id },
       {
-        estado: 'cerrada',
+        estado: "cerrada",
         total: 0,
         pedidos: [],
         pedidosBebidas: [],
@@ -311,32 +329,33 @@ export const cerrarMesa = async (req, res) => {
       }
     );
 
+    // --- Respuesta al front
     res.status(200).json({
-      message: 'Mesa cerrada con éxito',
+      message: "Mesa cerrada con éxito",
       mesaCerrada,
       propina: propinaCalculada,
       cambio: cambioCalculado,
-      facturaEmitida: !!hashFactura,
+      facturaEmitida: true,
       numeroFactura,
-      hashFactura: hashFactura?.hash || null,
+      estadoAEAT: facturaDoc.estado, // "generada" | "pendiente" | "aceptada" | "error"
+      hashFactura: facturaDoc.hashFactura || facturaDoc.huellaTCR || null,
       fechaExpedicion: ahora.toISOString(),
       datosImpresion: {
         mesaNumero: mesa.numero,
         comensales: mesa.comensales || 1,
-        clienteNombre: clienteNombre || 'Consumidor Final',
-        clienteNIF: clienteNIF || 'N/A',
+        clienteNombre: clienteNombre || "Consumidor Final",
+        clienteNIF: clienteNIF,
         numeroFactura,
         fechaExpedicion: ahora.toISOString(),
         productos,
         total: totalMesa,
-        hash: hashFactura,
-        camarero: camarero || '',
+        hash: facturaDoc.hashFactura || facturaDoc.huellaTCR || null,
+        camarero: camarero || "",
       },
-
     });
   } catch (error) {
-    logger.error('❌ Error al cerrar la mesa:', error);
-    res.status(500).json({ error: 'Error al cerrar la mesa' });
+    logger.error("❌ Error al cerrar la mesa:", error);
+    res.status(500).json({ error: "Error al cerrar la mesa" });
   }
 };
 

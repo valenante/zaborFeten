@@ -2,18 +2,16 @@ import { writeFileSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
-import generarVerifactuXML from './generarVerifactuXML.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export async function enviarFacturaAEAT(datosFactura) {
+export async function enviarFacturaAEAT(xml) {
   try {
     // 1. Generar XML sin firmar
-    const xmlSinFirmar = await generarVerifactuXML(datosFactura);
     const tempInPath = join(__dirname, '../../temp-in.xml');
     const tempOutPath = join(__dirname, '../../temp-out.xml');
-    writeFileSync(tempInPath, xmlSinFirmar, 'utf8');
+    writeFileSync(tempInPath, xml, 'utf8');
 
     // 2. Firmar usando JAR
     const certPath = process.env.CERT_PATH || join(__dirname, '../certificados/certificado.p12');

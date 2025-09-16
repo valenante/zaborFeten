@@ -4,8 +4,6 @@ export const requireEstacion = (estacionesPermitidas = []) => (req, res, next) =
   const user = req.user;
   let estacion = req.user?.estacion;
 
-  console.log('requireEstacion', { estacionesPermitidas, role, estacion, user });
-
   if (!role) return res.status(401).json({ error: 'No autenticado' });
 
   // Admin/supervisor pasan

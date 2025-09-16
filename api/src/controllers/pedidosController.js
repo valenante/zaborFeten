@@ -694,8 +694,6 @@ export const actualizarPedido = async (req, res) => {
       ts: Date.now(),
     });
 
-    console.log('[socket] emit cocina:refresh', { source: 'pedido:update', pedidoId: pedido._id.toString(), estado: pedido.estado, ts: Date.now() });
-
     res.status(200).json({ message: 'Pedido actualizado con éxito', pedido });
   } catch (error) {
     logger.error('Error al actualizar el pedido:', error);

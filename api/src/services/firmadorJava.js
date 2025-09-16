@@ -45,7 +45,6 @@ export async function firmarFacturaConJava(xmlSinFirma, rutaCertP12 = P12_PATH, 
           console.error('❌ Error al firmar con Java:', stderr || error.message);
           return reject(error);
         }
-        console.log(stdout || '✅ XML firmado con firmador.jar');
         resolve();
       }
     );

@@ -13,27 +13,26 @@ export async function generarVerifactuXML(datosFactura) {
     cuotaTotal
   } = datosFactura;
 
-  console.log(clienteNombre, clienteNIF, 'en generarVerifactuXML');
-
   // 👇 Datos del emisor
   const nombreEmisor = process.env.EMPRESA_NOMBRE || "ANTENUCCI AGUILAR VALENTINO NAHUEL";
   const nifEmisor = process.env.EMPRESA_NIF || "X6063327K";
 
   // 👇 Preprocesar productos para asegurar iva, base y cuota
-  const productosNormalizados = productos.map((p) => {
+  const productosNormalizados = (productos || []).map((p) => {
     const iva = p.iva ?? 10; // 10% por defecto en hostelería
-    const bruto = p.precio * p.cantidad;
+    const bruto = (p.precio || 0) * (p.cantidad || 0);
     const base = bruto / (1 + iva / 100);
-    const cuota = bruto - base;
+  const cuota = bruto - base;
 
-    return {
-      ...p,
-      iva,
-      base: parseFloat(base.toFixed(2)),
-      cuota: parseFloat(cuota.toFixed(2)),
-      total: parseFloat(bruto.toFixed(2)),
-    };
-  });
+  return {
+    ...p,
+    iva,
+    base: parseFloat(base.toFixed(2)),
+    cuota: parseFloat(cuota.toFixed(2)),
+    total: parseFloat(bruto.toFixed(2)),
+  };
+});
+
 
   const fechaObj = new Date(fechaExpedicion);
   const fechaFormateada = fechaObj.toLocaleDateString("es-ES", {

@@ -47,11 +47,7 @@ export async function signXadesEnveloped(xml) {
     });
 
     const xmlFirmado = await fs.readFile(tempOut, "utf8");
-
-    console.log("📄 XML firmado cargado con éxito desde:", tempOut);
-    console.log("📑 Primeros 5 líneas del XML firmado:");
-    console.log(xmlFirmado.split("\n").slice(0, 5).join("\n"));
-
+    
     return xmlFirmado;
   } catch (error) {
     console.error("❌ Error general en signXadesEnveloped:", error.message);

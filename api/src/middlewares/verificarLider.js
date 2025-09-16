@@ -5,9 +5,6 @@ const verificarLider = async (req, res, next) => {
   const { mesa } = req.query; // O req.body si el ID está en el cuerpo
   const tokenHeader = req.headers['x-token-lider'];
 
-  console.log('Verificando líder para la mesa:', mesa);
-  console.log('Token recibido en el header:', tokenHeader);
-
   if (!mesa || !tokenHeader) {
     return res
       .status(400)

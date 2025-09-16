@@ -18,7 +18,6 @@ export const authMiddleware = (req, res, next) => {
       verified.estacion = verified.role.split('-')[1]; // 'frio'|'frito'|'plancha'
     }
     req.user = verified; // { id, name, role, estacion? }
-    console.log(verified.id, verified.estacion);
     logger.info(`Token verificado para el usuario: ${verified.id}`);
     next();
   } catch (error) {

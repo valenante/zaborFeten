@@ -87,8 +87,6 @@ export const imprimirFactura = async (req, res) => {
       camarero
     };
 
-    console.log('Datos para impresión de factura:', datosImpresion);
-
     try {
       // Intentar enviar a impresión
       const response = await enviarAImpresion('imprimir-factura', datosImpresion);

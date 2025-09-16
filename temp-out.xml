@@ -1,78 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sum="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroLR.xsd" xmlns:sum1="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd">
-
   <soapenv:Header/>
   <soapenv:Body>
     <sum:RegFactuSistemaFacturacion>
-
       <sum:Cabecera>
         <sum1:ObligadoEmision>
           <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
           <sum1:NIF>X6063327K</sum1:NIF>
         </sum1:ObligadoEmision>
       </sum:Cabecera>
+      
+    <sum:RegistroFactura>
+      <sum1:RegistroAlta>
+        <sum1:IDVersion>1.0</sum1:IDVersion>
+        <sum1:IDFactura>
+          <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
+          <sum1:NumSerieFactura>R-2025-0001</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>16-09-2025</sum1:FechaExpedicionFactura>
+        </sum1:IDFactura>
+        <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
+        
+        <sum1:TipoFactura>R1</sum1:TipoFactura>
+        <sum1:TipoRectificativa>S</sum1:TipoRectificativa>
+        <sum1:DescripcionOperacion>ERROR</sum1:DescripcionOperacion>
+        
+  <sum1:Destinatarios>
+    <sum1:IDDestinatario>
+      <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
+      <sum1:NIF>X6063327K</sum1:NIF>
+    </sum1:IDDestinatario>
+  </sum1:Destinatarios>
 
-      <sum:RegistroFactura>
-        <sum1:RegistroAlta>
-          <sum1:IDVersion>1.0</sum1:IDVersion>
-
-          <sum1:IDFactura>
-            <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-            <sum1:NumSerieFactura>2025-0025</sum1:NumSerieFactura>
-            <sum1:FechaExpedicionFactura>13-09-2025</sum1:FechaExpedicionFactura>
-          </sum1:IDFactura>
-
-          <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
-          <sum1:TipoFactura>F1</sum1:TipoFactura>
-          <sum1:DescripcionOperacion>Factura de prueba VeriFactu</sum1:DescripcionOperacion>
-
-          <sum1:Destinatarios>
-            <sum1:IDDestinatario>
-              <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
-              <sum1:NIF>X6063327K</sum1:NIF>
-            </sum1:IDDestinatario>
-          </sum1:Destinatarios>
-
-          <sum1:Desglose>
-            
+        <sum1:Desglose>
           <sum1:DetalleDesglose>
             <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
             <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
-<sum1:TipoImpositivo>10</sum1:TipoImpositivo>
-            <sum1:BaseImponibleOimporteNoSujeto>4.27</sum1:BaseImponibleOimporteNoSujeto>
-            <sum1:CuotaRepercutida>0.43</sum1:CuotaRepercutida>
-          </sum1:DetalleDesglose>
-  
-          </sum1:Desglose>
-
-         <sum1:CuotaTotal>0.47</sum1:CuotaTotal>
-<sum1:ImporteTotal>4.70</sum1:ImporteTotal>
-
-          <sum1:Encadenamiento>
-            <sum1:RegistroAnterior>
-              <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-              <sum1:NumSerieFactura>NaN</sum1:NumSerieFactura>
-              <sum1:FechaExpedicionFactura>13-09-2025</sum1:FechaExpedicionFactura>
-              <sum1:Huella>A37E9FB6A5B51DB2E50E44E72673CD62963301E1AB2F598F09DEA5F29A8E9CB2</sum1:Huella>
-            </sum1:RegistroAnterior>
-          </sum1:Encadenamiento>
-
-          <sum1:SistemaInformatico>
-            <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
-            <sum1:NIF>X6063327K</sum1:NIF>
-            <sum1:NombreSistemaInformatico>TPV Restaurante</sum1:NombreSistemaInformatico>
-            <sum1:IdSistemaInformatico>77</sum1:IdSistemaInformatico>
-            <sum1:Version>1.0.3</sum1:Version>
-            <sum1:NumeroInstalacion>383</sum1:NumeroInstalacion>
-            <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
-            <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
-            <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
-          </sum1:SistemaInformatico>
-
-          <sum1:FechaHoraHusoGenRegistro>2025-09-13T12:08:25+02:00</sum1:FechaHoraHusoGenRegistro>
-          <sum1:TipoHuella>01</sum1:TipoHuella>
-          <sum1:Huella>1DC26562C60535AD8231233E62D116A1C56E087F778469C22EAB89E099E2BC5E</sum1:Huella>
-        </sum1:RegistroAlta>
-      </sum:RegistroFactura>
+            <sum1:TipoImpositivo>10</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>30.00</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>3.00</sum1:CuotaRepercutida>
+          </sum1:DetalleDesglose></sum1:Desglose>
+        
+    <sum1:ImporteRectificacion>
+      <sum1:BaseRectificada>30.00</sum1:BaseRectificada>
+      <sum1:CuotaRectificada>3.00</sum1:CuotaRectificada>
+      <sum1:CuotaTotal>3.00</sum1:CuotaTotal>
+      <sum1:ImporteTotal>33.00</sum1:ImporteTotal>
+    </sum1:ImporteRectificacion>
+        <!-- Obligatorios siempre, también si hay rectificación -->
+        <sum1:CuotaTotal>3.00</sum1:CuotaTotal>
+        <sum1:ImporteTotal>33.00</sum1:ImporteTotal>
+        
+  <sum1:Encadenamiento>
+    <sum1:RegistroAnterior>
+      <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
+      <sum1:NumSerieFactura>2025-0014</sum1:NumSerieFactura>
+      <sum1:FechaExpedicionFactura>01-01-1900</sum1:FechaExpedicionFactura>
+      <sum1:Huella>CA18DE5F39918175EA231554AC82512EFFD615BD2484211F97567E9D7ABF051B</sum1:Huella>
+    </sum1:RegistroAnterior>
+  </sum1:Encadenamiento>
+        
+    <sum1:SistemaInformatico>
+      <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
+      <sum1:NIF>X6063327K</sum1:NIF>
+      <sum1:NombreSistemaInformatico>TPV ALEF</sum1:NombreSistemaInformatico>
+      <sum1:IdSistemaInformatico>77</sum1:IdSistemaInformatico>
+      <sum1:Version>1.0.3</sum1:Version>
+      <sum1:NumeroInstalacion>383</sum1:NumeroInstalacion>
+      <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
+      <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
+      <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
+    </sum1:SistemaInformatico>
+        <sum1:FechaHoraHusoGenRegistro>2025-09-16T14:23:41+02:00</sum1:FechaHoraHusoGenRegistro>
+        <sum1:TipoHuella>01</sum1:TipoHuella>
+        <sum1:Huella>DD1E7A511FA6DB4B9067842DCF2C01C52B8DDBDAA380F53B80787E57C4A85FBC</sum1:Huella>
+      </sum1:RegistroAlta>
+    </sum:RegistroFactura>
     </sum:RegFactuSistemaFacturacion>
   </soapenv:Body>
-<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-Signature"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference Id="Reference-1113d31b-f5b6-4603-8285-e42c3d72bfda" URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/1999/REC-xpath-19991116"><ds:XPath xmlns:ds="http://www.w3.org/2000/09/xmldsig#">not(ancestor-or-self::ds:Signature)</ds:XPath></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>Kd0XZGqFeUbCoSQz8QU4TYh41XhS+qKEh/SWzzIBTLf/YbguC0l8cUABqIuW6nBaxMAuyCa2zdUyGKc76dEqug==</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>YkRMwQ4kgB2W4EqLXWvWk03AVQbbxr1IDCnmrjBJobjLEPBLhId2dLKKcAGAGC8ENvouT7evSzpbb+2+NMltmQ==</ds:DigestValue></ds:Reference><ds:Reference URI="#Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-KeyInfo"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>wYP5O1FAwV2QJ1TcrrFWj0Ik3rIa8mLfoqhtsx4aZWdp9fJPyhrr+cwuZUssoXalc9FKincvY121NxnkenjNPQ==</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue Id="Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-SignatureValue">LCVi0sMVm5bmYw/HmZzU9MTCWCBQ3je7RQ0xfNcgm9U2Ke2nwnH342cwfH1tHA9qTDe91aBKd/icukB1PXP7ZxZo8cGOZ6X1si3ld6O/laAufil5hU6SPb4hB4o5ZE8fIUxbZ3rdFoOBh+uZUa8modUoW+1uChYzvhM/Q6TuGtBlAsAEKYzpFjuMijb1bHExXN1GDRzOKL4BwF1scVrdvvdh/b3bSzAHzhhBuunM/rAQVXudyUZXvDm/Db8tlutqySv+xpkiB3ztorL0c/BiHE8KUMoL2Pf1/ubMURP8GuT2rfeNM0zT/AFHB8enTd6VkDrxP8fZioRtV0cnhg4GNQ==</ds:SignatureValue><ds:KeyInfo Id="Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-KeyInfo"><ds:X509Data><ds:X509Certificate>MIIHvTCCBqWgAwIBAgIQfuRYjnUlRJBoigK+FlNBIDANBgkqhkiG9w0BAQsFADBLMQswCQYDVQQGEwJFUzERMA8GA1UECgwIRk5NVC1SQ00xDjAMBgNVBAsMBUNlcmVzMRkwFwYDVQQDDBBBQyBGTk1UIFVzdWFyaW9zMB4XDTI1MDczMDExMzIxNFoXDTI5MDczMDExMzIxNFowgZcxCzAJBgNVBAYTAkVTMRgwFgYDVQQFEw9JRENFUy1YNjA2MzMyN0sxGTAXBgNVBCoMEFZBTEVOVElOTyBOQUhVRUwxGjAYBgNVBAQMEUFOVEVOVUNDSSBBR1VJTEFSMTcwNQYDVQQDDC5BTlRFTlVDQ0kgQUdVSUxBUiBWQUxFTlRJTk8gTkFIVUVMIC0gWDYwNjMzMjdLMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAixF+pitecS+J9DUw++N/GEMdn2XtKksB0oWyX5xbIWjNuuBrxbpbhA5Rak1qNk/IMJXeZyRcORFgU4OBHkd24loSQEq2v3y3SuxmdLsF91z9+i6AWlf0HA0+/g1cMfXcIE6dbKlIOI6M4tXfApv0GgVBTMPKGSW9DtkeilLFfN9qbbZwWWfDA8zTnz2c+kfav/4nq/oFsRd2Ce3Mgkc6+IgPaVWmkylZux1VXIOklt64eYvvrHhfxnmUWqC/NJFyv2LQTfSuncPL9V+Ls+dJDivFLLvrzwMFbgvx65HKOWI78ZzFLaVgRRXIaFzJZ4s+ld5zTR6zi50vP9W3fIb5LwIDAQABo4IETjCCBEowegYDVR0RBHMwcaRvMG0xGDAWBgkrBgEEAaxmAQQMCVg2MDYzMzI3SzEWMBQGCSsGAQQBrGYBAwwHQUdVSUxBUjEYMBYGCSsGAQQBrGYBAgwJQU5URU5VQ0NJMR8wHQYJKwYBBAGsZgEBDBBWQUxFTlRJTk8gTkFIVUVMMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgXgMCoGA1UdJQQjMCEGCCsGAQUFBwMCBgorBgEEAYI3CgMMBgkqhkiG9y8BAQUwHQYDVR0OBBYEFPndX4J2ETrRwALni4cZ+GHasBFxMB8GA1UdIwQYMBaAFLHUT8QjefpEBQnG6znP6DWwuCBkMIGCBggrBgEFBQcBAQR2MHQwPQYIKwYBBQUHMAGGMWh0dHA6Ly9vY3NwdXN1LmNlcnQuZm5tdC5lcy9vY3NwdXN1L09jc3BSZXNwb25kZXIwMwYIKwYBBQUHMAKGJ2h0dHA6Ly93d3cuY2VydC5mbm10LmVzL2NlcnRzL0FDVVNVLmNydDCCARUGA1UdIASCAQwwggEIMIH6BgorBgEEAaxmAwoBMIHrMCkGCCsGAQUFBwIBFh1odHRwOi8vd3d3LmNlcnQuZm5tdC5lcy9kcGNzLzCBvQYIKwYBBQUHAgIwgbAMga1DZXJ0aWZpY2FkbyBjdWFsaWZpY2FkbyBkZSBmaXJtYSBlbGVjdHLDs25pY2EuIFN1amV0byBhIGxhcyBjb25kaWNpb25lcyBkZSB1c28gZXhwdWVzdGFzIGVuIGxhIERQQyBkZSBsYSBGTk1ULVJDTSBjb24gTklGOiBRMjgyNjAwNC1KIChDL0pvcmdlIEp1YW4gMTA2LTI4MDA5LU1hZHJpZC1Fc3Bhw7FhKTAJBgcEAIvsQAEAMIG6BggrBgEFBQcBAwSBrTCBqjAIBgYEAI5GAQEwCwYGBACORgEDAgEPMBMGBgQAjkYBBjAJBgcEAI5GAQYBMHwGBgQAjkYBBTByMDcWMWh0dHBzOi8vd3d3LmNlcnQuZm5tdC5lcy9wZHMvUERTQUNVc3Vhcmlvc19lcy5wZGYTAmVzMDcWMWh0dHBzOi8vd3d3LmNlcnQuZm5tdC5lcy9wZHMvUERTQUNVc3Vhcmlvc19lbi5wZGYTAmVuMIHmBgNVHR8Egd4wgdswgdiggdWggdKGgZ9sZGFwOi8vbGRhcHVzdS5jZXJ0LmZubXQuZXMvY249Q1JMVTMyNjMsY249QUMlMjBGTk1UJTIwVXN1YXJpb3Msb3U9Q0VSRVMsbz1GTk1ULVJDTSxjPUVTP2NlcnRpZmljYXRlUmV2b2NhdGlvbkxpc3Q7YmluYXJ5P2Jhc2U/b2JqZWN0Y2xhc3M9Y1JMRGlzdHJpYnV0aW9uUG9pbnSGLmh0dHA6Ly93d3cuY2VydC5mbm10LmVzL2NybHNhY3VzdS9DUkxVMzI2My5jcmwwDQYJKoZIhvcNAQELBQADggEBAA1K5QSHrVCuuFlx7kPMZoxmXiiKyFGlLrMOY2hUf+A5fIu5n8ZCR6/zvQ4zKx0xP9S/G8RgkYCNmYMd9+tHyiU1vtE6LpRho/wvOWLMNg+4owW7sU0mrk0H10TqcqAqkCqzzAtp5sNe4Q5BtYvO+UawUoZX7vYtqEI1XwEWnWF50xwWURP4xAHWKQNzp6H2Ni6qb+LM0r92mwuwmUDEHWpfoIcySq/Qtsvfm5yCMN7GgrtNpriAt2ZUynOIlRHjowZs6hCG6NDksZTrcwLbmIvK1VknGYRbWJRJgR4gaVQbRrZj3BliyKJEeiFtoMmLjtYwzkWcnW8fAaxiBQzWCt4=</ds:X509Certificate></ds:X509Data><ds:KeyValue><ds:RSAKeyValue><ds:Modulus>ixF+pitecS+J9DUw++N/GEMdn2XtKksB0oWyX5xbIWjNuuBrxbpbhA5Rak1qNk/IMJXeZyRcORFgU4OBHkd24loSQEq2v3y3SuxmdLsF91z9+i6AWlf0HA0+/g1cMfXcIE6dbKlIOI6M4tXfApv0GgVBTMPKGSW9DtkeilLFfN9qbbZwWWfDA8zTnz2c+kfav/4nq/oFsRd2Ce3Mgkc6+IgPaVWmkylZux1VXIOklt64eYvvrHhfxnmUWqC/NJFyv2LQTfSuncPL9V+Ls+dJDivFLLvrzwMFbgvx65HKOWI78ZzFLaVgRRXIaFzJZ4s+ld5zTR6zi50vP9W3fIb5Lw==</ds:Modulus><ds:Exponent>AQAB</ds:Exponent></ds:RSAKeyValue></ds:KeyValue></ds:KeyInfo><ds:Object><xades:QualifyingProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Id="Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-QualifyingProperties" Target="#Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-Signature" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><xades:SignedProperties Id="Signature-81dc61d7-ddbd-4873-95fd-486d09c0e9ce-SignedProperties"><xades:SignedSignatureProperties><xades:SigningTime>2025-09-13T14:08:26+02:00</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>Nc7Id2ingsoqVJGraK8A5T9t4TtgelpHWOAh2/7745w5d+9Ex9+uSvsiJyv/Hs6DjIWm9gLD9L9n2tG/Knl+Ag==</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>CN=AC FNMT Usuarios, OU=Ceres, O=FNMT-RCM, C=ES</ds:X509IssuerName><ds:X509SerialNumber>168668367291344339246925820812225364256</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties><xades:SignedDataObjectProperties><xades:DataObjectFormat ObjectReference="#Reference-1113d31b-f5b6-4603-8285-e42c3d72bfda"><xades:Description/><xades:ObjectIdentifier><xades:Identifier Qualifier="OIDAsURN">urn:oid:1.2.840.10003.5.109.10</xades:Identifier><xades:Description/></xades:ObjectIdentifier><xades:MimeType>text/xml</xades:MimeType><xades:Encoding/></xades:DataObjectFormat></xades:SignedDataObjectProperties></xades:SignedProperties></xades:QualifyingProperties></ds:Object></ds:Signature></soapenv:Envelope>
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="Signature-efd93f1d-cf52-484f-963d-833af0359ad9-Signature"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference Id="Reference-5fff8186-bf55-4b2b-b7b1-2e252280745f" URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/TR/1999/REC-xpath-19991116"><ds:XPath xmlns:ds="http://www.w3.org/2000/09/xmldsig#">not(ancestor-or-self::ds:Signature)</ds:XPath></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>z7gls2yROxkeaFYvBsxTPyMog4HITFNq7gBGlHJqyLBAWaXc5B4NtstY8TuKQbNo0i+9gihsFVo1YAWP1Xh2RQ==</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#Signature-efd93f1d-cf52-484f-963d-833af0359ad9-SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>T+hSZjARUAXP9KEVHWjHx5MK1zUJzRlPvIY3FMVsSD4iA1Bk+e2ejErs22m++/wEmgAIC7Zxien7Hi9iRDaSnw==</ds:DigestValue></ds:Reference><ds:Reference URI="#Signature-efd93f1d-cf52-484f-963d-833af0359ad9-KeyInfo"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>3XNw8jM7iQA0qpa3Lp85cyc4YXSj+x22a9hsKbYDyr3U+KoTsZyY0vjwnScuErOmcWYbMh3uFiPsR2LsCUEzLw==</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue Id="Signature-efd93f1d-cf52-484f-963d-833af0359ad9-SignatureValue">NX0v3B/EQF1DHB4jduZg1C/FI13OplUKwuOW004kTTq/XXJwt+ssq8TTYMstPiBkm3iK+uSK1ghw5rIIv3jyHj8WhOmc/BXC/zfoVbnofFYZ5Gr9dGUrDmiVf7l4O9UCnMR9J4IlgnikYgg5AdotjF8qxrPIfnZgKmpLEqnA5gPeiTgBCUAKEF+0FBl4d9lznPC/iM4/mXwzFThQm0XRwwQiz7PwuX1Zcr3L34PVr1TkGC9GILFfISQDCMVPY8aSXsgNoOMlJv05ohS40vnduW2pgYZDbU5vHL60px97v6PyBlnQl9HLfsLPr629v38x2+u3W6jDj+PxQW6SJAtggw==</ds:SignatureValue><ds:KeyInfo Id="Signature-efd93f1d-cf52-484f-963d-833af0359ad9-KeyInfo"><ds:X509Data><ds:X509Certificate>MIIHvTCCBqWgAwIBAgIQfuRYjnUlRJBoigK+FlNBIDANBgkqhkiG9w0BAQsFADBLMQswCQYDVQQGEwJFUzERMA8GA1UECgwIRk5NVC1SQ00xDjAMBgNVBAsMBUNlcmVzMRkwFwYDVQQDDBBBQyBGTk1UIFVzdWFyaW9zMB4XDTI1MDczMDExMzIxNFoXDTI5MDczMDExMzIxNFowgZcxCzAJBgNVBAYTAkVTMRgwFgYDVQQFEw9JRENFUy1YNjA2MzMyN0sxGTAXBgNVBCoMEFZBTEVOVElOTyBOQUhVRUwxGjAYBgNVBAQMEUFOVEVOVUNDSSBBR1VJTEFSMTcwNQYDVQQDDC5BTlRFTlVDQ0kgQUdVSUxBUiBWQUxFTlRJTk8gTkFIVUVMIC0gWDYwNjMzMjdLMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAixF+pitecS+J9DUw++N/GEMdn2XtKksB0oWyX5xbIWjNuuBrxbpbhA5Rak1qNk/IMJXeZyRcORFgU4OBHkd24loSQEq2v3y3SuxmdLsF91z9+i6AWlf0HA0+/g1cMfXcIE6dbKlIOI6M4tXfApv0GgVBTMPKGSW9DtkeilLFfN9qbbZwWWfDA8zTnz2c+kfav/4nq/oFsRd2Ce3Mgkc6+IgPaVWmkylZux1VXIOklt64eYvvrHhfxnmUWqC/NJFyv2LQTfSuncPL9V+Ls+dJDivFLLvrzwMFbgvx65HKOWI78ZzFLaVgRRXIaFzJZ4s+ld5zTR6zi50vP9W3fIb5LwIDAQABo4IETjCCBEowegYDVR0RBHMwcaRvMG0xGDAWBgkrBgEEAaxmAQQMCVg2MDYzMzI3SzEWMBQGCSsGAQQBrGYBAwwHQUdVSUxBUjEYMBYGCSsGAQQBrGYBAgwJQU5URU5VQ0NJMR8wHQYJKwYBBAGsZgEBDBBWQUxFTlRJTk8gTkFIVUVMMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgXgMCoGA1UdJQQjMCEGCCsGAQUFBwMCBgorBgEEAYI3CgMMBgkqhkiG9y8BAQUwHQYDVR0OBBYEFPndX4J2ETrRwALni4cZ+GHasBFxMB8GA1UdIwQYMBaAFLHUT8QjefpEBQnG6znP6DWwuCBkMIGCBggrBgEFBQcBAQR2MHQwPQYIKwYBBQUHMAGGMWh0dHA6Ly9vY3NwdXN1LmNlcnQuZm5tdC5lcy9vY3NwdXN1L09jc3BSZXNwb25kZXIwMwYIKwYBBQUHMAKGJ2h0dHA6Ly93d3cuY2VydC5mbm10LmVzL2NlcnRzL0FDVVNVLmNydDCCARUGA1UdIASCAQwwggEIMIH6BgorBgEEAaxmAwoBMIHrMCkGCCsGAQUFBwIBFh1odHRwOi8vd3d3LmNlcnQuZm5tdC5lcy9kcGNzLzCBvQYIKwYBBQUHAgIwgbAMga1DZXJ0aWZpY2FkbyBjdWFsaWZpY2FkbyBkZSBmaXJtYSBlbGVjdHLDs25pY2EuIFN1amV0byBhIGxhcyBjb25kaWNpb25lcyBkZSB1c28gZXhwdWVzdGFzIGVuIGxhIERQQyBkZSBsYSBGTk1ULVJDTSBjb24gTklGOiBRMjgyNjAwNC1KIChDL0pvcmdlIEp1YW4gMTA2LTI4MDA5LU1hZHJpZC1Fc3Bhw7FhKTAJBgcEAIvsQAEAMIG6BggrBgEFBQcBAwSBrTCBqjAIBgYEAI5GAQEwCwYGBACORgEDAgEPMBMGBgQAjkYBBjAJBgcEAI5GAQYBMHwGBgQAjkYBBTByMDcWMWh0dHBzOi8vd3d3LmNlcnQuZm5tdC5lcy9wZHMvUERTQUNVc3Vhcmlvc19lcy5wZGYTAmVzMDcWMWh0dHBzOi8vd3d3LmNlcnQuZm5tdC5lcy9wZHMvUERTQUNVc3Vhcmlvc19lbi5wZGYTAmVuMIHmBgNVHR8Egd4wgdswgdiggdWggdKGgZ9sZGFwOi8vbGRhcHVzdS5jZXJ0LmZubXQuZXMvY249Q1JMVTMyNjMsY249QUMlMjBGTk1UJTIwVXN1YXJpb3Msb3U9Q0VSRVMsbz1GTk1ULVJDTSxjPUVTP2NlcnRpZmljYXRlUmV2b2NhdGlvbkxpc3Q7YmluYXJ5P2Jhc2U/b2JqZWN0Y2xhc3M9Y1JMRGlzdHJpYnV0aW9uUG9pbnSGLmh0dHA6Ly93d3cuY2VydC5mbm10LmVzL2NybHNhY3VzdS9DUkxVMzI2My5jcmwwDQYJKoZIhvcNAQELBQADggEBAA1K5QSHrVCuuFlx7kPMZoxmXiiKyFGlLrMOY2hUf+A5fIu5n8ZCR6/zvQ4zKx0xP9S/G8RgkYCNmYMd9+tHyiU1vtE6LpRho/wvOWLMNg+4owW7sU0mrk0H10TqcqAqkCqzzAtp5sNe4Q5BtYvO+UawUoZX7vYtqEI1XwEWnWF50xwWURP4xAHWKQNzp6H2Ni6qb+LM0r92mwuwmUDEHWpfoIcySq/Qtsvfm5yCMN7GgrtNpriAt2ZUynOIlRHjowZs6hCG6NDksZTrcwLbmIvK1VknGYRbWJRJgR4gaVQbRrZj3BliyKJEeiFtoMmLjtYwzkWcnW8fAaxiBQzWCt4=</ds:X509Certificate></ds:X509Data><ds:KeyValue><ds:RSAKeyValue><ds:Modulus>ixF+pitecS+J9DUw++N/GEMdn2XtKksB0oWyX5xbIWjNuuBrxbpbhA5Rak1qNk/IMJXeZyRcORFgU4OBHkd24loSQEq2v3y3SuxmdLsF91z9+i6AWlf0HA0+/g1cMfXcIE6dbKlIOI6M4tXfApv0GgVBTMPKGSW9DtkeilLFfN9qbbZwWWfDA8zTnz2c+kfav/4nq/oFsRd2Ce3Mgkc6+IgPaVWmkylZux1VXIOklt64eYvvrHhfxnmUWqC/NJFyv2LQTfSuncPL9V+Ls+dJDivFLLvrzwMFbgvx65HKOWI78ZzFLaVgRRXIaFzJZ4s+ld5zTR6zi50vP9W3fIb5Lw==</ds:Modulus><ds:Exponent>AQAB</ds:Exponent></ds:RSAKeyValue></ds:KeyValue></ds:KeyInfo><ds:Object><xades:QualifyingProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Id="Signature-efd93f1d-cf52-484f-963d-833af0359ad9-QualifyingProperties" Target="#Signature-efd93f1d-cf52-484f-963d-833af0359ad9-Signature" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><xades:SignedProperties Id="Signature-efd93f1d-cf52-484f-963d-833af0359ad9-SignedProperties"><xades:SignedSignatureProperties><xades:SigningTime>2025-09-16T14:23:42+02:00</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>Nc7Id2ingsoqVJGraK8A5T9t4TtgelpHWOAh2/7745w5d+9Ex9+uSvsiJyv/Hs6DjIWm9gLD9L9n2tG/Knl+Ag==</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>CN=AC FNMT Usuarios, OU=Ceres, O=FNMT-RCM, C=ES</ds:X509IssuerName><ds:X509SerialNumber>168668367291344339246925820812225364256</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties><xades:SignedDataObjectProperties><xades:DataObjectFormat ObjectReference="#Reference-5fff8186-bf55-4b2b-b7b1-2e252280745f"><xades:Description/><xades:ObjectIdentifier><xades:Identifier Qualifier="OIDAsURN">urn:oid:1.2.840.10003.5.109.10</xades:Identifier><xades:Description/></xades:ObjectIdentifier><xades:MimeType>text/xml</xades:MimeType><xades:Encoding/></xades:DataObjectFormat></xades:SignedDataObjectProperties></xades:SignedProperties></xades:QualifyingProperties></ds:Object></ds:Signature></soapenv:Envelope>

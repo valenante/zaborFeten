@@ -32,6 +32,5 @@ await ObligadoTributario.create({
   activo: true,
 });
 
-console.log('Seed OK');
 await mongoose.disconnect();
 process.exit(0);
