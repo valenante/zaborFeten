@@ -15,7 +15,7 @@ export function buildVerifactuXML({
   fechaFacturaAnterior,
   fechaHoraRegistro,
   tipoEvento, // solo para evento
-  tipoFactura = "F1", // F1 normal, R1/R2 rectificativas
+  tipoFactura, // F1 normal, R1/R2 rectificativas
   tipoRectificativa, // "S" sustitución o "I" diferencias
   subsanacion = false, // 👈 si es subsanación de un rechazo previo
   descripcionOperacion = "Factura de prueba VeriFactu",
@@ -59,25 +59,27 @@ export function buildVerifactuXML({
 
   // ------- BLOQUE DESTINATARIOS (opcional) -------
 
-// ------- BLOQUE DESTINATARIOS -------
-const destinatarios = `
-  <sum1:Destinatarios>
-    <sum1:IDDestinatario>
-      <sum1:NombreRazon>${clienteNombre?.trim() || "Consumidor Final"}</sum1:NombreRazon>
-      ${
-        clienteNIF && clienteNIF.trim() !== ""
-          ? `<sum1:NIF>${clienteNIF}</sum1:NIF>`
-          : `
-      <sum1:IDOtro>
-        <sum1:CodigoPais>ES</sum1:CodigoPais>
-        <sum1:IDType>07</sum1:IDType>
-        <sum1:ID>CF</sum1:ID>
-      </sum1:IDOtro>`
+  // ------- BLOQUE DESTINATARIOS -------
+  let destinatarios = "";
+  if (["F1", "F3", "R1", "R2", "R3", "R4"].includes(tipoFactura)) {
+    destinatarios = `
+    <sum1:Destinatarios>
+      <sum1:IDDestinatario>
+        <sum1:NombreRazon>${clienteNombre?.trim() || "Consumidor final"}</sum1:NombreRazon>
+        ${clienteNIF && clienteNIF.trim() !== ""
+        ? `<sum1:NIF>${clienteNIF}</sum1:NIF>`
+        : `
+        <sum1:IDOtro>
+          <sum1:CodigoPais>ES</sum1:CodigoPais>
+          <sum1:IDType>07</sum1:IDType>
+          <sum1:ID>CF</sum1:ID>
+        </sum1:IDOtro>`
       }
-    </sum1:IDDestinatario>
-  </sum1:Destinatarios>
-`;
-
+      </sum1:IDDestinatario>
+    </sum1:Destinatarios>`;
+  } else if (["F2", "R5"].includes(tipoFactura)) {
+    destinatarios = `<sum1:FacturaSinIdentifDestinatarioArt61d>S</sum1:FacturaSinIdentifDestinatarioArt61d>`;
+  }
 
   let registro = "";
 

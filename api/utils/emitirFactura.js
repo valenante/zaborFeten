@@ -41,6 +41,16 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       return `${dd}-${mm}-${yyyy}`;
     }
 
+    // 3.1) Determinar tipoFactura según datos de cliente
+    let tipoFacturaFinal = datos.tipoFactura || "F1"; // por defecto F1
+
+    if (
+      (!datos.clienteNombre || datos.clienteNombre.trim() === "" || datos.clienteNombre.trim().toLowerCase() === "consumidor final") &&
+      (!datos.clienteNIF || datos.clienteNIF.trim() === "")
+    ) {
+      tipoFacturaFinal = "F2";
+    }
+
     const fechaExpedicion = formatFechaDDMMYYYY(datos.fechaExpedicion || new Date());
 
     const cuotaTotal =
@@ -81,7 +91,7 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       idEmisor: nifEmisor,
       numeroFactura: datos.numeroFactura,
       fechaExpedicion: fechaExpedicion,
-      tipoFactura: "F1", // ⚠️ adaptar según caso real
+      tipoFactura: tipoFacturaFinal,
       cuotaTotal,
       importeTotal: datos.importeTotal,
       huellaAnterior,
@@ -115,6 +125,7 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       fechaFacturaAnterior,
       huellaNueva: hashFactura,
       fechaHoraRegistro,
+      tipoFactura: tipoFacturaFinal,
     });
 
     // 7) Firmar XML
