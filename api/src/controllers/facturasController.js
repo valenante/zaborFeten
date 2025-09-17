@@ -93,10 +93,17 @@ export const exportarFacturasCSV = async (req, res) => {
     res.status(500).json({ error: 'Error al exportar facturas.' });
   }
 };
-
 export const rectificarFactura = async (req, res) => {
   const { id } = req.params;
-  const { motivo, importeTotal, clienteNombre, clienteNIF, productos = [] } = req.body;
+  const { 
+    motivo, 
+    importeTotal, 
+    clienteNombre, 
+    clienteNIF, 
+    productos = [], 
+    tipoFactura,       // 👈 R1, R2, R3, R4 o R5
+    tipoRectificativa  // 👈 "S" (sustitución) o "I" (diferencias), solo para R1 y R2
+  } = req.body;
 
   try {
     // 1) Buscar la factura original
@@ -110,7 +117,16 @@ export const rectificarFactura = async (req, res) => {
     // 2) Generar número para la factura rectificativa
     const nuevoNumeroFactura = await generarNumeroFacturaRectificativa();
 
-    // 3) Emitir la nueva factura rectificativa (TipoFactura=R1)
+    // 3) Preparar productos para rectificativa
+    const productosRectificativos = productos.length
+      ? productos
+      : generarProductoRectificativo(
+          importeTotal,
+          10, // 👈 podrías calcular el IVA real de la original
+          motivo || "Rectificación de factura"
+        );
+
+    // 4) Emitir la nueva factura rectificativa
     const nuevaFactura = await emitirRegistroVerifactu({
       tipo: "alta",
       datos: {
@@ -118,15 +134,7 @@ export const rectificarFactura = async (req, res) => {
         fechaExpedicion: new Date(),
         clienteNombre,
         clienteNIF,
-
-        productos: productos.length
-          ? productos
-          : generarProductoRectificativo(
-              importeTotal,
-              10,
-              motivo || "Rectificación de factura"
-            ),
-
+        productos: productosRectificativos,
         importeTotal,
         descripcionOperacion: motivo || "Rectificación de factura",
 
@@ -136,17 +144,22 @@ export const rectificarFactura = async (req, res) => {
         huellaAnterior: facturaOriginal.huellaTCR,
 
         // Factura rectificativa
-        tipoFactura: "R1",         // 👈 tipo rectificativa
-        tipoRectificativa: "S",    // 👈 Sustitución (o "I" si es por diferencias)
+        tipoFactura,                  // 👈 dinámico: R1, R2, R3, R4, R5
+        tipoRectificativa: 
+          ["R1", "R2"].includes(tipoFactura) 
+            ? tipoRectificativa || "S" // Sustitución por defecto
+            : undefined,
       },
     });
 
-    // 4) Marcar la original como rectificada
+    console.log(tipoFactura, tipoRectificativa, 'tipos en controller');
+
+    // 5) Marcar la original como rectificada
     facturaOriginal.rectificada = true;
     facturaOriginal.facturaRectificativaId = nuevaFactura._id;
     await facturaOriginal.save();
 
-    // 5) Registrar evento interno (opcional)
+    // 6) Registrar evento interno
     await new EventoFactura({
       tipoEvento: "rectificacion",
       numeroFactura: nuevoNumeroFactura,
@@ -159,7 +172,7 @@ export const rectificarFactura = async (req, res) => {
       facturaRectificativaId: nuevaFactura._id,
     }).save();
 
-    // 6) Intentar imprimir (opcional)
+    // 7) Intentar imprimir
     try {
       await axios.post("http://100.91.21.52:4000/imprimir-factura-rectificativa", {
         numeroFactura: nuevoNumeroFactura,
@@ -169,6 +182,8 @@ export const rectificarFactura = async (req, res) => {
         importeTotal,
         motivo,
         hash: nuevaFactura.hashFactura,
+        tipoFactura,
+        tipoRectificativa,
       });
     } catch (printError) {
       logger.warn("⚠️ No se pudo imprimir la factura rectificativa:", printError.message);

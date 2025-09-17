@@ -42,7 +42,9 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
     }
 
     // 3.1) Determinar tipoFactura según datos de cliente
-    let tipoFacturaFinal = datos.tipoFactura || "F1"; // por defecto F1
+    let tipoFacturaFinal = datos.tipoFactura;
+    
+    console.log(tipoFacturaFinal, 'emitirRegistroVerifactu');
 
     if (
       (!datos.clienteNombre || datos.clienteNombre.trim() === "" || datos.clienteNombre.trim().toLowerCase() === "consumidor final") &&

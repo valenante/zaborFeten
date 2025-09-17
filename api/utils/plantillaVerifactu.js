@@ -29,6 +29,7 @@ export function buildVerifactuXML({
     multiplesOT: "N",
   },
 }) {
+  const tf = tipoFactura || "";
   // ------- BLOQUE DESGLOSE -------
   const desglose =
     tipo === "alta"
@@ -96,10 +97,10 @@ export function buildVerifactuXML({
       <sum1:CuotaRectificada>${(
           productos.reduce((acc, p) => acc + (p.cuota ?? 0), 0)
         ).toFixed(2)}</sum1:CuotaRectificada>
-      <sum1:CuotaTotal>${(cuotaTotal ?? 0).toFixed(2)}</sum1:CuotaTotal>
       <sum1:ImporteTotal>${(importeTotal ?? 0).toFixed(2)}</sum1:ImporteTotal>
     </sum1:ImporteRectificacion>`
         : "";
+
 
     registro = `
     <sum:RegistroFactura>
@@ -113,7 +114,7 @@ export function buildVerifactuXML({
         <sum1:NombreRazonEmisor>${nombreEmisor}</sum1:NombreRazonEmisor>
         ${subsanacion ? `<sum1:Subsanacion>S</sum1:Subsanacion>` : ""}
         <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>
-        ${tipoFactura.startsWith("R")
+        ${tf.startsWith("R")
         ? `<sum1:TipoRectificativa>${tipoRectificativa || "S"}</sum1:TipoRectificativa>`
         : ""
       }
