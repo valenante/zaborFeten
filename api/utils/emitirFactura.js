@@ -14,6 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
+  console.log(datos, 'emitirRegistroVerifactu');
   try {
     // 1) Estado VeriFactu desde la BD
     const verifactuEnabled = await getVerifactuEnabled();
@@ -154,24 +155,26 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       return await RegistroVerifactu.findById(baseDoc._id);
     }
 
-    // 9) Enviar a AEAT (modo VeriFactu)
-    try {
+    // 9) Enviar a AEAT (modo VeriFactu) solo si verifactuEnabled
+    if (verifactuEnabled) {
+      try {
       const resp = await enviarFacturaAEAT(xml);
 
       await RegistroVerifactu.findByIdAndUpdate(baseDoc._id, {
         $set: {
-          estado: resp.estado,
-          respuestaAEAT: resp.respuestaAEAT,
-          xmlAEAT: resp.xmlAEAT,
+        estado: resp.estado,
+        respuestaAEAT: resp.respuestaAEAT,
+        xmlAEAT: resp.xmlAEAT,
         },
       });
 
       return await RegistroVerifactu.findById(baseDoc._id);
-    } catch (err) {
+      } catch (err) {
       await RegistroVerifactu.findByIdAndUpdate(baseDoc._id, {
         $set: { estado: "error", respuestaAEAT: String(err?.message || err) },
       });
       throw err;
+      }
     }
   } catch (error) {
     console.error("❌ Error en emitirRegistroVerifactu:", error);

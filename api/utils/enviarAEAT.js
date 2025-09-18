@@ -14,8 +14,8 @@ export async function enviarFacturaAEAT(xml) {
     writeFileSync(tempInPath, xml, 'utf8');
 
     // 2. Firmar usando JAR
-    const certPath = process.env.CERT_PATH || join(__dirname, '../certificados/certificado.p12');
-    const certPassword = process.env.CERT_PASSWORD || 'MIKHAILTAL1!';
+    const certPath = process.env.VERIFACTU_P12_PATH || join(__dirname, '../certificados/certificado.p12');
+    const certPassword = process.env.VERIFACTU_P12_PASS || 'MIKHAILTAL1!';
 
     const comandoFirma = `java -jar firmador.jar "${tempInPath}" "${tempOutPath}" "${certPath}" "${certPassword}"`;
     execSync(comandoFirma, { stdio: 'pipe' });

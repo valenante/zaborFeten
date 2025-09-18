@@ -200,7 +200,7 @@ export const cerrarMesa = async (req, res) => {
 
     // --- Caja del día (sin mutar 'ahora')
     const inicioDia = new Date(ahora); inicioDia.setHours(0, 0, 0, 0);
-    const finDia = new Date(ahora);    finDia.setHours(23, 59, 59, 999);
+    const finDia = new Date(ahora); finDia.setHours(23, 59, 59, 999);
 
     let caja = await Caja.findOne({
       fechaApertura: { $gte: inicioDia, $lte: finDia },
@@ -281,6 +281,18 @@ export const cerrarMesa = async (req, res) => {
       return { nombre: p.nombre, cantidad: p.cantidad, precio: p.precio, iva, base, cuota };
     });
 
+    // Dentro de cerrarMesa, antes de emitirRegistroVerifactu
+    let tipoFactura = "F1";
+    if (
+      !clienteNombre ||
+      clienteNombre.trim() === "" ||
+      clienteNombre.trim().toLowerCase() === "consumidor final" ||
+      !clienteNIF ||
+      clienteNIF.trim() === ""
+    ) {
+      tipoFactura = "F2";
+    }
+
     // ✅ EMITIR FACTURA VERI*FACTU (ALTA)
     const facturaDoc = await emitirRegistroVerifactu({
       tipo: "alta",
@@ -293,6 +305,7 @@ export const cerrarMesa = async (req, res) => {
         importeTotal: totalMesa,
         mesaNumero: mesa.numero,
         camarero: camarero || "",
+        tipoFactura, // 👈 ahora explícito
       },
     });
 

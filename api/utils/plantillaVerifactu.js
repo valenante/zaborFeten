@@ -30,6 +30,8 @@ export function buildVerifactuXML({
   },
 }) {
   const tf = tipoFactura || "";
+
+  console.log(tipoFactura, 'emitirRegistroVerifactu');
   // ------- BLOQUE DESGLOSE -------
   const desglose =
     tipo === "alta"
