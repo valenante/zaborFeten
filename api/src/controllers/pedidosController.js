@@ -288,7 +288,7 @@ export const agregarProductoAlPedido = async (req, res) => {
       sesionId: sesionActiva._id,
       estado: { $in: ['pendiente', 'listo'] }
     });
-    
+
     const pedidosBebidas = await PedidoBebida.find({
       mesa: mesa._id,
       sesionId: sesionActiva._id,
@@ -734,29 +734,42 @@ export const verificarPedidosMesa = async (req, res) => {
   const { numeroMesa } = req.params;
 
   if (!numeroMesa || isNaN(Number(numeroMesa))) {
-    logger.error('Número de mesa no válido:', numeroMesa);
-    return res.status(400).json({ error: 'Número de mesa no válido.' });
+    logger.error("Número de mesa no válido:", numeroMesa);
+    return res.status(400).json({ error: "Número de mesa no válido." });
   }
 
   try {
     const mesa = await Mesa.findOne({ numero: Number(numeroMesa) });
     if (!mesa) {
-      return res.status(404).json({ error: 'Mesa no encontrada.' });
+      return res.status(404).json({ error: "Mesa no encontrada." });
     }
 
-    const pedidos = await Pedido.find({ mesa: mesa._id });
-
-    if (pedidos.length === 0) {
-      // ✅ Si no hay pedidos, devolver false
+    if (!mesa.sesionActiva) {
+      // ✅ Si no hay sesión activa, no tiene pedidos en curso
       return res.status(200).json({ todosListos: false });
     }
 
-    const todosListos = pedidos.every((pedido) => pedido.estado === 'listo');
+    // Filtramos pedidos de esta mesa y de la sesión activa
+    const pedidos = await Pedido.find({ 
+      mesa: mesa._id, 
+      sesionId: mesa.sesionActiva 
+    });
+
+    if (pedidos.length === 0) {
+      return res.status(200).json({ todosListos: false });
+    }
+
+    const todosListos = pedidos.every((pedido) => pedido.estado === "listo");
+
+    logger.info(
+      `Mesa ${numeroMesa} (sesión ${mesa.sesionActiva}) - ${pedidos.length} pedidos, todos listos: ${todosListos}`
+    );
 
     res.status(200).json({ todosListos });
   } catch (error) {
-    logger.error('Error al verificar pedidos de la mesa:', error);
-    res.status(500).json({ error: 'Error al verificar pedidos de la mesa.' });
+    logger.error("Error al verificar pedidos de la mesa:", error);
+    res.status(500).json({ error: "Error al verificar pedidos de la mesa." });
   }
 };
+
 
