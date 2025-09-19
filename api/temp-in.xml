@@ -17,40 +17,27 @@
         <sum1:IDVersion>1.0</sum1:IDVersion>
         <sum1:IDFactura>
           <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>2025-0037</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>18-09-2025</sum1:FechaExpedicionFactura>
+          <sum1:NumSerieFactura>2025-0045</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>19-09-2025</sum1:FechaExpedicionFactura>
         </sum1:IDFactura>
         <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
         
-        <sum1:TipoFactura>F1</sum1:TipoFactura>
+        <sum1:TipoFactura>F2</sum1:TipoFactura>
         
         <sum1:DescripcionOperacion>Factura de prueba VeriFactu</sum1:DescripcionOperacion>
-        
-    <sum1:Destinatarios>
-      <sum1:IDDestinatario>
-        <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
-        <sum1:NIF>X6063327K</sum1:NIF>
-      </sum1:IDDestinatario>
-    </sum1:Destinatarios>
-        <sum1:Desglose>
-          <sum1:DetalleDesglose>
-            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
-            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
-            <sum1:TipoImpositivo>10</sum1:TipoImpositivo>
-            <sum1:BaseImponibleOimporteNoSujeto>4.90</sum1:BaseImponibleOimporteNoSujeto>
-            <sum1:CuotaRepercutida>0.49</sum1:CuotaRepercutida>
-          </sum1:DetalleDesglose></sum1:Desglose>
+        <sum1:FacturaSinIdentifDestinatarioArt61d>S</sum1:FacturaSinIdentifDestinatarioArt61d>
+        <sum1:Desglose></sum1:Desglose>
         
         <!-- Obligatorios siempre, también si hay rectificación -->
-        <sum1:CuotaTotal>0.49</sum1:CuotaTotal>
-        <sum1:ImporteTotal>4.90</sum1:ImporteTotal>
+        <sum1:CuotaTotal>0.00</sum1:CuotaTotal>
+        <sum1:ImporteTotal>88.40</sum1:ImporteTotal>
         
   <sum1:Encadenamiento>
     <sum1:RegistroAnterior>
       <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-      <sum1:NumSerieFactura>2025-0036</sum1:NumSerieFactura>
+      <sum1:NumSerieFactura>2025-0044</sum1:NumSerieFactura>
       <sum1:FechaExpedicionFactura>01-01-1900</sum1:FechaExpedicionFactura>
-      <sum1:Huella>5BC7907E3BB34100A7A7C70D946B58F4D2A8B10F3A1E257BB94DCD180D7065F9</sum1:Huella>
+      <sum1:Huella>105250BB17A0CD53EA6BADB6908D9752EBE16AF1FBC4A4C854C925D7D7EBEB60</sum1:Huella>
     </sum1:RegistroAnterior>
   </sum1:Encadenamiento>
         
@@ -65,9 +52,9 @@
       <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
       <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
     </sum1:SistemaInformatico>
-        <sum1:FechaHoraHusoGenRegistro>2025-09-18T16:24:39+02:00</sum1:FechaHoraHusoGenRegistro>
+        <sum1:FechaHoraHusoGenRegistro>2025-09-19T15:02:36+02:00</sum1:FechaHoraHusoGenRegistro>
         <sum1:TipoHuella>01</sum1:TipoHuella>
-        <sum1:Huella>37B4808C482D8AEA1A9F7A5A298A60229DDA0587018A89ABEACDE1CD7E6967B5</sum1:Huella>
+        <sum1:Huella>F89D8FB83769D5B05E57BCBE18B01FD0E3E67B263A628245857DEFFD1C541399</sum1:Huella>
       </sum1:RegistroAlta>
     </sum:RegistroFactura>
     </sum:RegFactuSistemaFacturacion>

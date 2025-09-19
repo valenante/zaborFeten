@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../utils/api";
 import * as logger from '../utils/logger';
 import { useCategorias } from "../context/CategoriasContext";
+import { v4 as uuidv4 } from "uuid"; // instala con npm install uuid
 
 export const useRightBar = (mesaId) => {
   const [tipo, setTipo] = useState("plato");
@@ -42,11 +43,14 @@ export const useRightBar = (mesaId) => {
   };
 
   const agregarAlCarrito = (productoPersonalizado) => {
+    const productoConId = { ...productoPersonalizado, uid: uuidv4() };
+
     if (productoPersonalizado.tipo === "bebida") {
-      setCarritoBebidas((prev) => [...prev, productoPersonalizado]);
+      setCarritoBebidas((prev) => [...prev, productoConId]);
     } else {
-      setCarrito((prev) => [...prev, productoPersonalizado]); // ✅ ya no hay secciones
+      setCarrito((prev) => [...prev, productoConId]);
     }
+
     cerrarModal();
   };
 
@@ -63,6 +67,7 @@ export const useRightBar = (mesaId) => {
         tipoPlato: p.tipoPlato || null,
         acompanante: p.acompanante || null,
         tipo: p.tipo,
+        seccion: p.seccion,
         categoria: p.categoria,
         ingredientes: p.ingredientes || [],
         opcionesPersonalizables: p.opciones

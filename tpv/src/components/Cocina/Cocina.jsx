@@ -478,7 +478,6 @@ const Cocina = () => {
       entrante: [],
       medio: [],
       final: [],
-      sinSeccion: [], // Para casos donde no esté definido
     };
 
     productos.forEach((producto) => {

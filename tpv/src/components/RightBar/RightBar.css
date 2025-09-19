@@ -1,4 +1,3 @@
-
 /* Contenedor principal del RightBar */
 .right-bar--rightbar {
   background-color: #F5F5F5;
@@ -175,19 +174,30 @@
   z-index: 1000;
 }
 
-.resumen-pedido-panel {
+/* Overlay del modal */
+.resumen-overlay {
   position: fixed;
-  top: 70px;
-  right: 10px;
+  inset: 0;
+  /* top, right, bottom, left = 0 */
+  background: rgba(0, 0, 0, 0.5);
+  /* fondo oscuro */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Panel del carrito (ocupa toda la pantalla en modal) */
+.resumen-pedido-panel {
   background-color: #fff;
-  border: 2px solid var(--color-principal);
   border-radius: 10px;
-  padding: 15px;
-  width: 250px;
-  max-height: 70vh;
+  padding: 20px;
+  width: 90%;
+  max-width: 800px;
+  /* ancho máximo centrado */
+  max-height: 90vh;
   overflow-y: auto;
-  z-index: 999;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .resumen-pedido-panel h4 {
@@ -196,7 +206,6 @@
 
 .resumen-pedido-panel button {
   margin-top: 10px;
-  width: 100%;
 }
 
 .lista-resumen-pedido {
@@ -238,7 +247,8 @@
   margin-top: 10px;
   width: 100%;
   padding: 8px;
-  background-color: var(--color-secundario); /* tu naranja vibrante */
+  background-color: var(--color-secundario);
+  /* tu naranja vibrante */
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -253,7 +263,8 @@
 }
 
 .boton-enviar-pedido:hover:not(:disabled) {
-  background-color: var(--color-principal); /* tu morado */
+  background-color: var(--color-principal);
+  /* tu morado */
 }
 
 .mensaje-pedido-textarea {
@@ -265,6 +276,26 @@
   margin-top: 10px;
   resize: vertical;
 }
+
+/* Botón cerrar modal */
+.cerrar-modal {
+  background: var(--color-secundario); /* ya lo tienes */
+  color: #fff;
+  border: none;
+  font-size: 1rem;        /* un poco más pequeño */
+  font-weight: bold;
+  width: 28px;            /* ancho fijo */
+  height: 28px;           /* alto fijo */
+  border-radius: 6px;     /* esquinas suaves */
+  margin-left: auto;      /* lo empuja a la esquina derecha */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
 
 /* Media Query para pantallas pequeñas */
 @media (max-width: 768px) {
@@ -321,16 +352,17 @@
     font-size: 0.95rem;
   }
 
-  .categorias--rightbar{
+  .categorias--rightbar {
     padding: 0px;
   }
 
 
- .lista-categorias--rightbar {
+  .lista-categorias--rightbar {
     list-style: none;
     margin: 10px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columnas en móvil */
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 columnas en móvil */
     gap: 10px;
     justify-items: center;
     width: 100%;

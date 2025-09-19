@@ -227,9 +227,10 @@ const iniciarServidor = async () => {
 
     connectToDatabase();
 
-    server.listen(PORT, () => {
-      logger.info(`Servidor escuchando en el puerto ${PORT}`);
-    });
+    server.listen(PORT, "0.0.0.0", () => {
+  logger.info(`Servidor escuchando en http://0.0.0.0:${PORT}`);
+});
+
 
   } catch (err) {
   console.error('Error capturado al conectar Redis');

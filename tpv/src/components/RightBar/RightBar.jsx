@@ -84,49 +84,56 @@ const RightBar = ({ mesaId }) => {
       )}
 
       {mostrarResumen && (
-        <div className="resumen-pedido-panel">
-          <h4>Pedido Actual</h4>
-
-          {/* Platos */}
-          <CarritoOrganizable
-            carrito={carrito}
-            setCarrito={setCarrito}
-            enviarPedido={enviarPedido}
-            isLoading={isLoading}
-          />
-
-          {/* Bebidas */}
-          {carritoBebidas.length > 0 && (
-            <div className="carrito-section">
-              <h4 className="carrito-section-title">Bebidas</h4>
-              {carritoBebidas.map((bebida, index) => (
-                <div key={index} className="carrito-item">
-                  <div className="carrito-item-nombre">
-                    {bebida.nombre} x{bebida.cantidad}
-                  </div>
-                  <div className="carrito-item-eliminar">
-                    <button
-                      onClick={() => eliminarBebidaDelCarrito(index)}
-                      className="carrito-eliminar-button"
-                      title="Eliminar"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Botón al final */}
-          <div className="carrito-enviar-container">
+        <div className="resumen-overlay">
+          <div className="resumen-pedido-panel">
             <button
-              onClick={enviarPedido}
-              disabled={isLoading}
-              className="carrito-enviar-button"
+              className="cerrar-modal"
+              onClick={() => setMostrarResumen(false)}
             >
-              {isLoading ? "Enviando..." : "Enviar Pedido"}
+              ✖
             </button>
+
+            {/* Platos */}
+            <CarritoOrganizable
+              carrito={carrito}
+              setCarrito={setCarrito}
+              enviarPedido={enviarPedido}
+              isLoading={isLoading}
+            />
+
+            {/* Bebidas */}
+            {carritoBebidas.length > 0 && (
+              <div className="carrito-section">
+                <h4 className="carrito-section-title">Bebidas</h4>
+                {carritoBebidas.map((bebida, index) => (
+                  <div key={index} className="carrito-item">
+                    <div className="carrito-item-nombre">
+                      {bebida.nombre} x{bebida.cantidad}
+                    </div>
+                    <div className="carrito-item-eliminar">
+                      <button
+                        onClick={() => eliminarBebidaDelCarrito(index)}
+                        className="carrito-eliminar-button"
+                        title="Eliminar"
+                      >
+                        ❌
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Botón al final */}
+            <div className="carrito-enviar-container">
+              <button
+                onClick={enviarPedido}
+                disabled={isLoading}
+                className="carrito-enviar-button"
+              >
+                {isLoading ? "Enviando..." : "Enviar Pedido"}
+              </button>
+            </div>
           </div>
         </div>
       )}

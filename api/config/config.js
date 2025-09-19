@@ -17,7 +17,10 @@ export const corsOptions = {
     'https://valenante.info',
     'http://192.168.1.150:3000',
     'http://192.168.1.150:3001',
-    "http://192.168.1.150:3002"
+    "http://192.168.1.150:3002",
+    "http://192.168.1.143:3000",
+    "http://192.168.1.143:3001",
+    "http://192.168.1.143:3002",
 
     // Otros dominios permitidos (IPs locales si las usás en desarrollo)
   ],
