@@ -1,5 +1,5 @@
 export function buildVerifactuXML({
-  tipo = "alta", // "alta" | "anulacion" | "evento"
+  tipo = "alta",
   numeroFactura,
   fechaExpedicion,
   nombreEmisor,
@@ -14,10 +14,10 @@ export function buildVerifactuXML({
   numFacturaAnterior,
   fechaFacturaAnterior,
   fechaHoraRegistro,
-  tipoEvento, // solo para evento
-  tipoFactura, // F1 normal, R1/R2 rectificativas
-  tipoRectificativa, // "S" sustitución o "I" diferencias
-  subsanacion = false, // 👈 si es subsanación de un rechazo previo
+  tipoEvento,
+  tipoFactura,
+  tipoRectificativa,
+  subsanacion = false,
   descripcionOperacion = "Factura de prueba VeriFactu",
   sistema = {
     nombreSistema: "TPV ALEF",
@@ -31,23 +31,38 @@ export function buildVerifactuXML({
 }) {
   const tf = tipoFactura || "";
 
-  console.log(tipoFactura, 'emitirRegistroVerifactu');
   // ------- BLOQUE DESGLOSE -------
-  const desglose =
-    tipo === "alta"
-      ? productos
-        .map(
-          (p) => `
+  let desglose = "";
+  if (tipo === "alta") {
+    const agrupados = {};
+    productos.forEach((p) => {
+      const key = `${p.iva}-01-S1`;
+      if (!agrupados[key]) {
+        agrupados[key] = {
+          iva: parseInt(p.iva, 10),
+          clave: "01",
+          calificacion: "S1",
+          base: 0,
+          cuota: 0,
+        };
+      }
+      agrupados[key].base += p.base ?? 0;
+      agrupados[key].cuota += p.cuota ?? 0;
+    });
+
+    desglose = Object.values(agrupados)
+      .map(
+        (g) => `
           <sum1:DetalleDesglose>
-            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
-            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
-            <sum1:TipoImpositivo>${parseInt(p.iva, 10)}</sum1:TipoImpositivo>
-            <sum1:BaseImponibleOimporteNoSujeto>${(p.base ?? 0).toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
-            <sum1:CuotaRepercutida>${(p.cuota ?? 0).toFixed(2)}</sum1:CuotaRepercutida>
+            <sum1:ClaveRegimen>${g.clave}</sum1:ClaveRegimen>
+            <sum1:CalificacionOperacion>${g.calificacion}</sum1:CalificacionOperacion>
+            <sum1:TipoImpositivo>${g.iva}</sum1:TipoImpositivo>
+            <sum1:BaseImponibleOimporteNoSujeto>${g.base.toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
+            <sum1:CuotaRepercutida>${g.cuota.toFixed(2)}</sum1:CuotaRepercutida>
           </sum1:DetalleDesglose>`
-        )
-        .join("")
-      : "";
+      )
+      .join("");
+  }
 
   // ------- BLOQUE ENCADENAMIENTO -------
   const encadenamiento = `
@@ -59,8 +74,6 @@ export function buildVerifactuXML({
       <sum1:Huella>${huellaAnterior || "0000000000000000000000000000000000000000000000000000000000000000"}</sum1:Huella>
     </sum1:RegistroAnterior>
   </sum1:Encadenamiento>`;
-
-  // ------- BLOQUE DESTINATARIOS (opcional) -------
 
   // ------- BLOQUE DESTINATARIOS -------
   let destinatarios = "";
@@ -88,21 +101,28 @@ export function buildVerifactuXML({
 
   // -------- ALTA / RECTIFICATIVA --------
   if (tipo === "alta") {
-    // Bloque ImporteRectificacion si es R1/R2
-    const importeRectificacion =
-      tipoFactura.startsWith("R")
-        ? `
-    <sum1:ImporteRectificacion>
-      <sum1:BaseRectificada>${(
-          productos.reduce((acc, p) => acc + (p.base ?? 0), 0)
-        ).toFixed(2)}</sum1:BaseRectificada>
-      <sum1:CuotaRectificada>${(
-          productos.reduce((acc, p) => acc + (p.cuota ?? 0), 0)
-        ).toFixed(2)}</sum1:CuotaRectificada>
-      <sum1:ImporteTotal>${(importeTotal ?? 0).toFixed(2)}</sum1:ImporteTotal>
-    </sum1:ImporteRectificacion>`
-        : "";
+    const baseRectificada = productos.reduce((acc, p) => acc + (p.base ?? 0), 0);
+    const cuotaRectificada = productos.reduce((acc, p) => acc + (p.cuota ?? 0), 0);
 
+    // 🔑 Rectificativas: diferencias (I) llevan también ImporteTotal dentro
+    let importeRectificacion = "";
+    if (tf.startsWith("R")) {
+      if (tipoRectificativa === "I") {
+        importeRectificacion = `
+    <sum1:ImporteRectificacion>
+      <sum1:BaseRectificada>${baseRectificada.toFixed(2)}</sum1:BaseRectificada>
+      <sum1:CuotaRectificada>${cuotaRectificada.toFixed(2)}</sum1:CuotaRectificada>
+      <sum1:ImporteTotal>${(importeTotal ?? 0).toFixed(2)}</sum1:ImporteTotal>
+    </sum1:ImporteRectificacion>`;
+      } else {
+        // Sustitución (S)
+        importeRectificacion = `
+    <sum1:ImporteRectificacion>
+      <sum1:BaseRectificada>${baseRectificada.toFixed(2)}</sum1:BaseRectificada>
+      <sum1:CuotaRectificada>${cuotaRectificada.toFixed(2)}</sum1:CuotaRectificada>
+    </sum1:ImporteRectificacion>`;
+      }
+    }
 
     registro = `
     <sum:RegistroFactura>
@@ -116,16 +136,13 @@ export function buildVerifactuXML({
         <sum1:NombreRazonEmisor>${nombreEmisor}</sum1:NombreRazonEmisor>
         ${subsanacion ? `<sum1:Subsanacion>S</sum1:Subsanacion>` : ""}
         <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>
-        ${tf.startsWith("R")
-        ? `<sum1:TipoRectificativa>${tipoRectificativa || "S"}</sum1:TipoRectificativa>`
-        : ""
-      }
+        ${tf.startsWith("R") ? `<sum1:TipoRectificativa>${tipoRectificativa || "S"}</sum1:TipoRectificativa>` : ""}
         <sum1:DescripcionOperacion>${descripcionOperacion}</sum1:DescripcionOperacion>
         ${destinatarios}
         <sum1:Desglose>${desglose}</sum1:Desglose>
         ${importeRectificacion}
-        <!-- Obligatorios siempre, también si hay rectificación -->
-        <sum1:CuotaTotal>${(cuotaTotal ?? 0).toFixed(2)}</sum1:CuotaTotal>
+        <!-- Obligatorios siempre -->
+        <sum1:CuotaTotal>${tf.startsWith("R") ? cuotaRectificada.toFixed(2) : (cuotaTotal ?? 0).toFixed(2)}</sum1:CuotaTotal>
         <sum1:ImporteTotal>${(importeTotal ?? 0).toFixed(2)}</sum1:ImporteTotal>
         ${encadenamiento}
         ${sistemaBlock(nombreEmisor, nifEmisor, sistema)}

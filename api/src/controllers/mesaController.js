@@ -172,8 +172,7 @@ export const abrirMesaCamarero = async (req, res) => {
     logger.error(error);
     res.status(500).json({ error: 'Error al reabrir la mesa' });
   }
-};
-export const cerrarMesa = async (req, res) => {
+};export const cerrarMesa = async (req, res) => {
   const { id } = req.params;
   const { metodoPago, clienteNombre, clienteNIF, camarero } = req.body;
 
@@ -198,7 +197,7 @@ export const cerrarMesa = async (req, res) => {
     const cambioCalculado = Number((totalPagado - totalMesa).toFixed(2));
     const propinaCalculada = Number((propina || 0).toFixed(2));
 
-    // --- Caja del día (sin mutar 'ahora')
+    // --- Caja del día
     const inicioDia = new Date(ahora); inicioDia.setHours(0, 0, 0, 0);
     const finDia = new Date(ahora); finDia.setHours(23, 59, 59, 999);
 
@@ -254,7 +253,7 @@ export const cerrarMesa = async (req, res) => {
     // --- Número de factura
     const numeroFactura = await obtenerNumeroFactura();
 
-    // --- Productos "visibles" para impresión (nombre/cantidad/precio)
+    // --- Productos "visibles" para impresión
     const productosPlatos = mesa.pedidos.flatMap((pedido) =>
       pedido.productos.map((p) => ({
         nombre: p.producto?.nombre || "Producto desconocido",
@@ -281,7 +280,16 @@ export const cerrarMesa = async (req, res) => {
       return { nombre: p.nombre, cantidad: p.cantidad, precio: p.precio, iva, base, cuota };
     });
 
-    // Dentro de cerrarMesa, antes de emitirRegistroVerifactu
+    function to2Dec(num) {
+  return Number(num.toFixed(2));
+}
+
+    // --- Calcular totales para AEAT
+    const baseTotal = to2Dec(productosVF.reduce((acc, p) => acc + p.base, 0));
+    const cuotaTotal = to2Dec(productosVF.reduce((acc, p) => acc + p.cuota, 0));
+    const importeTotal = to2Dec(baseTotal + cuotaTotal);
+
+    // --- Tipo de factura (simplificada o completa)
     let tipoFactura = "F1";
     if (
       !clienteNombre ||
@@ -302,21 +310,22 @@ export const cerrarMesa = async (req, res) => {
         clienteNombre: clienteNombre || "Consumidor Final",
         clienteNIF: clienteNIF,
         productos: productosVF,
-        importeTotal: totalMesa,
+        cuotaTotal,
+        importeTotal,
         mesaNumero: mesa.numero,
         camarero: camarero || "",
-        tipoFactura, // 👈 ahora explícito
+        tipoFactura,
       },
     });
 
-    // --- Registro interno de evento (opcional)
+    // --- Registro interno de evento
     await new EventoFactura({
       tipoEvento: "creacion",
       numeroFactura,
       clienteNombre: clienteNombre || "Consumidor Final",
       clienteNIF: clienteNIF || "N/A",
       motivo: "Generación de la factura al cierre de la mesa",
-      importeTotal: totalMesa,
+      importeTotal,
       hashFactura: facturaDoc.hashFactura || facturaDoc.huellaTCR,
     }).save();
 
@@ -350,7 +359,7 @@ export const cerrarMesa = async (req, res) => {
       cambio: cambioCalculado,
       facturaEmitida: true,
       numeroFactura,
-      estadoAEAT: facturaDoc.estado, // "generada" | "pendiente" | "aceptada" | "error"
+      estadoAEAT: facturaDoc.estado,
       hashFactura: facturaDoc.hashFactura || facturaDoc.huellaTCR || null,
       fechaExpedicion: ahora.toISOString(),
       datosImpresion: {
@@ -361,7 +370,7 @@ export const cerrarMesa = async (req, res) => {
         numeroFactura,
         fechaExpedicion: ahora.toISOString(),
         productos,
-        total: totalMesa,
+        total: importeTotal, // 👈 ahora el total correcto con IVA
         hash: facturaDoc.hashFactura || facturaDoc.huellaTCR || null,
         camarero: camarero || "",
       },
@@ -371,6 +380,7 @@ export const cerrarMesa = async (req, res) => {
     res.status(500).json({ error: "Error al cerrar la mesa" });
   }
 };
+
 
 // Obtener historial de mesas cerradas
 export const getHistorialMesas = async (req, res) => {
