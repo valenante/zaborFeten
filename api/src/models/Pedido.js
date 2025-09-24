@@ -37,6 +37,11 @@ const PedidoSchema = new Schema({
   estado: { type: String, enum: ['pendiente', 'listo'], default: 'pendiente' },
   fecha: { type: Date, default: Date.now },
   sesionId: { type: Schema.Types.ObjectId, ref: 'SesionMesa' }, // ✅ Sesión de la mesa
+         cerradoPorEstacion: {
+    frio: { type: Boolean, default: false },
+    plancha: { type: Boolean, default: false },
+    frito: { type: Boolean, default: false }, // opcional, si quieres que central también se marque
+  },
   productos: [
     {
       producto: {

@@ -19,6 +19,7 @@ import {
   actualizarProducto,
   eliminarPedido,
   obtenerPedidoPorMesaId,
+  cerrarEstacion,
 } from '../controllers/pedidosController.js';
 import verificarLider from '../middlewares/verificarLider.js';
 
@@ -233,5 +234,7 @@ router.put('/:pedidoId/producto/:productoId', actualizarProducto);
  *         description: Producto eliminado correctamente
  */
 router.delete('/:pedidoId/:id', eliminarPedido);
+
+router.put('/:pedidoId/cerrar-estacion', cerrarEstacion);
 
 export default router;

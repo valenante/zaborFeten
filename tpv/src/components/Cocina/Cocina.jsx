@@ -98,11 +98,16 @@ const Cocina = () => {
   const { habilitado, activar, encolarLectura, silenciar } = useLecturaVoz(1, 8000);
   const { activo, iniciarContinua, detenerContinua, onResultado, onFin, onError, soportado } = useReconocimientoVoz({ idioma: "es-ES" });
   const [estacion, setEstacion] = useState(() => localStorage.getItem('cocina_estacion') || 'frito');
-  const [cerradas, setCerradas] = useState([]);
 
-  const cerrarSeccion = (pedidoId) => {
-    setCerradas(prev => ({ ...prev, [pedidoId]: true }));
+  const cerrarSeccion = async (pedidoId) => {
+    try {
+      await api.put(`/pedidos/${pedidoId}/cerrar-estacion`, { estacion });
+      // ya no manejamos local state, esperamos al socket o refetch
+    } catch (err) {
+      console.error("Error cerrando estación:", err);
+    }
   };
+
   const onChangeEstacion = (e) => {
     const val = e.target.value;
     setEstacion(val);
@@ -220,7 +225,7 @@ const Cocina = () => {
       if (!ev || !ev.type) return;
 
       if (ev.type === 'itemEstadoCambiado' && ev.pedidoId && ev.item?._id) {
-        patchItem(ev.pedidoId, ev.item);         // ✅ parche inmediato
+        patchItem(ev.pedidoId, ev.item);
         return;
       }
 
@@ -230,9 +235,26 @@ const Cocina = () => {
         return;
       }
 
-      // Backwards-compat si aún emites eventos viejos
       if (ev.type === 'itemListo' && ev.pedidoId && ev.item?._id) {
         patchItem(ev.pedidoId, { ...ev.item, workflow: { ...(ev.item.workflow || {}), estado: 'listo' } });
+        return;
+      }
+
+      // 🚀 NUEVO: cerrar estación
+      if (ev.type === 'estacionCerrada' && ev.pedidoId && ev.estacion) {
+        setPedidos(prev =>
+          prev.map(p =>
+            p._id !== ev.pedidoId
+              ? p
+              : {
+                ...p,
+                cerradoPorEstacion: {
+                  ...(p.cerradoPorEstacion || {}),
+                  [ev.estacion]: true,
+                },
+              }
+          )
+        );
         return;
       }
     };
@@ -555,8 +577,7 @@ const Cocina = () => {
                 pedido.productos.filter((producto) => ['plato', 'tapaRacion'].includes(producto.tipo))
               );
 
-              if (cerradas[pedido._id]) {
-                // si cerró la sección → no mostramos productos
+              if (pedido.cerradoPorEstacion?.[estacion]) {
                 return null;
               }
 
@@ -673,7 +694,7 @@ const Cocina = () => {
                     <button
                       onClick={() => cerrarSeccion(pedido._id)}
                       disabled={!visibles.every(p => p.workflow?.estado === 'listo')}
-                      className="boton-cerrar-seccion--cocina"
+                      className="boton-terminar--cocina"
                     >
                       Cerrar
                     </button>

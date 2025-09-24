@@ -92,6 +92,7 @@ export const crearPedido = async (req, res) => {
       precioSeleccionado,
       sesionId: mesaExistente.sesionActiva,
       estado: 'pendiente',
+      cerradoPorEstacion: { frio: false, plancha: false, frito: false }, // 👈 inicializar siempre
     });
 
     await nuevoPedido.save();
@@ -268,6 +269,11 @@ export const agregarProductoAlPedido = async (req, res) => {
       productosCompletos.forEach((p) => {
         pedidoExistente.productos.push({ ...p });
         pedidoExistente.total += p.total;
+
+        // 👇 Si la estación estaba cerrada, reabrirla
+        if (pedidoExistente.cerradoPorEstacion?.[p.estacion]) {
+          pedidoExistente.cerradoPorEstacion[p.estacion] = false;
+        }
       });
       pedidoModificado = await pedidoExistente.save();
     } else {
@@ -750,9 +756,9 @@ export const verificarPedidosMesa = async (req, res) => {
     }
 
     // Filtramos pedidos de esta mesa y de la sesión activa
-    const pedidos = await Pedido.find({ 
-      mesa: mesa._id, 
-      sesionId: mesa.sesionActiva 
+    const pedidos = await Pedido.find({
+      mesa: mesa._id,
+      sesionId: mesa.sesionActiva
     });
 
     if (pedidos.length === 0) {
@@ -772,4 +778,35 @@ export const verificarPedidosMesa = async (req, res) => {
   }
 };
 
+export const cerrarEstacion = async (req, res) => {
+  try {
+    const { pedidoId } = req.params;
+    const { estacion } = req.body; // "frio", "plancha"
 
+    if (!['frio', 'plancha', 'frito'].includes(estacion)) {
+      return res.status(400).json({ error: 'Estación inválida' });
+    }
+
+    const pedido = await Pedido.findByIdAndUpdate(
+      pedidoId,
+      { $set: { [`cerradoPorEstacion.${estacion}`]: true } },
+      { new: true }
+    );
+
+    if (!pedido) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    // emitir socket para que otros vean el cambio
+    req.io?.emit("kitchen:update", {
+      type: "estacionCerrada",
+      pedidoId,
+      estacion,
+    });
+
+    res.json(pedido);
+  } catch (err) {
+    console.error("Error al cerrar estación:", err);
+    res.status(500).json({ error: "Error al cerrar estación" });
+  }
+};
