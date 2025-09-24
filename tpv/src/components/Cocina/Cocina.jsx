@@ -9,6 +9,7 @@ import { useLecturaVoz } from '../../hooks/useLecturaVoz';
 import { useReconocimientoVoz, extraerNumeroMesa } from '../../hooks/useReconocimientoVoz';
 import { parseCocinaCommand } from '../../Voice/intentsCocina';
 import './Cocina.css';
+import DetallesProducto from './DetallesProducto';
 
 const ESTACIONES = ['frito', 'frio', 'plancha'];
 
@@ -97,7 +98,11 @@ const Cocina = () => {
   const { habilitado, activar, encolarLectura, silenciar } = useLecturaVoz(1, 8000);
   const { activo, iniciarContinua, detenerContinua, onResultado, onFin, onError, soportado } = useReconocimientoVoz({ idioma: "es-ES" });
   const [estacion, setEstacion] = useState(() => localStorage.getItem('cocina_estacion') || 'frito');
+  const [cerradas, setCerradas] = useState([]);
 
+  const cerrarSeccion = (pedidoId) => {
+    setCerradas(prev => ({ ...prev, [pedidoId]: true }));
+  };
   const onChangeEstacion = (e) => {
     const val = e.target.value;
     setEstacion(val);
@@ -500,7 +505,6 @@ const Cocina = () => {
             Cerrar Sesión
           </button>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* … tus botones de voz … */}
             <div className="cocina-selector">
               <select id="estacion" value={estacion} onChange={onChangeEstacion}>
                 {ESTACIONES.map((e) => (
@@ -551,12 +555,20 @@ const Cocina = () => {
                 pedido.productos.filter((producto) => ['plato', 'tapaRacion'].includes(producto.tipo))
               );
 
+              if (cerradas[pedido._id]) {
+                // si cerró la sección → no mostramos productos
+                return null;
+              }
+
+              if (visibles.length === 0) {
+                return null; // 🚀 no hay productos para esta estación, no mostrar tarjeta vacía
+              }
+
               const todosProductosListos = visibles.every(
                 (producto) => (producto.workflow?.estado === 'listo')
               );
 
               const productosAgrupados = agruparPorSeccion(visibles);
-
 
               return (
                 <div key={pedido._id} className="pedido-card--cocina">
@@ -573,10 +585,9 @@ const Cocina = () => {
                           <h4 className="seccion-titulo--cocina">{seccion.toUpperCase()}</h4>
                           <ul className="productos-list--cocina">
                             {productosAgrupados[seccion].map((producto) => {
-                              // ✅ AHORA sí: variables por item
                               const estado = producto?.workflow?.estado ?? 'pendiente';
                               const solicitadoA = producto?.workflow?.solicitadoA ?? producto?.solicitadoA ?? null;
-                              const destino = producto?.estacion || 'frio'; // estación del plato
+                              const destino = producto?.estacion || 'frio';
                               const disabledSolicitar = !((estacion || '').toLowerCase().startsWith('frito') && estado === 'pendiente');
 
                               return (
@@ -599,7 +610,8 @@ const Cocina = () => {
                                     </span>
                                   </label>
 
-                                  {/* Botón Solicitar: SOLO en central */}
+                                  <DetallesProducto producto={producto} />
+
                                   {isCentral && (
                                     <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
                                       <button
@@ -640,19 +652,7 @@ const Cocina = () => {
                                 </span>
                               </label>
 
-                              {producto.adicionales?.length > 0 && <p>{producto.adicionales.map(ad => ad.nombre).join(', ')}</p>}
-                              {producto.alergiasComensal && <p className="alergias-individual--cocina"><strong>A:</strong> {producto.alergiasComensal}</p>}
-                              {producto.tipoCroqueta && <p className="tipo-croqueta">{producto.tipoCroqueta}</p>}
-                              {producto.sabor?.length > 0 && (
-                                <ul>{producto.sabor.map((s, i) => <li key={i}>{s.cantidad}x {s.ingrediente}</li>)}</ul>
-                              )}
-                              {producto.ingredientesEliminados?.length > 0 && (
-                                <p><strong>Sin:</strong> {producto.ingredientesEliminados.join(', ')}</p>
-                              )}
-                              {producto.especificaciones?.length > 0 && (
-                                <p><strong>Especificaciones:</strong> {producto.especificaciones.join(', ')}</p>
-                              )}
-                              {producto.mensaje && <p className="mensaje-producto--cocina">{producto.mensaje}</p>}
+                              <DetallesProducto producto={producto} />
                             </li>
                           ))}
                         </ul>
@@ -660,13 +660,24 @@ const Cocina = () => {
                     )
                   }
 
-                  <button
-                    onClick={() => marcarPedidoComoListo(pedido._id)}
-                    disabled={!todosProductosListos}
-                    className="boton-terminar--cocina"
-                  >
-                    Terminar Pedido
-                  </button>
+                  {/* Botón de cerrar o terminar */}
+                  {isCentral ? (
+                    <button
+                      onClick={() => marcarPedidoComoListo(pedido._id)}
+                      disabled={!todosProductosListos}
+                      className="boton-terminar--cocina"
+                    >
+                      Terminar Pedido
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => cerrarSeccion(pedido._id)}
+                      disabled={!visibles.every(p => p.workflow?.estado === 'listo')}
+                      className="boton-cerrar-seccion--cocina"
+                    >
+                      Cerrar
+                    </button>
+                  )}
                 </div>
               );
             })}

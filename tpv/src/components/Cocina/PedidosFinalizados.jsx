@@ -39,7 +39,6 @@ const PedidosFinalizados = ({ onClose }) => {
                   </li>
                 ))}
               </ul>
-              <p><strong>Total:</strong> {pedido.total.toFixed(2)} €</p>
             </div>
           ))
         )}
