@@ -14,7 +14,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
-  console.log(datos, 'emitirRegistroVerifactu');
   try {
     // 1) Estado VeriFactu desde la BD
     const verifactuEnabled = await getVerifactuEnabled();
@@ -27,13 +26,15 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
     // 2) Última factura encadenada
     const ultima = await RegistroVerifactu.findOne().sort({ createdAt: -1 });
 
-    const huellaAnterior = ultima?.huellaTCR || "0000000000000000000000000000000000000000000000000000000000000000";
+    const huellaAnterior =
+      ultima?.huellaTCR ||
+      "0000000000000000000000000000000000000000000000000000000000000000";
     const numFacturaAnterior = ultima?.numeroFactura || "0";
     const fechaFacturaAnterior = ultima?.fechaExpedicion
-      ? new Date(ultima.fechaExpedicion).toISOString().split("T")[0]
-      : "01-01-1900";
+      ? formatFechaDDMMYYYY(ultima.fechaExpedicion)
+      : undefined;
 
-    // 3) Preparar datos comunes
+    // 3) Helpers
     function formatFechaDDMMYYYY(date) {
       const d = new Date(date);
       const dd = String(d.getDate()).padStart(2, "0");
@@ -42,72 +43,71 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       return `${dd}-${mm}-${yyyy}`;
     }
 
-    // 3.1) Determinar tipoFactura según datos de cliente
-    let tipoFacturaFinal = datos.tipoFactura;
-    
-    console.log(tipoFacturaFinal, 'emitirRegistroVerifactu');
-
-    if (
-      (!datos.clienteNombre || datos.clienteNombre.trim() === "" || datos.clienteNombre.trim().toLowerCase() === "consumidor final") &&
-      (!datos.clienteNIF || datos.clienteNIF.trim() === "")
-    ) {
-      tipoFacturaFinal = "F2";
-    }
-
-    const fechaExpedicion = formatFechaDDMMYYYY(datos.fechaExpedicion || new Date());
-
-    const cuotaTotal =
-      tipo === "alta"
-        ? datos.productos.reduce((acc, p) => {
-          const iva = p.iva ?? 10;
-          const base = (p.precio || 0) * (p.cantidad || 1);
-          return acc + (base * iva) / 100;
-        }, 0)
-        : 0;
-
     function getFechaHoraRegistro() {
       const now = new Date();
-
-      // Formato YYYY-MM-DDTHH:MM:SS
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
       const seconds = String(now.getSeconds()).padStart(2, "0");
-
-      // Offset respecto a UTC
-      const offsetMinutes = now.getTimezoneOffset(); // ej: -120 para UTC+2
+      const offsetMinutes = now.getTimezoneOffset();
       const sign = offsetMinutes <= 0 ? "+" : "-";
       const absMinutes = Math.abs(offsetMinutes);
       const hh = String(Math.floor(absMinutes / 60)).padStart(2, "0");
       const mm = String(absMinutes % 60).padStart(2, "0");
-
       return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${sign}${hh}:${mm}`;
     }
 
+    // 4) Tipo de factura
+    let tipoFacturaFinal = datos.tipoFactura;
+    if (
+      (!datos.clienteNombre ||
+        datos.clienteNombre.trim() === "" ||
+        datos.clienteNombre.trim().toLowerCase() === "consumidor final") &&
+      (!datos.clienteNIF || datos.clienteNIF.trim() === "")
+    ) {
+      tipoFacturaFinal = "F2";
+    }
+
+    // 5) Fechas
+    const fechaExpedicionDate = datos.fechaExpedicion
+      ? new Date(datos.fechaExpedicion)
+      : new Date();
+
+    const fechaExpedicionStr = formatFechaDDMMYYYY(fechaExpedicionDate);
     const fechaHoraRegistro = getFechaHoraRegistro();
 
-    // 4) Generar huella según tipo
+    // 6) Calcular cuota total
+    const cuotaTotal =
+      tipo === "alta"
+        ? datos.productos.reduce((acc, p) => {
+            const iva = p.iva ?? 10;
+            const base = (p.precio || 0) * (p.cantidad || 1);
+            return acc + (base * iva) / 100;
+          }, 0)
+        : 0;
+
+    // 7) Generar huella/hash
     const hashFactura = generarHashFactura({
       tipo,
       idEmisor: nifEmisor,
       numeroFactura: datos.numeroFactura,
-      fechaExpedicion: fechaExpedicion,
+      fechaExpedicion: fechaExpedicionStr, // string para AEAT
       tipoFactura: tipoFacturaFinal,
       cuotaTotal,
       importeTotal: datos.importeTotal,
       huellaAnterior,
       fechaHoraRegistro,
-      anulacion: datos.anulacion, // solo si tipo=anulacion
-      evento: datos.evento,       // solo si tipo=evento
+      anulacion: datos.anulacion,
+      evento: datos.evento,
     });
 
-    // 5) Crear documento en BD
+    // 8) Guardar en BD
     const baseDoc = await RegistroVerifactu.create({
       tipo,
       numeroFactura: datos.numeroFactura,
-      fechaExpedicion: fechaExpedicion,
+      fechaExpedicion: fechaExpedicionDate, // Date real
       fechaEnvio: new Date(),
       estado: verifactuEnabled ? "pendiente" : "generada",
       hashFactura,
@@ -115,11 +115,11 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       errores: [],
     });
 
-    // 6) Generar XML en función del tipo
+    // 9) Generar XML
     const xml = buildVerifactuXML({
       tipo,
       ...datos,
-      fechaExpedicion,
+      fechaExpedicion: fechaExpedicionStr, // string para AEAT
       nombreEmisor,
       nifEmisor,
       cuotaTotal,
@@ -131,14 +131,14 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       tipoFactura: tipoFacturaFinal,
     });
 
-    // 7) Firmar XML
+    // 10) Firmar XML
     const xmlFirmado = await signXadesEnveloped(xml, {
       pfxPath: path.resolve(__dirname, "../certs/certificado.pfx"),
       pfxPassword: process.env.CERT_PASSWORD || "1234",
       signatureId: `xmldsig-${baseDoc._id}`,
     });
 
-    // 8) Guardar local o enviar
+    // 11) Guardar local o enviar
     if (!verifactuEnabled) {
       const carpeta = path.resolve(__dirname, "../facturas_emitidas");
       if (!fs.existsSync(carpeta)) fs.mkdirSync(carpeta, { recursive: true });
@@ -155,25 +155,24 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       return await RegistroVerifactu.findById(baseDoc._id);
     }
 
-    // 9) Enviar a AEAT (modo VeriFactu) solo si verifactuEnabled
     if (verifactuEnabled) {
       try {
-      const resp = await enviarFacturaAEAT(xml);
+        const resp = await enviarFacturaAEAT(xml);
 
-      await RegistroVerifactu.findByIdAndUpdate(baseDoc._id, {
-        $set: {
-        estado: resp.estado,
-        respuestaAEAT: resp.respuestaAEAT,
-        xmlAEAT: resp.xmlAEAT,
-        },
-      });
+        await RegistroVerifactu.findByIdAndUpdate(baseDoc._id, {
+          $set: {
+            estado: resp.estado,
+            respuestaAEAT: resp.respuestaAEAT,
+            xmlAEAT: resp.xmlAEAT,
+          },
+        });
 
-      return await RegistroVerifactu.findById(baseDoc._id);
+        return await RegistroVerifactu.findById(baseDoc._id);
       } catch (err) {
-      await RegistroVerifactu.findByIdAndUpdate(baseDoc._id, {
-        $set: { estado: "error", respuestaAEAT: String(err?.message || err) },
-      });
-      throw err;
+        await RegistroVerifactu.findByIdAndUpdate(baseDoc._id, {
+          $set: { estado: "error", respuestaAEAT: String(err?.message || err) },
+        });
+        throw err;
       }
     }
   } catch (error) {

@@ -39,6 +39,7 @@ export function buildVerifactuXML({
       const key = `${p.iva}-01-S1`;
       if (!agrupados[key]) {
         agrupados[key] = {
+          impuesto: "01", // IVA por defecto
           iva: parseInt(p.iva, 10),
           clave: "01",
           calificacion: "S1",
@@ -51,16 +52,19 @@ export function buildVerifactuXML({
     });
 
     desglose = Object.values(agrupados)
-      .map(
-        (g) => `
-          <sum1:DetalleDesglose>
-            <sum1:ClaveRegimen>${g.clave}</sum1:ClaveRegimen>
-            <sum1:CalificacionOperacion>${g.calificacion}</sum1:CalificacionOperacion>
-            <sum1:TipoImpositivo>${g.iva}</sum1:TipoImpositivo>
-            <sum1:BaseImponibleOimporteNoSujeto>${g.base.toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>
-            <sum1:CuotaRepercutida>${g.cuota.toFixed(2)}</sum1:CuotaRepercutida>
-          </sum1:DetalleDesglose>`
-      )
+      .map((g) => {
+        const baseTag = `<sum1:BaseImponibleOimporteNoSujeto>${g.base.toFixed(2)}</sum1:BaseImponibleOimporteNoSujeto>`;
+
+        return `
+      <sum1:DetalleDesglose>
+        <sum1:Impuesto>${g.impuesto}</sum1:Impuesto>
+        <sum1:ClaveRegimen>${g.clave}</sum1:ClaveRegimen>
+        <sum1:CalificacionOperacion>${g.calificacion}</sum1:CalificacionOperacion>
+        <sum1:TipoImpositivo>${g.iva}</sum1:TipoImpositivo>
+        ${baseTag}
+        <sum1:CuotaRepercutida>${g.cuota.toFixed(2)}</sum1:CuotaRepercutida>
+      </sum1:DetalleDesglose>`;
+      })
       .join("");
   }
 
@@ -104,26 +108,30 @@ export function buildVerifactuXML({
     const baseRectificada = productos.reduce((acc, p) => acc + (p.base ?? 0), 0);
     const cuotaRectificada = productos.reduce((acc, p) => acc + (p.cuota ?? 0), 0);
 
-    // 🔑 Rectificativas: diferencias (I) llevan también ImporteTotal dentro
+    // 🔑 Facturas rectificativas: añadir bloques obligatorios
+    // 🔑 Facturas rectificativas: añadir bloques obligatorios
+    let facturasRectificadas = "";
     let importeRectificacion = "";
     if (tf.startsWith("R")) {
-      if (tipoRectificativa === "I") {
-        importeRectificacion = `
-    <sum1:ImporteRectificacion>
-      <sum1:BaseRectificada>${baseRectificada.toFixed(2)}</sum1:BaseRectificada>
-      <sum1:CuotaRectificada>${cuotaRectificada.toFixed(2)}</sum1:CuotaRectificada>
-      <sum1:ImporteTotal>${(importeTotal ?? 0).toFixed(2)}</sum1:ImporteTotal>
-    </sum1:ImporteRectificacion>`;
-      } else {
-        // Sustitución (S)
+      facturasRectificadas = `
+  <sum1:FacturasRectificadas>
+    <sum1:IDFacturaRectificada>
+      <sum1:IDEmisorFactura>${nifEmisor}</sum1:IDEmisorFactura>
+      <sum1:NumSerieFactura>${numFacturaAnterior || "0"}</sum1:NumSerieFactura>
+      <sum1:FechaExpedicionFactura>${fechaFacturaAnterior || "01-01-1900"}</sum1:FechaExpedicionFactura>
+    </sum1:IDFacturaRectificada>
+  </sum1:FacturasRectificadas>`;
+
+      if (tipoRectificativa === "S") {
+        // Obligatorio en sustitución
         importeRectificacion = `
     <sum1:ImporteRectificacion>
       <sum1:BaseRectificada>${baseRectificada.toFixed(2)}</sum1:BaseRectificada>
       <sum1:CuotaRectificada>${cuotaRectificada.toFixed(2)}</sum1:CuotaRectificada>
     </sum1:ImporteRectificacion>`;
       }
+      // 👉 En diferencias (I) no se añade nada
     }
-
     registro = `
     <sum:RegistroFactura>
       <sum1:RegistroAlta>
@@ -137,11 +145,11 @@ export function buildVerifactuXML({
         ${subsanacion ? `<sum1:Subsanacion>S</sum1:Subsanacion>` : ""}
         <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>
         ${tf.startsWith("R") ? `<sum1:TipoRectificativa>${tipoRectificativa || "S"}</sum1:TipoRectificativa>` : ""}
+        ${facturasRectificadas}        
+        ${importeRectificacion}        
         <sum1:DescripcionOperacion>${descripcionOperacion}</sum1:DescripcionOperacion>
         ${destinatarios}
         <sum1:Desglose>${desglose}</sum1:Desglose>
-        ${importeRectificacion}
-        <!-- Obligatorios siempre -->
         <sum1:CuotaTotal>${tf.startsWith("R") ? cuotaRectificada.toFixed(2) : (cuotaTotal ?? 0).toFixed(2)}</sum1:CuotaTotal>
         <sum1:ImporteTotal>${(importeTotal ?? 0).toFixed(2)}</sum1:ImporteTotal>
         ${encadenamiento}

@@ -8,6 +8,14 @@ import { generarNumeroFacturaRectificativa } from '../../utils/numeracionRectifi
 import { generarProductoRectificativo } from '../../utils/generarProductoRectificativo.js';
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
 
+function formatFechaDDMMYYYY(date) {
+  const d = new Date(date);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
 export const listarFacturasEncadenadas = async (req, res) => {
   try {
     const page = parseInt(req.query.page || '1', 10);
@@ -95,12 +103,12 @@ export const exportarFacturasCSV = async (req, res) => {
 };
 export const rectificarFactura = async (req, res) => {
   const { id } = req.params;
-  const { 
-    motivo, 
-    importeTotal, 
-    clienteNombre, 
-    clienteNIF, 
-    productos = [], 
+  const {
+    motivo,
+    importeTotal,
+    clienteNombre,
+    clienteNIF,
+    productos = [],
     tipoFactura,       // 👈 R1, R2, R3, R4 o R5
     tipoRectificativa  // 👈 "S" (sustitución) o "I" (diferencias), solo para R1 y R2
   } = req.body;
@@ -108,6 +116,7 @@ export const rectificarFactura = async (req, res) => {
   try {
     // 1) Buscar la factura original
     const facturaOriginal = await RegistroVerifactu.findById(id);
+    console.log(facturaOriginal, 'facturaOriginal');
     if (!facturaOriginal)
       return res.status(404).json({ error: "Factura original no encontrada." });
 
@@ -121,10 +130,10 @@ export const rectificarFactura = async (req, res) => {
     const productosRectificativos = productos.length
       ? productos
       : generarProductoRectificativo(
-          importeTotal,
-          10, // 👈 podrías calcular el IVA real de la original
-          motivo || "Rectificación de factura"
-        );
+        importeTotal,
+        10, // 👈 podrías calcular el IVA real de la original
+        motivo || "Rectificación de factura"
+      );
 
     // 4) Emitir la nueva factura rectificativa
     const nuevaFactura = await emitirRegistroVerifactu({
@@ -140,19 +149,22 @@ export const rectificarFactura = async (req, res) => {
 
         // Encadenamiento con la original
         numFacturaAnterior: facturaOriginal.numeroFactura,
-        fechaFacturaAnterior: facturaOriginal.fechaExpedicion,
-        huellaAnterior: facturaOriginal.huellaTCR,
+        fechaFacturaAnterior: facturaOriginal.fechaExpedicion
+          ? formatFechaDDMMYYYY(facturaOriginal.fechaExpedicion)
+          : undefined, huellaAnterior: facturaOriginal.huellaTCR,
 
         // Factura rectificativa
         tipoFactura,                  // 👈 dinámico: R1, R2, R3, R4, R5
-        tipoRectificativa: 
-          ["R1", "R2"].includes(tipoFactura) 
-            ? tipoRectificativa || "S" // Sustitución por defecto
-            : undefined,
+        tipoRectificativa:
+          ["R1", "R2"].includes(tipoFactura)
+            ? tipoRectificativa || "I" // diferencias por defecto
+            : ["R3", "R4"].includes(tipoFactura)
+              ? "S"
+              : undefined,
       },
     });
 
-    console.log(tipoFactura, tipoRectificativa, 'tipos en controller');
+    console.log(facturaOriginal.fechaExpedicion, 'fechaFacturaAnterior');
 
     // 5) Marcar la original como rectificada
     facturaOriginal.rectificada = true;

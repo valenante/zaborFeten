@@ -17,34 +17,52 @@
         <sum1:IDVersion>1.0</sum1:IDVersion>
         <sum1:IDFactura>
           <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>2025-0056</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>24-09-2025</sum1:FechaExpedicionFactura>
+          <sum1:NumSerieFactura>R-2025-0004</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>30-09-2025</sum1:FechaExpedicionFactura>
         </sum1:IDFactura>
         <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
         
-        <sum1:TipoFactura>F2</sum1:TipoFactura>
+        <sum1:TipoFactura>R3</sum1:TipoFactura>
+        <sum1:TipoRectificativa>S</sum1:TipoRectificativa>
         
-        <sum1:DescripcionOperacion>Factura de prueba VeriFactu</sum1:DescripcionOperacion>
-        <sum1:FacturaSinIdentifDestinatarioArt61d>S</sum1:FacturaSinIdentifDestinatarioArt61d>
+  <sum1:FacturasRectificadas>
+    <sum1:IDFacturaRectificada>
+      <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
+      <sum1:NumSerieFactura>2025-0077</sum1:NumSerieFactura>
+      <sum1:FechaExpedicionFactura>30-09-2025</sum1:FechaExpedicionFactura>
+    </sum1:IDFacturaRectificada>
+  </sum1:FacturasRectificadas>        
+        
+    <sum1:ImporteRectificacion>
+      <sum1:BaseRectificada>9.09</sum1:BaseRectificada>
+      <sum1:CuotaRectificada>0.91</sum1:CuotaRectificada>
+    </sum1:ImporteRectificacion>        
+        <sum1:DescripcionOperacion>ERROR</sum1:DescripcionOperacion>
+        
+    <sum1:Destinatarios>
+      <sum1:IDDestinatario>
+        <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
+        <sum1:NIF>X6063327K</sum1:NIF>
+      </sum1:IDDestinatario>
+    </sum1:Destinatarios>
         <sum1:Desglose>
-          <sum1:DetalleDesglose>
-            <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
-            <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
-            <sum1:TipoImpositivo>10</sum1:TipoImpositivo>
-            <sum1:BaseImponibleOimporteNoSujeto>149.40</sum1:BaseImponibleOimporteNoSujeto>
-            <sum1:CuotaRepercutida>14.94</sum1:CuotaRepercutida>
-          </sum1:DetalleDesglose></sum1:Desglose>
-        
-        <!-- Obligatorios siempre -->
-        <sum1:CuotaTotal>14.94</sum1:CuotaTotal>
-        <sum1:ImporteTotal>164.34</sum1:ImporteTotal>
+      <sum1:DetalleDesglose>
+        <sum1:Impuesto>01</sum1:Impuesto>
+        <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+        <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+        <sum1:TipoImpositivo>10</sum1:TipoImpositivo>
+        <sum1:BaseImponibleOimporteNoSujeto>9.09</sum1:BaseImponibleOimporteNoSujeto>
+        <sum1:CuotaRepercutida>0.91</sum1:CuotaRepercutida>
+      </sum1:DetalleDesglose></sum1:Desglose>
+        <sum1:CuotaTotal>0.91</sum1:CuotaTotal>
+        <sum1:ImporteTotal>10.00</sum1:ImporteTotal>
         
   <sum1:Encadenamiento>
     <sum1:RegistroAnterior>
       <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-      <sum1:NumSerieFactura>2025-0055</sum1:NumSerieFactura>
-      <sum1:FechaExpedicionFactura>01-01-1900</sum1:FechaExpedicionFactura>
-      <sum1:Huella>8150F92CF7180D1F7EE486990F789E2C6CEDE483E4F8C443119C529B57F6ABA9</sum1:Huella>
+      <sum1:NumSerieFactura>2025-0077</sum1:NumSerieFactura>
+      <sum1:FechaExpedicionFactura>30-09-2025</sum1:FechaExpedicionFactura>
+      <sum1:Huella>D864C427731A9293AE2278357D6E3BEB3B30622BDFBDEDDE2E17DA6F034F7000</sum1:Huella>
     </sum1:RegistroAnterior>
   </sum1:Encadenamiento>
         
@@ -59,9 +77,9 @@
       <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
       <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
     </sum1:SistemaInformatico>
-        <sum1:FechaHoraHusoGenRegistro>2025-09-24T15:41:13+02:00</sum1:FechaHoraHusoGenRegistro>
+        <sum1:FechaHoraHusoGenRegistro>2025-09-30T16:46:06+02:00</sum1:FechaHoraHusoGenRegistro>
         <sum1:TipoHuella>01</sum1:TipoHuella>
-        <sum1:Huella>EF43BE83ABC8CDEEB76624D5A918444B5E21567CFBD0EECEDF1588C83EA505C9</sum1:Huella>
+        <sum1:Huella>F52518C76EA6C27AF7A729AE9527C30991E45BFE795B07D686CB610399432480</sum1:Huella>
       </sum1:RegistroAlta>
     </sum:RegistroFactura>
     </sum:RegFactuSistemaFacturacion>
