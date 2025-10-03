@@ -15,6 +15,8 @@ const FacturasPage = () => {
     const [mostrarModal, setMostrarModal] = useState(false);
     const [mensajeAlerta, setMensajeAlerta] = useState(null);
     const [subtipo, setSubtipo] = useState(""); // S o I
+    const [fechaInicio, setFechaInicio] = useState("");
+    const [fechaFin, setFechaFin] = useState("");
 
     // Formulario de rectificación
     const [tipo, setTipo] = useState("");
@@ -96,6 +98,12 @@ const FacturasPage = () => {
     // --- Helpers ---
     const normaliza = (s) => (s || "").toString().toLowerCase();
     const facturasFiltradas = facturas.filter((f) => {
+        const fechaFactura = new Date(f.fechaExpedicion);
+
+        const enRango =
+            (!fechaInicio || fechaFactura >= new Date(fechaInicio)) &&
+            (!fechaFin || fechaFactura <= new Date(fechaFin + "T23:59:59"));
+
         const anioOk =
             !filtroAnio ||
             (f.fechaExpedicion &&
@@ -109,18 +117,20 @@ const FacturasPage = () => {
             normaliza(f.hash ?? f.hashFactura).includes(q) ||
             normaliza(f.hashAnterior).includes(q);
 
-        return anioOk && textoOk;
+        return enRango && anioOk && textoOk;
     });
 
+    // --- Exportar CSV profesional ---
     const exportarCSV = () => {
         const csv = Papa.unparse(
             facturasFiltradas.map((f) => ({
-                numeroFactura: f.numeroFactura,
-                fechaExpedicion: new Date(f.fechaExpedicion).toLocaleString(),
-                clienteNombre: f.clienteNombre,
-                clienteNIF: f.clienteNIF,
-                importeTotal: f.importeTotal,
-                hash: f.hash ?? f.hashFactura,
+                "Número factura": f.numeroFactura,
+                "Fecha emisión": new Date(f.fechaExpedicion).toLocaleString("es-ES"),
+                "Cliente": f.clienteNombre || "-",
+                "NIF": f.clienteNIF || "-",
+                "Importe total (€)": f.importeTotal?.toFixed(2),
+                "Estado": f.estado || "-",
+                "Hash": f.hash ?? f.hashFactura,
             }))
         );
 
@@ -128,37 +138,53 @@ const FacturasPage = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "facturas.csv";
+        link.download = `facturas_${fechaInicio || "todo"}_${fechaFin || "todo"}.csv`;
         link.click();
     };
 
     const exportarPDF = () => {
         const doc = new jsPDF({ orientation: "landscape" });
-        doc.text("Facturas Encadenadas", 14, 20);
 
-        facturasFiltradas.forEach((f, index) => {
-            const startY = 30 + index * 60;
-            doc.text(`Número: ${f.numeroFactura}`, 14, startY);
-            doc.text(`Fecha: ${new Date(f.fechaExpedicion).toLocaleString("es-ES")}`, 14, startY + 6);
-            doc.text(`Cliente: ${f.clienteNombre || "-"}`, 14, startY + 12);
-            doc.text(`NIF: ${f.clienteNIF || "-"}`, 14, startY + 18);
-            doc.text(`Importe: ${f.importeTotal} €`, 14, startY + 24);
-            doc.text(`Hash: ${f.hash}`, 14, startY + 30);
+        // Encabezado
+        doc.setFontSize(14);
+        doc.text("Facturas Encadenadas", 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Exportado: ${new Date().toLocaleString("es-ES")}`, 14, 22);
+        if (fechaInicio || fechaFin) {
+            doc.text(
+                `Rango: ${fechaInicio || "—"} a ${fechaFin || "—"}`,
+                14,
+                28
+            );
+        }
 
-            autoTable(doc, {
-                startY: startY + 36,
-                head: [["Producto", "Cantidad", "Precio"]],
-                body: (Array.isArray(f.productos) ? f.productos : []).map((p) => [
-                    p.nombre,
-                    String(p.cantidad ?? ""),
-                    (typeof p.precio === "number" ? p.precio.toFixed(2) : ""),
-                ]),
-                styles: { fontSize: 7 },
-                margin: { left: 14, right: 14 },
-            });
+        // Tabla
+        autoTable(doc, {
+            startY: fechaInicio || fechaFin ? 34 : 28,
+            head: [["Número", "Fecha", "Cliente", "NIF", "Importe (€)", "Estado", "Hash"]],
+            body: facturasFiltradas.map((f) => [
+                f.numeroFactura,
+                new Date(f.fechaExpedicion).toLocaleString("es-ES"),
+                f.clienteNombre || "-",
+                f.clienteNIF || "-",
+                f.importeTotal?.toFixed(2),
+                f.estado || "-",
+                f.hash ?? f.hashFactura,
+            ]),
+            styles: { fontSize: 8, cellWidth: "wrap" },
+            headStyles: { fillColor: [41, 128, 185] }, // azul elegante
+            margin: { left: 14, right: 14 },
+            didDrawPage: (data) => {
+                doc.setFontSize(8);
+                doc.text(
+                    `Página ${doc.internal.getNumberOfPages()}`,
+                    data.settings.margin.left,
+                    doc.internal.pageSize.height - 5
+                );
+            },
         });
 
-        doc.save("facturas.pdf");
+        doc.save(`facturas_${fechaInicio || "todo"}_${fechaFin || "todo"}.pdf`);
     };
 
     return (
@@ -173,6 +199,20 @@ const FacturasPage = () => {
                     value={filtroAnio}
                     onChange={(e) => setFiltroAnio(e.target.value)}
                     placeholder="Ej: 2025"
+                />
+
+                <label>Desde:&nbsp;</label>
+                <input
+                    type="date"
+                    value={fechaInicio}
+                    onChange={(e) => setFechaInicio(e.target.value)}
+                />
+
+                <label>Hasta:&nbsp;</label>
+                <input
+                    type="date"
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
                 />
 
                 <label>Buscar:&nbsp;</label>
@@ -194,6 +234,7 @@ const FacturasPage = () => {
             <table className="facturas-table">
                 <thead>
                     <tr>
+                        <th>Estado</th> {/* 👈 Nueva columna al inicio */}
                         <th>Número</th>
                         <th>Fecha</th>
                         <th>Cliente</th>
@@ -206,6 +247,19 @@ const FacturasPage = () => {
                 <tbody>
                     {facturasFiltradas.map((f) => (
                         <tr key={f._id}>
+                            <td>
+                                <span
+                                    className={`estado ${f.estado}`}
+                                    style={{
+                                        color: f.estado === "correcto" ? "green" :
+                                            f.estado === "enviado" ? "orange" :
+                                                f.estado === "incorrecto" ? "red" : "black",
+                                        fontWeight: "bold",
+                                    }}
+                                >
+                                    {f.estado || "—"}
+                                </span>
+                            </td>
                             <td>{f.numeroFactura}</td>
                             <td>{new Date(f.fechaExpedicion).toLocaleString("es-ES")}</td>
                             <td>{f.clienteNombre || "-"}</td>
@@ -215,7 +269,12 @@ const FacturasPage = () => {
                             <td>
                                 <div className="acciones-factura">
                                     <button onClick={() => abrirModalRectificacion(f._id)}>Rectificar</button>
-                                    <button onClick={() => anularFactura(f._id)}>Anular</button>
+
+                                    {/* 👇 Oculta el botón si la factura ya está anulada */}
+                                    {f.estado !== "anulada" && (
+                                        <button onClick={() => anularFactura(f._id)}>Anular</button>
+                                    )}
+
                                     <button onClick={() => verXML(f.xmlFirmado)}>Ver XML</button>
                                 </div>
                             </td>
@@ -224,7 +283,6 @@ const FacturasPage = () => {
                 </tbody>
             </table>
 
-            {/* Modal rectificación */}
             {/* Modal rectificación */}
             {mostrarModal && (
                 <div className="modal-overlay">

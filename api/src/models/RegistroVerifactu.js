@@ -9,7 +9,8 @@ const registroVerifactuSchema = new mongoose.Schema({
     enum: [
       'pendiente', 'enviado', 'aceptado', 'rechazado', 
       'error', 'generada', 'INCORRECTO', 
-      'ACEPTADO_CON_ERRORES', 'CORRECTO'
+      'ACEPTADO_CON_ERRORES', 'CORRECTO', 'incorrecto', "correcto",
+      "anulada"
     ],
     default: 'pendiente',
   },

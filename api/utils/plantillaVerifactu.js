@@ -1,5 +1,5 @@
 export function buildVerifactuXML({
-  tipo = "alta",
+  tipo,
   numeroFactura,
   fechaExpedicion,
   nombreEmisor,
@@ -162,7 +162,7 @@ export function buildVerifactuXML({
   }
 
   // -------- ANULACIÓN --------
-  if (tipo === "anulacion") {
+  else if (tipo === "anulacion") {
     registro = `
       <sum:RegistroFactura>
         <sum1:RegistroAnulacion>
@@ -182,7 +182,7 @@ export function buildVerifactuXML({
   }
 
   // -------- EVENTO --------
-  if (tipo === "evento") {
+  else if (tipo === "evento") {
     registro = `
       <sum:RegistroEvento>
         <sum1:Evento>
@@ -206,6 +206,10 @@ export function buildVerifactuXML({
           <sum1:HuellaEvento>${huellaNueva}</sum1:HuellaEvento>
         </sum1:Evento>
       </sum:RegistroEvento>`;
+  }
+
+  else {
+    throw new Error(`Tipo de registro no soportado: ${tipo}`);
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>

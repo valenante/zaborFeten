@@ -3,7 +3,8 @@ import {
   listarFacturasEncadenadas,
   exportarFacturasCSV,
   rectificarFactura,
-  verificarFactura
+  verificarFactura,
+  anularFactura
 } from '../controllers/facturasController.js';
 
 const router = express.Router();
@@ -100,5 +101,39 @@ router.post('/rectificar/:id', rectificarFactura);
  */
 
 router.get('/verificar-factura/:hash', verificarFactura);
+
+/**
+ * @swagger
+ * /facturas/anular/{id}:
+ *   post:
+ *     summary: Anular una factura
+ *    tags: [Facturas]
+ *     parameters:  
+ *     - in: path
+ *      name: id
+ *    required: true
+ *    description: ID de la factura a anular
+ *    schema:
+ *     type: string
+ *    requestBody:
+ *    description: Motivo de la anulación (opcional)
+ *   required: false
+ *  content:
+ *    application/json:
+ *     schema:
+ *      type: object
+ *     properties:
+ *     motivo:
+ *    type: string
+ *    responses:
+ *    200:
+ *    description: Factura anulada correctamente
+ *  404:
+ *   description: Factura no encontrada
+ *  500:
+ *  description: Error en la anulación
+ * /
+*/
+router.post('/anular/:id', anularFactura);
 
 export default router;

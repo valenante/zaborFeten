@@ -31,7 +31,6 @@ export const generarRefreshToken = (user) => {
 
 export const renovarToken = async (req, res) => {
   const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
-  console.log('👉 Refresh Token recibido:', refreshToken);
 
   if (!refreshToken) {
     console.warn('⛔ No se proporcionó refresh token.');
@@ -39,16 +38,12 @@ export const renovarToken = async (req, res) => {
   }
 
   try {
-    console.log('🔍 Buscando token revocado...');
     const tokenRevocado = await TokenRevocado.findOne({ token: refreshToken });
     if (tokenRevocado) {
       console.warn('⛔ Token revocado.');
       return res.status(403).json({ error: 'Este refresh token ha sido revocado.' });
     }
-
-    console.log('🔐 Verificando refresh token con JWT...');
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    console.log('✅ Token verificado:', decoded);
 
     const user = {
       id: decoded.id,
@@ -58,7 +53,6 @@ export const renovarToken = async (req, res) => {
     };
 
     const newAccessToken = generarAccessToken(user);
-    console.log('🎫 Nuevo access token generado.');
 
     return res.status(200).json({ accessToken: newAccessToken });
 

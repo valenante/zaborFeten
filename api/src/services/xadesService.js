@@ -10,10 +10,8 @@ const CERT = process.env.VERIFACTU_P12_PATH;
 const PASS = process.env.VERIFACTU_P12_PASS;
 
 export async function signXadesEnveloped(xml) {
-  console.log("🛠 [signXadesEnveloped] INICIO");
 
   if (process.env.VERIFACTU_SIGN_ENABLED !== "true") {
-    console.log("⚠️ Firma desactivada por variable de entorno VERIFACTU_SIGN_ENABLED");
     return xml;
   }
 
@@ -21,15 +19,7 @@ export async function signXadesEnveloped(xml) {
   const tempOut = path.join(__dirname, "../../temp-out.xml");
 
   try {
-    console.log("📄 Guardando XML sin firmar en:", tempIn);
     await fs.writeFile(tempIn, xml, "utf8");
-
-    console.log("☕ Ejecutando JAR para firmar:");
-    console.log("   📁 JAR:", JAR);
-    console.log("   🔐 CERT:", CERT);
-    console.log("   🔑 PASS:", PASS ? "(oculto)" : "(vacío)");
-    console.log("   📥 IN:", tempIn);
-    console.log("   📤 OUT:", tempOut);
 
     await new Promise((resolve, reject) => {
       execFile("java", ["-jar", JAR, tempIn, tempOut, CERT, PASS], (err, stdout, stderr) => {
@@ -39,9 +29,6 @@ export async function signXadesEnveloped(xml) {
           console.error("   ❗ STDOUT:", stdout);
           return reject(err);
         }
-        console.log("✅ Firma ejecutada correctamente");
-        console.log("   📤 STDOUT:", stdout);
-        console.log("   📤 STDERR:", stderr);
         resolve();
       });
     });

@@ -1,6 +1,6 @@
 import { buildVerifactuXML } from './plantillaVerifactu.js';
 
-export async function generarVerifactuXML(datosFactura) {
+export function generarVerifactuXML(datosFactura) {
   const {
     numeroFactura,
     fechaExpedicion,
@@ -10,9 +10,9 @@ export async function generarVerifactuXML(datosFactura) {
     importeTotal,
     hashFactura,
     hashAnterior,
-    cuotaTotal
+    cuotaTotal,
+    tipo
   } = datosFactura;
-
   // 👇 Datos del emisor
   const nombreEmisor = process.env.EMPRESA_NOMBRE || "ANTENUCCI AGUILAR VALENTINO NAHUEL";
   const nifEmisor = process.env.EMPRESA_NIF || "X6063327K";
@@ -49,6 +49,7 @@ export async function generarVerifactuXML(datosFactura) {
   }
 
   return buildVerifactuXML({
+    tipo,
     numeroFactura,
     fechaExpedicion: fechaFormateada,
     nombreEmisor,

@@ -6,6 +6,8 @@ import EventoFactura from '../models/EventosFactura.js';
 import { emitirRegistroVerifactu } from '../../utils/emitirFactura.js';
 import { generarNumeroFacturaRectificativa } from '../../utils/numeracionRectificativas.js';
 import { generarProductoRectificativo } from '../../utils/generarProductoRectificativo.js';
+import { generarVerifactuXML } from '../../utils/generarVerifactuXML.js';
+import { enviarFacturaAEAT } from '../../utils/enviarAEAT.js';
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
 
 function formatFechaDDMMYYYY(date) {
@@ -52,6 +54,7 @@ export const listarFacturasEncadenadas = async (req, res) => {
           hash: '$hashFactura',          // en tu UI lo llamas f.hash
           hashAnterior: 1,               // si lo tienes guardado en RegistroVerifactu
           xmlFirmado: 1,
+          estado: 1,
         },
       },
     ];
@@ -116,7 +119,6 @@ export const rectificarFactura = async (req, res) => {
   try {
     // 1) Buscar la factura original
     const facturaOriginal = await RegistroVerifactu.findById(id);
-    console.log(facturaOriginal, 'facturaOriginal');
     if (!facturaOriginal)
       return res.status(404).json({ error: "Factura original no encontrada." });
 
@@ -163,8 +165,6 @@ export const rectificarFactura = async (req, res) => {
               : undefined,
       },
     });
-
-    console.log(facturaOriginal.fechaExpedicion, 'fechaFacturaAnterior');
 
     // 5) Marcar la original como rectificada
     facturaOriginal.rectificada = true;
@@ -241,4 +241,43 @@ export const verificarFactura = async (req, res) => {
     hashAnterior: factura.hashAnterior,
     valido: hashCalculado === factura.hash
   });
+};
+
+export const anularFactura = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1) Buscar la factura original
+    const facturaOriginal = await RegistroVerifactu.findById(id);
+    if (!facturaOriginal) {
+      return res.status(404).json({ error: "Factura no encontrada." });
+    }
+
+    // 2) Emitir registro de anulación con la misma lógica central
+    const anulacion = await emitirRegistroVerifactu({
+      tipo: "anulacion",
+      datos: {
+        numeroFactura: facturaOriginal.numeroFactura,
+        fechaExpedicion: facturaOriginal.fechaExpedicion,
+        huellaAnterior: facturaOriginal.huellaTCR,
+        huellaNueva: facturaOriginal.huellaTCR, // en anulaciones, huella = la misma
+        anulacion: true,
+      },
+    });
+
+    // 3) Marcar la original como anulada
+    facturaOriginal.estado = "anulada";
+    facturaOriginal.facturaAnulacionId = anulacion._id;
+    await facturaOriginal.save();
+
+    // 4) Respuesta al frontend
+    res.json({
+      message: "Factura anulada correctamente",
+      numeroFactura: facturaOriginal.numeroFactura,
+      estado: anulacion.estado,
+    });
+  } catch (error) {
+    console.error("❌ Error al anular factura:", error);
+    res.status(500).json({ error: "Error al anular la factura." });
+  }
 };

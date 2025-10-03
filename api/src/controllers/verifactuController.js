@@ -126,7 +126,6 @@ export const enviarAEAT = async (req, res) => {
 // ──────────────────────────────────────────────────────────────
 export const crearRegistroAlta = async (req, res) => {
   try {
-    console.log("📥 [crearRegistroAlta] Body:", JSON.stringify(req.body, null, 2));
 
     const { ot, factura } = req.body;
 
@@ -142,10 +141,8 @@ export const crearRegistroAlta = async (req, res) => {
 
     const nif = "x6063327k";
     const prev = await getPrevRegistro(nif);
-    console.log("📚 Registro anterior:", prev);
 
     const fechaHoraGenISO = nowISOWithTZ();
-    console.log("🕒 FechaHoraGenISO:", fechaHoraGenISO);
 
     const huella = huellaAlta({
       nifEmisor: nif,
@@ -157,8 +154,6 @@ export const crearRegistroAlta = async (req, res) => {
       huellaAnterior: prev?.huella || '',
       fechaHoraGenISO,
     });
-
-    console.log("🔐 Huella:", huella);
 
     // Construcción XML
     const root = create({ version: '1.0', encoding: 'UTF-8' }).ele('RegistroAlta');
@@ -194,10 +189,8 @@ export const crearRegistroAlta = async (req, res) => {
     enc.up();
 
     const xmlSinFirma = root.end({ prettyPrint: true });
-    console.log("📄 XML generado:\n", xmlSinFirma);
 
     const xmlFirmado = await signXadesEnveloped(xmlSinFirma);
-    console.log("✅ XML firmado correctamente");
 
     await saveNuevoRegistro({
       otNif: nif,

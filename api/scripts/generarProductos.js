@@ -42,18 +42,11 @@ async function asignarEstaciones() {
       ]
     );
 
-    console.log(`✅ Productos actualizados: ${res.modifiedCount}`);
-
     // Buscar y mostrar los productos afectados
     const actualizados = await Producto.find({
       tipo: { $ne: "bebida" },
       categoria: { $in: categorias },
     }).select("nombre categoria estacion");
-
-    console.log("📦 Lista de productos actualizados:");
-    actualizados.forEach((p) =>
-      console.log(`- ${p.nombre} | ${p.categoria} → ${p.estacion}`)
-    );
 
     await mongoose.disconnect();
   } catch (err) {

@@ -79,97 +79,102 @@ const DetalleMesa = () => {
                   }, user?.name)
                 }
               >
-              Emitir Factura
-            </button>
-            <button onClick={() => setMostrarFacturaModal(false)}>
-              Cancelar
-            </button>
-          </div>
+                Emitir Factura
+              </button>
+              <button onClick={() => setMostrarFacturaModal(false)}>
+                Cancelar
+              </button>
+            </div>
           </div>
         )}
-      <h1 className="titulo-mesa--mesadetalles">Mesa {mesa.numero}</h1>
-      <p className="total-mesa--mesadetalles">Total: {mesa.total} €</p>
-      <ListaPedidos
-        pedidos={mesa.pedidos || []}
-        productosDetalles={productosDetalles}
-        eliminarProducto={eliminarProducto}
-      />
-
-      <ListaBebidas
-        pedidosBebidas={mesa.pedidosBebidas || []}
-        eliminarProducto={eliminarProducto}
-      />
-
-
-      {mesa.estado === "abierta" && (
-        <button
-          onClick={() => setShowModal("cierre")}
-          className="boton-cerrar--mesadetalles"
-        >
-          Cerrar Mesa
-        </button>
-      )}
-      {mesa.estado === "abierta" && (
-        <div className="contenedor-botones--mesadetalles">
-          <button
-            onClick={imprimirCuenta}
-            className="boton-imprimir--mesadetalles"
-          >
-            Cuenta
-          </button>
-          <button
-            onClick={() => setShowModal("factura")}
-            className="boton-factura--mesadetalles"
-          >
-            Factura
-          </button>
-          <button
-            onClick={() => setMostrarModalTransferir(true)}
-            className="boton-factura--mesadetalles"
-          >
-            Transferir Artículos
-          </button>
-        </div>
-      )}
-
-      {(showModal === "cierre" || showModal === "factura") && (
-        <MetodoPago
-          total={mesa.total}
-          onClose={() => setShowModal(false)}
-          onConfirm={(metodoPago) => {
-            if (showModal === "factura") {
-              setMetodoPagoFactura(metodoPago);
-              setShowModal(false);
-              setMostrarFacturaModal(true); // Abre el modal de datos fiscales
-            } else {
-              cerrarMesa(metodoPago, "simplificada", {}, user?.name || user?.email || "");
-            }
-          }}
+        <h1 className="titulo-mesa--mesadetalles">Mesa {mesa.numero}</h1>
+        <p className="total-mesa--mesadetalles">Total: {mesa.total} €</p>
+        <ListaPedidos
+          pedidos={mesa.pedidos || []}
+          productosDetalles={productosDetalles}
+          eliminarProducto={eliminarProducto}
         />
-      )}
-    </div>
-      {
-    mensajeAlerta && (
-      <AlertaMensaje
-        tipo={mensajeAlerta.tipo}
-        mensaje={mensajeAlerta.mensaje}
-        onClose={() => setMensajeAlerta(null)}
-      />
-    )
-  }
 
-  {
-    mostrarModalTransferir && (
-      <ModalTransferencia
-        mesaOrigen={mesa}
-        onClose={() => setMostrarModalTransferir(false)}
-        onTransferSuccess={() => {
-          setMostrarModalTransferir(false);
-          fetchMesa(); // Refresca la mesa después de transferir
-        }}
-      />
-    )
-  }
+        <ListaBebidas
+          pedidosBebidas={mesa.pedidosBebidas || []}
+          eliminarProducto={eliminarProducto}
+        />
+
+
+        {mesa.estado === "abierta" && (
+          <>
+            <button
+              onClick={() => setShowModal("cierre")}
+              className="boton-cerrar--mesadetalles"
+              disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
+            >
+              Cerrar Mesa
+            </button>
+
+            <div className="contenedor-botones--mesadetalles">
+              <button
+                onClick={imprimirCuenta}
+                className="boton-imprimir--mesadetalles"
+                disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
+              >
+                Cuenta
+              </button>
+              <button
+                onClick={() => setShowModal("factura")}
+                className="boton-factura--mesadetalles"
+                disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
+              >
+                Factura
+              </button>
+              <button
+                onClick={() => setMostrarModalTransferir(true)}
+                className="boton-factura--mesadetalles"
+                disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
+              >
+                Transferir Artículos
+              </button>
+            </div>
+          </>
+        )}
+
+        {(showModal === "cierre" || showModal === "factura") && (
+          <MetodoPago
+            total={mesa.total}
+            onClose={() => setShowModal(false)}
+            onConfirm={(metodoPago) => {
+              if (showModal === "factura") {
+                setMetodoPagoFactura(metodoPago);
+                setShowModal(false);
+                setMostrarFacturaModal(true); // Abre el modal de datos fiscales
+              } else {
+                cerrarMesa(metodoPago, "simplificada", {}, user?.name || user?.email || "");
+              }
+            }}
+          />
+        )}
+      </div>
+      {
+        mensajeAlerta && (
+          <AlertaMensaje
+            tipo={mensajeAlerta.tipo}
+            mensaje={mensajeAlerta.mensaje}
+            onClose={() => setMensajeAlerta(null)}
+          />
+        )
+      }
+
+      {
+        mostrarModalTransferir && (
+          <ModalTransferencia
+            mesaOrigen={mesa}
+            onClose={() => setMostrarModalTransferir(false)}
+            onTransferSuccess={() => {
+              setMostrarModalTransferir(false);
+              fetchMesa(); // Refresca la mesa después de transferir
+            }}
+          />
+        )
+      }
     </div >
   );
 };

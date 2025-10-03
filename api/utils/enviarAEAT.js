@@ -1,61 +1,65 @@
-import { writeFileSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { writeFileSync, readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export async function enviarFacturaAEAT(xml) {
   try {
-    // 1. Generar XML sin firmar
-    const tempInPath = join(__dirname, '../../temp-in.xml');
-    const tempOutPath = join(__dirname, '../../temp-out.xml');
-    writeFileSync(tempInPath, xml, 'utf8');
+    // 1. Guardar XML temporal sin firmar
+    const tempInPath = join(__dirname, "../../temp-in.xml");
+    const tempOutPath = join(__dirname, "../../temp-out.xml");
+    writeFileSync(tempInPath, xml, "utf8");
 
-    // 2. Firmar usando JAR
-    const certPath = process.env.VERIFACTU_P12_PATH || join(__dirname, '../certificados/certificado.p12');
-    const certPassword = process.env.VERIFACTU_P12_PASS || 'MIKHAILTAL1!';
+    // 2. Firmar XML usando JAR
+    const certPath =
+      process.env.VERIFACTU_P12_PATH ||
+      join(__dirname, "../certificados/certificado.p12");
+    const certPassword = process.env.VERIFACTU_P12_PASS || "MIKHAILTAL1!";
 
     const comandoFirma = `java -jar firmador.jar "${tempInPath}" "${tempOutPath}" "${certPath}" "${certPassword}"`;
-    execSync(comandoFirma, { stdio: 'pipe' });
+    execSync(comandoFirma, { stdio: "pipe" });
 
-    const xmlFirmado = readFileSync(tempOutPath, 'utf8');
+    const xmlFirmado = readFileSync(tempOutPath, "utf8");
 
-    // 3. Enviar a AEAT
-    const endpoint = process.env.VERIFACTU_ENDPOINT ||
-      'https://prewww1.aeat.es/wlpl/TIKE-CONT/ws/SistemaFacturacion/VerifactuSOAP';
+    // 3. Enviar firmado a AEAT con curl
+    const endpoint =
+      process.env.VERIFACTU_ENDPOINT ||
+      "https://prewww1.aeat.es/wlpl/TIKE-CONT/ws/SistemaFacturacion/VerifactuSOAP";
 
     const curlCmd = `curl -s --http1.1 --tlsv1.2 --cert-type P12 --cert "${certPath}:${certPassword}" \
       -H "Content-Type: text/xml; charset=utf-8" \
       --data-binary @"${tempOutPath}" \
       "${endpoint}"`;
 
-    const respuestaAEAT = execSync(curlCmd, { stdio: 'pipe' }).toString();
+    const respuestaAEAT = execSync(curlCmd, { stdio: "pipe" }).toString();
 
-    // 4. Determinar estado en base a respuesta
-    let estado = 'enviado';
-    if (respuestaAEAT.includes('<faultcode>')) {
-      estado = 'error';
-    } else if (respuestaAEAT.includes('<EstadoEnvio>Correcto</EstadoEnvio>')) {
-      estado = 'correcto';
-    } else if (respuestaAEAT.includes('<EstadoEnvio>ParcialmenteCorrecto</EstadoEnvio>')) {
-      estado = 'aceptadoConErrores';
-    } else if (respuestaAEAT.includes('Incorrecto')) {
-      estado = 'incorrecto';
+    // 4. Analizar respuesta AEAT (robusto contra namespaces y saltos de línea)
+    let estado = "error"; // valor seguro por defecto
+
+    if (/<faultcode>/i.test(respuestaAEAT)) {
+      estado = "error";
+    } else if (/EstadoEnvio>\s*Correcto/i.test(respuestaAEAT) && /EstadoRegistro>\s*Correcto/i.test(respuestaAEAT)) {
+      estado = "correcto";
+    } else if (/EstadoEnvio>\s*ParcialmenteCorrecto/i.test(respuestaAEAT)) {
+      estado = "aceptadoConErrores";
+    } else if (/EstadoEnvio>\s*Incorrecto/i.test(respuestaAEAT) || /EstadoRegistro>\s*Incorrecto/i.test(respuestaAEAT)) {
+      estado = "incorrecto";
     }
 
-    // 5. Devolver objeto estructurado
+    // 5. Devolver datos estructurados
     return {
       estado,
       respuestaAEAT,
-      xmlFirmado,        // lo que mandaste
-      xmlRespuesta: respuestaAEAT // lo que recibiste
+      xmlFirmado,        // lo que se envió firmado
+      xmlRespuesta: respuestaAEAT // respuesta cruda
     };
   } catch (err) {
-    console.error('❌ Error en enviarFacturaAEAT:', err);
+    console.error("❌ Error en enviarFacturaAEAT:", err);
     return {
-      estado: 'error',
+      estado: "error",
       respuestaAEAT: String(err?.message || err),
       xmlFirmado: null,
       xmlRespuesta: null
