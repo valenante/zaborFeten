@@ -30,19 +30,27 @@ const Carta = () => {
     cargarValoraciones();
   }, [cargarProductos]);
 
-  const productosFiltrados = productos.filter((producto) => {
-    const esCategoriaValida = categoriaSeleccionada
-      ? producto.categoria === categoriaSeleccionada
-      : true;
-    const estaHabilitado = producto.estado === "habilitado";
-    const esBebida = producto.tipo === "bebida";
+  const productosFiltrados = productos
+    .filter((producto) => {
+      const esCategoriaValida = categoriaSeleccionada
+        ? producto.categoria === categoriaSeleccionada
+        : true;
+      const estaHabilitado = producto.estado === "habilitado";
+      const esBebida = producto.tipo === "bebida";
 
-    if (mostrarSoloBebidas) {
-      return esBebida && estaHabilitado;
-    }
+      if (mostrarSoloBebidas) {
+        return esBebida && estaHabilitado;
+      }
 
-    return esCategoriaValida && estaHabilitado;
-  });
+      return esCategoriaValida && estaHabilitado;
+    })
+    .sort((a, b) => {
+      // Los no-bebidas primero, bebidas después
+      if (a.tipo === "bebida" && b.tipo !== "bebida") return 1;
+      if (a.tipo !== "bebida" && b.tipo === "bebida") return -1;
+      return 0;
+    });
+
 
   return (
     <>

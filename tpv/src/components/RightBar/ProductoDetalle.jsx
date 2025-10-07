@@ -123,13 +123,6 @@ const ProductoDetalle = ({
 
   const manejarCantidad = (inc) =>
     setCantidad((prev) => Math.max(1, prev + inc));
-  const manejarOpciones = (tipo, opcion) =>
-    setOpcionesSeleccionadas((prev) => ({ ...prev, [tipo]: opcion }));
-  const manejarIngrediente = (ing, sel) => {
-    setIngredientesSeleccionados((prev) =>
-      sel ? [...prev, ing] : prev.filter((i) => i !== ing)
-    );
-  };
 
   const confirmarProducto = () => {
     const adicionalesSeleccionados = producto.adicionales
@@ -150,9 +143,6 @@ const ProductoDetalle = ({
       tipoPrecio,
       acompanante,
       opciones: opcionesSeleccionadas,
-      ingredientes: producto.ingredientes.filter(
-        (i) => !ingredientesSeleccionados.includes(i)
-      ),
       mensaje: mensajeProducto,
       adicionales: adicionalesSeleccionados, // Guardamos los adicionales seleccionados
       extras: extrasSeleccionados, // Guardamos los extras seleccionados
@@ -167,28 +157,6 @@ const ProductoDetalle = ({
         <h2 className="titulo-modal--productoDetalle">
           {producto.nombre}
         </h2>
-
-        {producto.ingredientes.length > 0 && (
-          <>
-            <ul className="lista-ingredientes--productoDetalle">
-              {producto.ingredientes.map((ing) => (
-                <li key={ing} className="ingrediente--productoDetalle">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={ingredientesSeleccionados.includes(ing)}
-                      onChange={(e) =>
-                        manejarIngrediente(ing, e.target.checked)
-                      }
-                    />
-                    {ing}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
         <div>
           <button onClick={() => manejarCantidad(-1)}>-</button>
           <span>{cantidad}</span>
