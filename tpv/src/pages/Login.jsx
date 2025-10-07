@@ -9,6 +9,7 @@ const Login = () => {
   const { setUser, setAccessToken } = useAuth();
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // 👈 nuevo estado
   const navigate = useNavigate();
 
   // Manejar cambios en los campos del formulario
@@ -25,10 +26,8 @@ const Login = () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/login`, {
         method: "POST",
-        credentials: "include", // Para incluir cookies
-        headers: {
-          "Content-Type": "application/json",
-        },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
@@ -45,13 +44,11 @@ const Login = () => {
 
       switch (user.role) {
         case "admin":
+        case "camarero":
           navigate("/");
           break;
         case "cocinero":
           navigate("/cocina");
-          break;
-        case "camarero":
-          navigate("/");
           break;
         default:
           throw new Error("Rol de usuario desconocido");
@@ -82,20 +79,31 @@ const Login = () => {
           onChange={handleChange}
           required
           autoFocus
-          autoComplete="username" // 👈 añadido aquí
+          autoComplete="username"
           className="input--login"
           placeholder="Nombre de usuario"
         />
-        <input
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          autoComplete="current-password" // 👈 añadido aquí
-          className="input--login"
-          placeholder="Contraseña"
-        />
+
+        <div className="password-container">
+          <input
+            type={showPassword ? "text" : "password"}
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            autoComplete="current-password"
+            className="input--login password-input"
+            placeholder="Contraseña"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="toggle-password-btn"
+          >
+            {showPassword ? "🙈" : "👁️"}
+          </button>
+        </div>
+
         {error && <p className="error--login">{error}</p>}
         <button type="submit" disabled={isLoading} className="boton--login">
           {isLoading ? "Iniciando sesión..." : "Ingresar"}

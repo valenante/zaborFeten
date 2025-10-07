@@ -93,6 +93,18 @@
   color: var(--color-principal);
 }
 
+.boton-acciones {
+  background-color: var(--color-principal);
+  color: var(--blanco);
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--borde-redondeado);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-left: 0.3rem;
+}
+
 .filtros-facturas input {
   padding: 0.6rem;
   border: 1px solid var(--gris);
@@ -141,6 +153,7 @@
   color: var(--blanco);
   border: none;
   padding: 0.4rem 0.8rem;
+  margin: .5vh;
   border-radius: var(--borde-redondeado);
   font-size: 0.9rem;
   cursor: pointer;
@@ -179,6 +192,18 @@
 .paginacion-facturas span {
   font-weight: bold;
   color: var(--color-principal);
+}
+
+.acciones-facturas button{
+  background-color: var(--color-secundario);
+  color: var(--blanco);
+  border: none;
+  padding: 0.4rem 0.8rem;
+  margin: .5vh;
+  border-radius: var(--borde-redondeado);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 @media (max-width: 768px) {

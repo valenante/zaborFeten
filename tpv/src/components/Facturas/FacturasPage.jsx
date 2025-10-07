@@ -87,11 +87,112 @@ const FacturasPage = () => {
         }
     };
 
-    const verXML = (xml) => {
-        const nuevaVentana = window.open("", "_blank");
-        nuevaVentana.document.write(
-            `<pre style="white-space: pre-wrap; word-wrap: break-word;">${xml}</pre>`
+    const verXML = (xml, tipo = "firmado") => {
+        if (!xml) {
+            setMensajeAlerta({
+                tipo: "error",
+                mensaje: "No hay XML disponible para esta factura.",
+            });
+            return;
+        }
+
+        const contenidoLimpio = xml
+            .replaceAll("\\n", "\n")
+            .replaceAll("\\t", "\t")
+            .replaceAll('\\"', '"');
+
+        // --- Formatear XML con sangría ---
+        const formatXML = (xmlString) => {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+                const xs = new XMLSerializer();
+                const serialized = xs.serializeToString(xmlDoc);
+                const PADDING = "  ";
+                let formatted = "";
+                let pad = 0;
+                serialized.replace(/(>)(<)(\/*)/g, "$1\n$2$3").split("\n").forEach((node) => {
+                    if (node.match(/^<\/\w/)) pad -= 1;
+                    formatted += PADDING.repeat(pad) + node + "\n";
+                    if (node.match(/^<\w[^>]*[^/]>.*$/)) pad += 1;
+                });
+                return formatted.trim();
+            } catch (err) {
+                return xmlString;
+            }
+        };
+
+        const xmlPretty = formatXML(contenidoLimpio);
+
+        // --- Resaltado de sintaxis XML ---
+        const highlightXML = (xmlStr) =>
+            xmlStr
+                .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="comment">$1</span>')
+                .replace(/(&lt;[?].*?[?]&gt;)/g, '<span class="declaration">$1</span>')
+                .replace(/(&lt;\/?[^\s>]+)(.*?)(\/?&gt;)/g, (match, tag, attrs, end) => {
+                    const attrsColored = attrs.replace(
+                        /(\w+)="(.*?)"/g,
+                        '<span class="attr">$1</span>=<span class="value">"$2"</span>'
+                    );
+                    return `<span class="tag">${tag}</span>${attrsColored}<span class="tag">${end}</span>`;
+                });
+
+        const xmlHTML = highlightXML(
+            xmlPretty
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
         );
+
+        const nuevaVentana = window.open("", "_blank");
+        nuevaVentana.document.write(`
+    <html>
+      <head>
+        <title>${tipo === "respuesta" ? "Respuesta AEAT" : "XML Firmado"}</title>
+        <style>
+          body {
+            font-family: 'Fira Code', Consolas, monospace;
+            background-color: #1e1e1e;
+            color: #dcdcdc;
+            padding: 16px;
+          }
+          pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.4em;
+            font-size: 13px;
+          }
+          .tag { color: #569CD6; }
+          .attr { color: #9CDCFE; }
+          .value { color: #CE9178; }
+          .comment { color: #6A9955; font-style: italic; }
+          .declaration { color: #C586C0; }
+          h2 {
+            font-weight: normal;
+            color: #fff;
+            border-bottom: 1px solid #444;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+          }
+          button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+          }
+          button:hover { background: #1177bb; }
+        </style>
+      </head>
+      <body>
+        <h2>${tipo === "respuesta" ? "Respuesta AEAT" : "XML Firmado"}</h2>
+        <button onclick="window.print()">Imprimir</button>
+        <button onclick="window.close()">Cerrar</button>
+        <pre>${xmlHTML}</pre>
+      </body>
+    </html>
+  `);
         nuevaVentana.document.close();
     };
 

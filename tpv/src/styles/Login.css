@@ -63,6 +63,37 @@
   cursor: not-allowed;
 }
 
+.password-container {
+  position: relative;
+  width: 100%;
+}
+
+.password-input {
+  width: 100%;
+  padding-right: 2.5rem;
+  /* deja espacio interno para el botón */
+  box-sizing: border-box;
+  /* asegura que el padding no altere el ancho total */
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #666;
+  transition: color 0.2s ease;
+}
+
+.toggle-password-btn:hover {
+  color: #000;
+}
+
+
 @media (max-width: 480px) {
   .login--login {
     margin: 2rem 1rem;
