@@ -25,10 +25,10 @@ const CartaPage = () => {
         />
         <meta
           name="keywords"
-          content="carta, restaurante, pedidos, menú, pizza, tapas, bebidas, comida, Love Pizza, Torremolinos"
+          content="carta, restaurante, pedidos, menú, pizza, tapas, bebidas, comida, Zabor Fetén, Torremolinos"
         />
         <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="Carta | Love Pizza" />
+        <meta property="og:title" content="Carta | Zabor Fetén" />
         <meta
           property="og:description"
           content="Consulta la carta digital desde tu mesa y haz tu pedido fácilmente."

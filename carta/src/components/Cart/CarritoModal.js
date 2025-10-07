@@ -15,7 +15,6 @@ const CarritoModal = ({ cerrarModal }) => {
   const { comensal } = useComensal();
   const { comensales } = comensal;
   const [mensajeAlerta, setMensajeAlerta] = useState(null);
-  const tokenLider = localStorage.getItem("tokenLider"); // el mismo que comparas en esLider()
 
   useEffect(() => {
     // Aquí estamos llamando a la función para obtener el ID de la mesa (asumiendo que la mesa es la 1, o puedes pasar otro número de mesa)

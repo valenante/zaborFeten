@@ -1,11 +1,11 @@
 /* === VARIABLES GLOBALES === */
 :root {
-  --color-principal: #60b5ff; /* Azul índigo oscuro */
-  --color-principal-hover: #1a252f; /* Azul más profundo al hacer hover */
-  --color-principal-oscuro: #1e2e3a; /* Versión aún más oscura */
+--color-principal: #9B1C1C; /* Rojo vino del logo */
+  --color-principal-hover: #7E1616; /* Rojo vino más oscuro al hacer hover */
+  --color-principal-oscuro: #5B1010; /* Versión aún más oscura */
 
-  --color-secundario: #f39c12; /* Naranja vibrante */
-  --color-secundario-hover: #d68910; /* Naranja más oscuro al pasar el ratón */
+  --color-secundario: #4465e7; /* Azul violáceo de la base del abanico */
+  --color-secundario-hover: #3C4C8A; /* Azul más oscuro al pasar el ratón */
 
   --blanco: #ffffff;
   --gris-claro: #ecf0f1;

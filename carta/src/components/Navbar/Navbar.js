@@ -9,12 +9,10 @@ import api from "../../utils/api";
 import { useMesas } from "../../context/MesasContext";
 import * as logger from '../../utils/logger';
 import "../../styles/Navbar.css";
-import { useSearchParams } from 'react-router-dom';
 import socket from "../../utils/socket";
 
 
 const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
-  const [searchParams] = useSearchParams();
   const { mesaId, numeroMesa } = useMesas();
 
   const { productos, categoriaSeleccionada, setCategoriaSeleccionada } =

@@ -3,8 +3,10 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/autoplay";
 import { Autoplay } from "swiper/modules";
-import Pizza1 from "../../assets/images/pizza1.jpg";
-import Pizza2 from "../../assets/images/pizza2.jpg";
+import Pizza1 from "../../assets/images/churrasquito.avif";
+import Pizza2 from "../../assets/images/mujeresZF.avif";
+import Pizza3 from "../../assets/images/parejaZF.avif";
+import Pizza4 from "../../assets/images/hamburguesasZF.avif";
 import "../../styles/HomeCarrousel.css";
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
@@ -15,11 +17,19 @@ const HomeCarousel = () => {
   const slides = [
     {
       src: Pizza1,
-      text: "Multiples premios por nuestras pizzas",
+      text: "Disfruta de las mejores tapas de Torremolinos",
     },
     {
       src: Pizza2,
-      text: "El sabor perfecto para la ocasión",
+      text: "El cóctel perfecto para cada ocasión",
+    },
+    {
+      src: Pizza3,
+      text: "Platos gourmet que combinan tradición y calidad",
+    },
+    {
+      src: Pizza4,
+      text: "Un ambiente acogedor para compartir momentos únicos",
     },
   ];
 

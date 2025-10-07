@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trans } from "@lingui/react";
 import DOMPurify from "dompurify"; // Para sanitizar entradas de texto

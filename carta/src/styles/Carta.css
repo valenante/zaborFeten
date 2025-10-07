@@ -1,3 +1,28 @@
+/* === CONTENEDOR GENERAL === */
+.carta-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+}
+
+/* === SECCIÓN DE CATEGORÍA === */
+.categoria-seccion {
+  margin-bottom: 2rem;
+}
+
+/* === TÍTULO DE CATEGORÍA === */
+.categoria-titulo {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--color-secundario); /* Naranja vibrante */
+  margin-bottom: 1rem;
+  text-transform: capitalize;
+  border-left: 5px solid var(--color-principal); /* Morado profundo */
+  padding-left: 0.8rem;
+}
+
+/* === GRID DE PRODUCTOS (tu estilo original) === */
 .productos-grid {
   display: grid;
   /* 2 columnas en pantallas grandes */
