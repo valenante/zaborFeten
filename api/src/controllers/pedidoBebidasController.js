@@ -13,12 +13,11 @@ export const crearPedido = async (req, res) => {
   try {
     const {
       mesa,
-      productos,
+      productos = [], // [{ producto, cantidad, precioSeleccionado, total }]
       total,
       comensales,
       alergias,
       cartId,
-      precioSeleccionado,
     } = req.body;
 
     const mesaExistente = await Mesa.findById(mesa);
@@ -37,61 +36,91 @@ export const crearPedido = async (req, res) => {
       return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
     }
 
-    // 🧾 Crear nuevo pedido de bebida
+    // 🧾 Congelar precios producto por producto
+    const idsProductos = productos.map(p => p.producto);
+    const productosDB = await Producto.find({ _id: { $in: idsProductos } });
+
+    const productosCongelados = productos.map((p) => {
+      const info = productosDB.find(x => x._id.toString() === String(p.producto));
+
+      const precioCongelado = parseFloat(p.precioSeleccionado ?? info?.precioBase ?? 0);
+      const totalCongelado = parseFloat((precioCongelado * (p.cantidad ?? 1)).toFixed(2));
+
+      return {
+        ...p,
+        nombre: info?.nombre || p.nombre || 'Producto',
+        categoria: info?.categoria || 'bebida',
+        tipo: 'bebida',
+        estacion: info?.estacion || 'barra',
+        precioSeleccionado: precioCongelado,
+        total: totalCongelado,
+      };
+    });
+
+    // 🧮 Calcular total del pedido con precisión
+    const totalPedido = Number(
+      productosCongelados.reduce((sum, p) => sum + (p.total || 0), 0).toFixed(2)
+    );
+
+    // 🧾 Crear pedido
     const nuevoPedido = new PedidoBebida({
-      productos,
-      total: parseFloat(total.toFixed(2)),
+      productos: productosCongelados,
+      total: totalPedido,
       comensales,
       alergias,
       mesa: mesaExistente._id,
-      precioSeleccionado,
-      sesionId: sesionActiva._id, // 📌 Asociar a la sesión activa
+      sesionId: sesionActiva._id,
+      estado: 'pendiente',
     });
 
     await nuevoPedido.save();
 
+    // 🧩 Actualizar mesa
     mesaExistente.pedidosBebidas.push(nuevoPedido._id);
-    mesaExistente.total += nuevoPedido.total;
-    mesaExistente.total = parseFloat(mesaExistente.total.toFixed(2));
+    mesaExistente.total = parseFloat((mesaExistente.total + totalPedido).toFixed(2));
     await mesaExistente.save();
 
-    // Registrar cada producto como venta
-    for (const producto of productos) {
+    // 💾 Registrar ventas individuales
+    for (const item of productosCongelados) {
       const venta = new Venta({
-        producto: producto.producto,
+        producto: item.producto,
         pedidoId: nuevoPedido._id,
-        cantidad: producto.cantidad,
-        tipo: producto.tipo || 'bebida',
-        total,
+        cantidad: item.cantidad,
+        tipo: 'bebida',
+        total: item.total, // ✅ precio congelado individual
       });
 
       await venta.save();
 
-      const productoEnDB = await Producto.findById(producto.producto);
+      const productoEnDB = productosDB.find(
+        (p) => p._id.toString() === String(item.producto)
+      );
       if (productoEnDB) {
         productoEnDB.ventas.push(venta._id);
-        productoEnDB.stock -= producto.cantidad;
+        productoEnDB.stock -= item.cantidad;
         await productoEnDB.save();
       } else {
-        logger.error('Producto no encontrado en la base de datos:', producto.producto);
-        return res.status(400).json({ error: 'Producto no encontrado en la base de datos' });
+        logger.error('Producto no encontrado en la base de datos:', item.producto);
       }
     }
 
-    if (cartId) {
-      await Cart.findByIdAndDelete(cartId);
-    }
+    // 🧹 Eliminar carrito si aplica
+    if (cartId) await Cart.findByIdAndDelete(cartId);
 
-    // Emitir evento para actualizar en tiempo real
-    req.io.emit('nuevoPedido', nuevoPedido);
+    // 🔄 Emitir actualización en tiempo real
+    req.io.emit('nuevoPedido', {
+      tipo: 'crear-bebida',
+      mesaId: mesaExistente._id.toString(),
+      pedido: nuevoPedido.toObject(),
+    });
 
     res.status(201).json({
-      message: 'Pedido creado con éxito',
+      message: 'Pedido de bebidas creado con éxito',
       pedidoId: nuevoPedido._id,
       pedido: nuevoPedido,
     });
   } catch (error) {
-    logger.error('Error al procesar el pedido:', error);
+    logger.error('Error al procesar el pedido de bebida:', error);
     res.status(400).json({ error: error.message });
   }
 };

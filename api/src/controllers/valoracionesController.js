@@ -4,26 +4,36 @@ import Valoracion from '../models/Valoracion.js';
 import Mesa from '../models/Mesa.js';
 import validator from 'validator';
 import Producto from '../models/Producto.js';
-
 export const valorarPedido = async (req, res) => {
-  const { mesaId } = req.query; // Obtener el `mesaId` desde la consulta
+  const { mesaId } = req.query;
 
   if (!mesaId) {
     return res.status(400).json({ error: 'El ID de la mesa es requerido.' });
   }
 
   try {
-    // Buscar los pedidos relacionados con la mesa
-    const pedidos = await Pedido.find({ mesa: mesaId }).populate({
-      path: 'productos.producto', // Popular el campo producto dentro de productos
-      select: 'nombre precio producto', // Seleccionar solo los campos necesarios
+    // Buscar la mesa para obtener la sesión activa
+    const mesa = await Mesa.findById(mesaId);
+
+    if (!mesa) {
+      return res.status(404).json({ error: 'No se encontró la mesa especificada.' });
+    }
+
+    if (!mesa.sesionActiva) {
+      return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
+    }
+
+    // Buscar pedidos que pertenecen a la sesión activa de esa mesa
+    const pedidos = await Pedido.find({ sesionId: mesa.sesionActiva }).populate({
+      path: 'productos.producto',
+      select: 'nombre precio',
     });
 
     // Extraer los productos de los pedidos
     const productos = pedidos.flatMap((pedido) =>
       pedido.productos.map((p) => ({
         productoId: p.producto,
-        nombre: p.producto && p.producto.nombre, // ✅ Validación segura
+        nombre: p.producto?.nombre,
         cantidad: p.cantidad,
         total: p.total,
       }))

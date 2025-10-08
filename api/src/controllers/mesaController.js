@@ -172,7 +172,8 @@ export const abrirMesaCamarero = async (req, res) => {
     logger.error(error);
     res.status(500).json({ error: 'Error al reabrir la mesa' });
   }
-};export const cerrarMesa = async (req, res) => {
+};
+export const cerrarMesa = async (req, res) => {
   const { id } = req.params;
   const { metodoPago, clienteNombre, clienteNIF, camarero } = req.body;
 
@@ -184,9 +185,10 @@ export const abrirMesaCamarero = async (req, res) => {
 
     if (!mesa) return res.status(404).json({ error: "Mesa no encontrada" });
 
+    // === Variables iniciales ===
     const { efectivo = 0, tarjeta = 0, propina = 0 } = metodoPago || {};
+    const totalMesa = Number((mesa.total || 0).toFixed(2)); // ✅ se define antes de usar
     const totalPagado = Number((efectivo + tarjeta).toFixed(2));
-    const totalMesa = Number((mesa.total || 0).toFixed(2));
 
     if (totalPagado < totalMesa) {
       return res.status(400).json({
@@ -197,9 +199,11 @@ export const abrirMesaCamarero = async (req, res) => {
     const cambioCalculado = Number((totalPagado - totalMesa).toFixed(2));
     const propinaCalculada = Number((propina || 0).toFixed(2));
 
-    // --- Caja del día
-    const inicioDia = new Date(ahora); inicioDia.setHours(0, 0, 0, 0);
-    const finDia = new Date(ahora); finDia.setHours(23, 59, 59, 999);
+    // === Caja del día ===
+    const inicioDia = new Date(ahora);
+    inicioDia.setHours(0, 0, 0, 0);
+    const finDia = new Date(ahora);
+    finDia.setHours(23, 59, 59, 999);
 
     let caja = await Caja.findOne({
       fechaApertura: { $gte: inicioDia, $lte: finDia },
@@ -232,7 +236,7 @@ export const abrirMesaCamarero = async (req, res) => {
       await caja.save();
     }
 
-    // --- Guardar mesa cerrada antes de limpiar mesa
+    // === Guardar mesa cerrada ===
     const mesaCerrada = new MesaCerrada({
       numero: mesa.numero,
       pedidos: mesa.pedidos.map((p) => p._id),
@@ -247,50 +251,75 @@ export const abrirMesaCamarero = async (req, res) => {
     });
     await mesaCerrada.save();
 
-    // --- Abrir cajón
+    // === Abrir cajón registradora ===
     await abrirCajon();
 
-    // --- Número de factura
+    // === Número de factura ===
     const numeroFactura = await obtenerNumeroFactura();
 
-    // --- Productos "visibles" para impresión
+    // === Productos “visibles” (para impresión) ===
     const productosPlatos = mesa.pedidos.flatMap((pedido) =>
       pedido.productos.map((p) => ({
         nombre: p.producto?.nombre || "Producto desconocido",
         cantidad: p.cantidad,
-        precio: p.precioSeleccionado || 0,
+        precio: p.precioSeleccionado || 0, // PVP unitario (IVA incluido)
         iva: p.producto?.iva ?? 10,
       }))
     );
+
     const productosBebidas = mesa.pedidosBebidas.flatMap((pedido) =>
       pedido.productos.map((p) => ({
         nombre: p.producto?.nombre || "Bebida",
         cantidad: p.cantidad,
-        precio: p.precioSeleccionado || 0,
+        precio: p.precioSeleccionado || 0, // PVP unitario (IVA incluido)
         iva: p.producto?.iva ?? 10,
       }))
     );
+
     const productos = [...productosPlatos, ...productosBebidas];
 
-    // --- Productos para Veri*Factu (con base/cuota por línea)
+    // === Función auxiliar de redondeo ===
+    function to2Dec(num) {
+      return Number(num.toFixed(2));
+    }
+
+    // === Productos para Veri*Factu (desglose desde PVP con IVA incluido) ===
     const productosVF = productos.map((p) => {
-      const base = Number(((p.precio || 0) * (p.cantidad || 1)).toFixed(2));
       const iva = Number(p.iva ?? 10);
-      const cuota = Number((base * iva / 100).toFixed(2));
-      return { nombre: p.nombre, cantidad: p.cantidad, precio: p.precio, iva, base, cuota };
+      const cantidad = Number(p.cantidad ?? 1);
+      const pvpUnit = Number(p.precio ?? 0); // PVP unitario (IVA inc.)
+      const importeLinea = to2Dec(pvpUnit * cantidad);
+
+      // Desglose: base + cuota desde PVP
+      const base = to2Dec(importeLinea / (1 + iva / 100));
+      const cuota = to2Dec(importeLinea - base);
+
+      return {
+        nombre: p.nombre,
+        cantidad,
+        precio: pvpUnit,
+        iva,
+        base,
+        cuota,
+        importe: importeLinea,
+      };
     });
 
-    function to2Dec(num) {
-  return Number(num.toFixed(2));
-}
+    // === Totales AEAT ===
+    let baseTotal = to2Dec(productosVF.reduce((acc, p) => acc + p.base, 0));
+    let cuotaTotal = to2Dec(productosVF.reduce((acc, p) => acc + p.cuota, 0));
+    let importeTotal = to2Dec(baseTotal + cuotaTotal);
 
-    // --- Calcular totales para AEAT
-    const baseTotal = to2Dec(productosVF.reduce((acc, p) => acc + p.base, 0));
-    const cuotaTotal = to2Dec(productosVF.reduce((acc, p) => acc + p.cuota, 0));
-    const importeTotal = to2Dec(baseTotal + cuotaTotal);
+    // === Alinear totales con mesa.total (fuente de verdad) ===
+    if (Math.abs(importeTotal - totalMesa) >= 0.01) {
+      const factor = totalMesa / Math.max(importeTotal, 0.01);
+      baseTotal = to2Dec(baseTotal * factor);
+      cuotaTotal = to2Dec(totalMesa - baseTotal);
+      importeTotal = totalMesa;
+    }
 
-    // --- Tipo de factura (simplificada o completa)
-    let tipoFactura = "F1";
+    // === Tipo de factura ===
+    let tipoFactura = "F1"; // completa
     if (
       !clienteNombre ||
       clienteNombre.trim() === "" ||
@@ -298,18 +327,19 @@ export const abrirMesaCamarero = async (req, res) => {
       !clienteNIF ||
       clienteNIF.trim() === ""
     ) {
-      tipoFactura = "F2";
+      tipoFactura = "F2"; // simplificada
     }
 
-    // ✅ EMITIR FACTURA VERI*FACTU (ALTA)
+    // === Emitir factura VERI*FACTU ===
     const facturaDoc = await emitirRegistroVerifactu({
       tipo: "alta",
       datos: {
         numeroFactura,
-        fechaExpedicion: ahora.toISOString().split("T")[0], // yyyy-mm-dd
+        fechaExpedicion: ahora.toISOString().split("T")[0],
         clienteNombre: clienteNombre || "Consumidor Final",
         clienteNIF: clienteNIF,
         productos: productosVF,
+        baseTotal,
         cuotaTotal,
         importeTotal,
         mesaNumero: mesa.numero,
@@ -318,7 +348,7 @@ export const abrirMesaCamarero = async (req, res) => {
       },
     });
 
-    // --- Registro interno de evento
+    // === Registrar evento interno ===
     await new EventoFactura({
       tipoEvento: "creacion",
       numeroFactura,
@@ -329,7 +359,7 @@ export const abrirMesaCamarero = async (req, res) => {
       hashFactura: facturaDoc.hashFactura || facturaDoc.huellaTCR,
     }).save();
 
-    // --- Cerrar sesión activa de mesa (si existe)
+    // === Cerrar sesión activa ===
     const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: "activa" });
     if (sesionActiva) {
       sesionActiva.estado = "cerrada";
@@ -337,7 +367,7 @@ export const abrirMesaCamarero = async (req, res) => {
       await sesionActiva.save();
     }
 
-    // --- Limpiar mesa
+    // === Limpiar mesa ===
     await Mesa.updateOne(
       { _id: id },
       {
@@ -351,7 +381,7 @@ export const abrirMesaCamarero = async (req, res) => {
       }
     );
 
-    // --- Respuesta al front
+    // === Respuesta al frontend ===
     res.status(200).json({
       message: "Mesa cerrada con éxito",
       mesaCerrada,
@@ -370,7 +400,7 @@ export const abrirMesaCamarero = async (req, res) => {
         numeroFactura,
         fechaExpedicion: ahora.toISOString(),
         productos,
-        total: importeTotal, // 👈 ahora el total correcto con IVA
+        total: importeTotal, // ✅ Total final con IVA (igual al de la mesa)
         hash: facturaDoc.hashFactura || facturaDoc.huellaTCR || null,
         camarero: camarero || "",
       },
@@ -380,7 +410,6 @@ export const abrirMesaCamarero = async (req, res) => {
     res.status(500).json({ error: "Error al cerrar la mesa" });
   }
 };
-
 
 // Obtener historial de mesas cerradas
 export const getHistorialMesas = async (req, res) => {

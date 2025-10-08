@@ -1,37 +1,43 @@
 import Cart from '../models/Cart.js';
+import Mesa from '../models/Mesa.js';
+import SesionMesa from '../models/SesionMesa.js';
+import logger from '../../utils/logger.js';
 
-// Obtener carrito por número de mesa
+// === Obtener carrito por número de mesa ===
 export const obtenerCarrito = async (req, res) => {
   const { numeroMesa } = req.query;
 
   if (!numeroMesa) {
-    return res
-      .status(400)
-      .json({ error: 'Falta el número de mesa en la solicitud.' });
+    return res.status(400).json({ error: 'Falta el número de mesa en la solicitud.' });
   }
 
   try {
-    const cart = await Cart.findOne({ mesa: numeroMesa }).populate(
-      'items.productId'
-    );
-    res.status(200).json(cart || { items: [] });
+    const mesa = await Mesa.findOne({ numero: numeroMesa });
+    if (!mesa) return res.status(404).json({ error: 'Mesa no encontrada.' });
+
+    const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: 'activa' });
+    if (!sesionActiva) {
+      return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
+    }
+
+    const cart = await Cart.findOne({ mesa: numeroMesa, sesionId: sesionActiva._id })
+      .populate('items.productId');
+
+    res.status(200).json(cart || { items: [], sesionId: sesionActiva._id });
   } catch (error) {
     logger.error('❌ Error al obtener el carrito:', error);
     res.status(500).json({ error: 'Error al obtener el carrito.' });
   }
 };
 
-// Agregar producto al carrito
+// === Agregar producto al carrito ===
 export const agregarAlCarrito = async (req, res) => {
   let { mesa, items } = req.body;
 
   if (!mesa)
     return res.status(400).json({ error: 'El número de mesa es obligatorio.' });
-  if (!Array.isArray(items) || items.length === 0) {
-    return res
-      .status(400)
-      .json({ error: 'Debe haber al menos un producto en el carrito.' });
-  }
+  if (!Array.isArray(items) || items.length === 0)
+    return res.status(400).json({ error: 'Debe haber al menos un producto en el carrito.' });
 
   let {
     productId,
@@ -51,26 +57,28 @@ export const agregarAlCarrito = async (req, res) => {
 
   cantidad = parseInt(cantidad, 10);
 
-  if (
-    !productId ||
-    !nombre ||
-    !precioSeleccionado ||
-    isNaN(cantidad) ||
-    cantidad <= 0
-  ) {
-    return res
-      .status(400)
-      .json({ error: 'Faltan datos obligatorios o cantidad inválida.' });
+  if (!productId || !nombre || !precioSeleccionado || isNaN(cantidad) || cantidad <= 0) {
+    return res.status(400).json({ error: 'Faltan datos obligatorios o cantidad inválida.' });
   }
 
   if (tipoPlato === 'surtido' && (!sabor || sabor.length !== 6)) {
-    return res
-      .status(400)
-      .json({ error: 'El surtido debe tener exactamente 6 sabores.' });
+    return res.status(400).json({ error: 'El surtido debe tener exactamente 6 sabores.' });
   }
 
   try {
-    let cart = (await Cart.findOne({ mesa })) || new Cart({ mesa, items: [] });
+    const mesaDoc = await Mesa.findOne({ numero: mesa });
+    if (!mesaDoc) return res.status(404).json({ error: 'Mesa no encontrada.' });
+
+    const sesionActiva = await SesionMesa.findOne({ mesa: mesaDoc._id, estado: 'activa' });
+    if (!sesionActiva) {
+      return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
+    }
+
+    // Buscar carrito vinculado a la sesión activa
+    let cart = await Cart.findOne({ mesa, sesionId: sesionActiva._id });
+    if (!cart) {
+      cart = new Cart({ mesa, sesionId: sesionActiva._id, items: [] });
+    }
 
     const opcionesStr = JSON.stringify(opciones || {});
     const ingredientesStr = JSON.stringify(ingredientes || []);
@@ -108,8 +116,9 @@ export const agregarAlCarrito = async (req, res) => {
 
     req.io.emit('carritoActualizado', {
       cartId: cart._id,
-      totalItems: cart.items.length,
+      totalItems: cart.items.reduce((acc, item) => acc + item.cantidad, 0),
       numeroMesa: cart.mesa,
+      sesionId: cart.sesionId,
     });
 
     res.status(200).json(cart);
@@ -119,7 +128,7 @@ export const agregarAlCarrito = async (req, res) => {
   }
 };
 
-// Actualizar cantidad de un producto en el carrito
+// === Actualizar cantidad ===
 export const actualizarItem = async (req, res) => {
   const { itemId, cantidad } = req.body;
 
@@ -129,12 +138,10 @@ export const actualizarItem = async (req, res) => {
 
   try {
     const cart = await Cart.findOne({ 'items._id': itemId });
-    if (!cart)
-      return res.status(404).json({ message: 'Carrito no encontrado.' });
+    if (!cart) return res.status(404).json({ message: 'Carrito no encontrado.' });
 
     const item = cart.items.id(itemId);
-    if (!item)
-      return res.status(404).json({ message: 'Producto no encontrado.' });
+    if (!item) return res.status(404).json({ message: 'Producto no encontrado.' });
 
     item.cantidad = cantidad;
     await cart.save();
@@ -146,7 +153,7 @@ export const actualizarItem = async (req, res) => {
   }
 };
 
-// Eliminar producto del carrito
+// === Eliminar producto ===
 export const eliminarDelCarrito = async (req, res) => {
   const { itemId } = req.params;
   const cartId = req.headers['x-cart-id'];
@@ -182,6 +189,7 @@ export const eliminarDelCarrito = async (req, res) => {
     req.io.emit('carritoActualizado', {
       cartId: cart._id,
       totalItems: cart.items.reduce((acc, item) => acc + item.cantidad, 0),
+      sesionId: cart.sesionId,
     });
 
     res.status(200).json({
@@ -195,7 +203,7 @@ export const eliminarDelCarrito = async (req, res) => {
   }
 };
 
-// Vaciar carrito por número de mesa
+// === Vaciar carrito ===
 export const vaciarCarrito = async (req, res) => {
   const { mesa } = req.body;
 
@@ -203,9 +211,16 @@ export const vaciarCarrito = async (req, res) => {
     return res.status(400).json({ error: 'El número de mesa es obligatorio.' });
 
   try {
-    const cart = await Cart.findOne({ mesa });
-    if (!cart)
-      return res.status(404).json({ message: 'Carrito no encontrado.' });
+    const mesaDoc = await Mesa.findOne({ numero: mesa });
+    if (!mesaDoc) return res.status(404).json({ error: 'Mesa no encontrada.' });
+
+    const sesionActiva = await SesionMesa.findOne({ mesa: mesaDoc._id, estado: 'activa' });
+    if (!sesionActiva) {
+      return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
+    }
+
+    const cart = await Cart.findOne({ mesa, sesionId: sesionActiva._id });
+    if (!cart) return res.status(404).json({ message: 'Carrito no encontrado.' });
 
     cart.items = [];
     await cart.save();

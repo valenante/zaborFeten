@@ -31,7 +31,6 @@ const CartItemSchema = new Schema({
     enum: ['tapa', 'racion', 'surtido', 'precioBase', 'copa', 'botella'],
     required: true,
   },
-
   tipoPlato: {
     type: String,
     enum: ['compartir', 'individual'],
@@ -47,6 +46,11 @@ const CartSchema = new Schema(
   {
     items: [CartItemSchema],
     mesa: { type: String, required: true },
+    sesionId: {
+      type: _Schema.Types.ObjectId,
+      ref: 'SesionMesa',
+      required: true,
+    }
   },
   { timestamps: true }
 );

@@ -33,7 +33,6 @@ const ProductoCard = ({ producto, estrellas }) => {
   const esCroqueta = producto.nombre.toLowerCase().includes("croqueta") && !producto.nombre.toLowerCase().includes("mexicanas");
   const { permitePedidosComida, permitePedidosBebida } = useConfiguracion();
 
-
   useEffect(() => {
     const handleResize = () => {
       setPantallaPequena(window.innerWidth <= 768);
