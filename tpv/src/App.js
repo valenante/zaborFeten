@@ -32,9 +32,16 @@ const AppContent = () => {
   const rutasSinNavbar = ["/barra", "/cocina", "/login", "/register", "/verificar-factura/:hash"];
   const mostrarNavbar = !rutasSinNavbar.some(r => location.pathname.startsWith(r)) &&
     !location.pathname.startsWith("/verificar-factura/");
+
+
+  // 🔹 Rutas donde NO se debe mostrar el popup de cuenta
+  const rutasSinCuentaPopup = ["/cocina", "/barra", "/login", "/register", "/verificar-factura/:hash"];
+  const mostrarCuentaPopup = !rutasSinCuentaPopup.some(r =>
+    location.pathname.startsWith(r)
+  );
   return (
     <>
-      <CuentaPopup />
+      {mostrarCuentaPopup && <CuentaPopup />}
       {mostrarNavbar && <Navbar />}
       <Routes>
         {/* Rutas públicas */}

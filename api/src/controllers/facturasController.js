@@ -103,8 +103,7 @@ export const exportarFacturasCSV = async (req, res) => {
     logger.error('❌ Error al exportar facturas:', error);
     res.status(500).json({ error: 'Error al exportar facturas.' });
   }
-};
-export const rectificarFactura = async (req, res) => {
+};export const rectificarFactura = async (req, res) => {
   const { id } = req.params;
   const {
     motivo,
@@ -112,12 +111,12 @@ export const rectificarFactura = async (req, res) => {
     clienteNombre,
     clienteNIF,
     productos = [],
-    tipoFactura,       // 👈 R1, R2, R3, R4 o R5
-    tipoRectificativa  // 👈 "S" (sustitución) o "I" (diferencias), solo para R1 y R2
+    tipoFactura,       // R1, R2, R3, R4 o R5
+    tipoRectificativa  // "S" o "I"
   } = req.body;
 
   try {
-    // 1) Buscar la factura original
+    // 1️⃣ Buscar la factura original
     const facturaOriginal = await RegistroVerifactu.findById(id);
     if (!facturaOriginal)
       return res.status(404).json({ error: "Factura original no encontrada." });
@@ -125,72 +124,79 @@ export const rectificarFactura = async (req, res) => {
     if (facturaOriginal.rectificada)
       return res.status(400).json({ error: "La factura ya fue rectificada." });
 
-    // 2) Generar número para la factura rectificativa
+    // 2️⃣ Generar número para la factura rectificativa
     const nuevoNumeroFactura = await generarNumeroFacturaRectificativa();
 
-    // 3) Preparar productos para rectificativa
+    // 3️⃣ Detectar consumidor final
+    const esConsumidorFinal =
+      !clienteNIF || clienteNIF.trim() === "" || clienteNIF === "-" || clienteNIF === "99999999R";
+
+    // 4️⃣ Preparar productos para la rectificativa
     const productosRectificativos = productos.length
       ? productos
       : generarProductoRectificativo(
-        importeTotal,
-        10, // 👈 podrías calcular el IVA real de la original
-        motivo || "Rectificación de factura"
-      );
+          importeTotal,
+          10,
+          motivo || "Rectificación de factura"
+        );
 
-    // 4) Emitir la nueva factura rectificativa
+    // 5️⃣ Emitir la nueva factura rectificativa
     const nuevaFactura = await emitirRegistroVerifactu({
       tipo: "alta",
       datos: {
         numeroFactura: nuevoNumeroFactura,
         fechaExpedicion: new Date(),
-        clienteNombre,
-        clienteNIF,
+        clienteNombre: esConsumidorFinal ? "" : clienteNombre,
+        clienteNIF: esConsumidorFinal ? "" : clienteNIF,
+        facturaSinIdentificar: esConsumidorFinal, // 👈 NUEVO
         productos: productosRectificativos,
         importeTotal,
         descripcionOperacion: motivo || "Rectificación de factura",
 
-        // Encadenamiento con la original
+        // Encadenamiento
         numFacturaAnterior: facturaOriginal.numeroFactura,
         fechaFacturaAnterior: facturaOriginal.fechaExpedicion
           ? formatFechaDDMMYYYY(facturaOriginal.fechaExpedicion)
-          : undefined, huellaAnterior: facturaOriginal.huellaTCR,
+          : undefined,
+        huellaAnterior: facturaOriginal.huellaTCR,
 
-        // Factura rectificativa
-        tipoFactura,                  // 👈 dinámico: R1, R2, R3, R4, R5
+        // Tipos de factura
+        tipoFactura,
         tipoRectificativa:
           ["R1", "R2"].includes(tipoFactura)
-            ? tipoRectificativa || "I" // diferencias por defecto
+            ? tipoRectificativa || "I"
             : ["R3", "R4"].includes(tipoFactura)
-              ? "S"
-              : undefined,
+            ? "S"
+            : undefined,
       },
     });
 
-    // 5) Marcar la original como rectificada
+    // 6️⃣ Marcar la original como rectificada
     facturaOriginal.rectificada = true;
     facturaOriginal.facturaRectificativaId = nuevaFactura._id;
     await facturaOriginal.save();
 
-    // 6) Registrar evento interno
+    // 7️⃣ Registrar evento interno
     await new EventoFactura({
       tipoEvento: "rectificacion",
       numeroFactura: nuevoNumeroFactura,
-      clienteNombre,
-      clienteNIF,
+      clienteNombre: esConsumidorFinal ? "Consumidor final" : clienteNombre,
+      clienteNIF: esConsumidorFinal ? "—" : clienteNIF,
       motivo,
       importeTotal,
       hashFactura: nuevaFactura.hashFactura,
       facturaOriginalId: facturaOriginal._id,
       facturaRectificativaId: nuevaFactura._id,
+      facturaSinIdentificar: esConsumidorFinal, // 👈 NUEVO
     }).save();
 
-    // 7) Intentar imprimir
+    // 8️⃣ Intentar imprimir
     try {
       await axios.post("http://100.91.21.52:4000/imprimir-factura-rectificativa", {
         numeroFactura: nuevoNumeroFactura,
         fechaExpedicion: nuevaFactura.fechaExpedicion,
-        clienteNombre,
-        clienteNIF,
+        clienteNombre: esConsumidorFinal ? "Consumidor final" : clienteNombre,
+        clienteNIF: esConsumidorFinal ? "—" : clienteNIF,
         importeTotal,
         motivo,
         hash: nuevaFactura.hashFactura,

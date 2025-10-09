@@ -12,43 +12,24 @@
         </sum1:ObligadoEmision>
       </sum:Cabecera>
       
-    <sum:RegistroFactura>
-      <sum1:RegistroAlta>
-        <sum1:IDVersion>1.0</sum1:IDVersion>
-        <sum1:IDFactura>
-          <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>2025-0119</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>08-10-2025</sum1:FechaExpedicionFactura>
-        </sum1:IDFactura>
-        <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
-        
-        <sum1:TipoFactura>F2</sum1:TipoFactura>
-        
-                
-                
-        <sum1:DescripcionOperacion>Factura de prueba VeriFactu</sum1:DescripcionOperacion>
-        <sum1:FacturaSinIdentifDestinatarioArt61d>S</sum1:FacturaSinIdentifDestinatarioArt61d>
-        <sum1:Desglose>
-      <sum1:DetalleDesglose>
-        <sum1:Impuesto>01</sum1:Impuesto>
-        <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
-        <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
-        <sum1:TipoImpositivo>10</sum1:TipoImpositivo>
-        <sum1:BaseImponibleOimporteNoSujeto>6.91</sum1:BaseImponibleOimporteNoSujeto>
-        <sum1:CuotaRepercutida>0.69</sum1:CuotaRepercutida>
-      </sum1:DetalleDesglose></sum1:Desglose>
-        <sum1:CuotaTotal>0.76</sum1:CuotaTotal>
-        <sum1:ImporteTotal>7.60</sum1:ImporteTotal>
-        
+      <sum:RegistroFactura>
+        <sum1:RegistroAnulacion>
+          <sum1:IDVersion>1.0</sum1:IDVersion>
+          <sum1:IDFactura>
+            <sum1:IDEmisorFacturaAnulada>X6063327K</sum1:IDEmisorFacturaAnulada>
+            <sum1:NumSerieFacturaAnulada>2025-0131</sum1:NumSerieFacturaAnulada>
+            <sum1:FechaExpedicionFacturaAnulada>09-10-2025</sum1:FechaExpedicionFacturaAnulada>
+          </sum1:IDFactura>
+          
   <sum1:Encadenamiento>
     <sum1:RegistroAnterior>
       <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-      <sum1:NumSerieFactura>2025-0118</sum1:NumSerieFactura>
-      <sum1:FechaExpedicionFactura>08-10-2025</sum1:FechaExpedicionFactura>
-      <sum1:Huella>2AB50650E595F31D4D7E5F42ED8E308B3B2269A3786FA58FF65555D679B86A17</sum1:Huella>
+      <sum1:NumSerieFactura>2025-0131</sum1:NumSerieFactura>
+      <sum1:FechaExpedicionFactura>09-10-2025</sum1:FechaExpedicionFactura>
+      <sum1:Huella>4BF806906956119F7C00AF1146B950FF21E5C9364EFE92927FAAC7093BD2F6D0</sum1:Huella>
     </sum1:RegistroAnterior>
   </sum1:Encadenamiento>
-        
+          
     <sum1:SistemaInformatico>
       <sum1:NombreRazon>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazon>
       <sum1:NIF>X6063327K</sum1:NIF>
@@ -60,11 +41,11 @@
       <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
       <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
     </sum1:SistemaInformatico>
-        <sum1:FechaHoraHusoGenRegistro>2025-10-08T17:52:23+02:00</sum1:FechaHoraHusoGenRegistro>
-        <sum1:TipoHuella>01</sum1:TipoHuella>
-        <sum1:Huella>BFCC6A24D2C123D4794A58CB0AFD50ECE0DF49F634C8C70978752AC6F3D6C534</sum1:Huella>
-      </sum1:RegistroAlta>
-    </sum:RegistroFactura>
+          <sum1:FechaHoraHusoGenRegistro>2025-10-09T17:34:36+02:00</sum1:FechaHoraHusoGenRegistro>
+          <sum1:TipoHuella>01</sum1:TipoHuella>
+          <sum1:Huella>32CA52CF539A62F67F2218729FF13A3523A58A11CD6E5D83BD03BC62EEC641A9</sum1:Huella>
+        </sum1:RegistroAnulacion>
+      </sum:RegistroFactura>
     </sum:RegFactuSistemaFacturacion>
   </soapenv:Body>
 </soapenv:Envelope>

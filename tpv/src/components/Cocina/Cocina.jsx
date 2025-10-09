@@ -50,6 +50,13 @@ const formatearProductoCliente = (pr) => {
 const findPedidoPendienteByMesa = (pedidos, mesaNum) =>
   pedidos.find(p => p.mesa?.numero === mesaNum && p.estado !== 'listo');
 
+const labelTipoPrecio = (tp = '') => {
+  const t = tp.toLowerCase();
+  if (!t || t === 'preciobase' || t === 'base' || t === 'precio base') return '';
+  const mapa = { tapa: 'tapa', racion: 'ración', media: 'media ración', surtido: 'surtido' };
+  return mapa[t] || '';
+};
+
 // Genera texto de resumen (top productos pendientes)
 const resumenPendientesTexto = (pedidos) => {
   const conteo = {};
@@ -58,22 +65,32 @@ const resumenPendientesTexto = (pedidos) => {
       .filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo')
       .forEach(pr => {
         const nombre = pr.producto?.nombre || 'Producto';
-        const key = `${nombre} ${pr.tipoPrecio || ''}`.trim();
+        const tipoPrecio = labelTipoPrecio(pr.tipoPrecio);
+        const key = `${nombre}${tipoPrecio ? ` ${tipoPrecio}` : ''}`.trim();
         conteo[key] = (conteo[key] || 0) + pr.cantidad;
       });
   });
+
   const items = Object.entries(conteo)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8)
     .map(([k, v]) => `${v === 1 ? 'un' : v} ${k}`);
+
   return items.length ? items.join('. ') : 'No hay productos pendientes.';
 };
 
+
 // Busca producto por índice 1‑based o por nombre aproximado
 const findProductoPendienteEnPedido = (pedido, { idx, nombre }) => {
-  const lista = pedido.productos
-    .filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo');
+  const ordenSecciones = { entrante: 1, medio: 2, final: 3 };
 
+  const lista = pedido.productos
+    .filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo')
+    .sort((a, b) => {
+      const sa = ordenSecciones[a.seccion] || 99;
+      const sb = ordenSecciones[b.seccion] || 99;
+      return sa - sb; // primero entrantes, luego medios, luego finales
+    });
   if (idx != null) {
     const i = idx - 1;
     return (i >= 0 && i < lista.length) ? lista[i] : null;
@@ -273,7 +290,6 @@ const Cocina = () => {
       socket.off("nuevaComanda");
     };
   }, [socket, encolarLectura]);
-
 
   useEffect(() => {
     if (!soportado) return;

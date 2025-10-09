@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as logger from "../../utils/logger";
 import AlertaMensaje from "../AlertaMensaje/AlertaMensaje";
+import ModalConfirmacion from "../Modal/ModalConfirmacion";
 import "./FacturasPage.css";
 
 const FacturasPage = () => {
@@ -17,6 +18,8 @@ const FacturasPage = () => {
     const [subtipo, setSubtipo] = useState(""); // S o I
     const [fechaInicio, setFechaInicio] = useState("");
     const [fechaFin, setFechaFin] = useState("");
+    const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+    const [facturaAAnular, setFacturaAAnular] = useState(null);
 
     // Formulario de rectificación
     const [tipo, setTipo] = useState("");
@@ -373,7 +376,12 @@ const FacturasPage = () => {
 
                                     {/* 👇 Oculta el botón si la factura ya está anulada */}
                                     {f.estado !== "anulada" && (
-                                        <button onClick={() => anularFactura(f._id)}>Anular</button>
+                                        <button onClick={() => {
+                                            setFacturaAAnular(f._id);
+                                            setMostrarConfirmacion(true);
+                                        }}>
+                                            Anular
+                                        </button>
                                     )}
 
                                     <button onClick={() => verXML(f.xmlFirmado)}>Ver XML</button>
@@ -454,6 +462,18 @@ const FacturasPage = () => {
                     tipo={mensajeAlerta.tipo}
                     mensaje={mensajeAlerta.mensaje}
                     onClose={() => setMensajeAlerta(null)}
+                />
+            )}
+
+            {mostrarConfirmacion && (
+                <ModalConfirmacion
+                    titulo="Confirmar anulación"
+                    mensaje="¿Seguro que desea anular esta factura? Esta acción no se puede deshacer."
+                    onConfirm={() => {
+                        anularFactura(facturaAAnular);
+                        setMostrarConfirmacion(false);
+                    }}
+                    onClose={() => setMostrarConfirmacion(false)}
                 />
             )}
         </div>

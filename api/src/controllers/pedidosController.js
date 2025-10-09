@@ -161,18 +161,32 @@ export const crearPedido = async (req, res) => {
     });
 
     // 7️⃣ TTS cocina
+    const labelTipoPrecio = (tp = '') => {
+      const t = tp.toLowerCase();
+      if (!t || t === 'preciobase' || t === 'base' || t === 'precio base') return '';
+      const mapa = {
+        tapa: 'tapa',
+        racion: 'ración',
+        media: 'media ración',
+        surtido: 'surtido',
+      };
+      return mapa[t] || '';
+    };
+
     const itemsDetallados = productosCompletos
-      .filter((p) => ['plato', 'tapaRacion'].includes(p.tipo))
-      .map((p) => {
+      .filter(p => ['plato', 'tapaRacion'].includes(p.tipo))
+      .map(p => {
         const nombre = p.nombre || 'Producto';
+        const tipoPrecio = labelTipoPrecio(p.tipoPrecio);
         const partes = [
           `${p.cantidad} ${nombre}`,
-          p.tipoPrecio,
+          tipoPrecio ? tipoPrecio : '', // 👈 solo si aplica
           p.adicionales?.length ? `con ${p.adicionales.join(', ')}` : '',
           p.extras?.length ? `extras: ${p.extras.join(', ')}` : '',
         ].filter(Boolean);
         return { ...p, texto: partes.join(', ') };
       });
+
 
     const notasGlobales = productosCompletos.map(p => limpiar(p.mensaje)).filter(Boolean).join('. ');
     const alergiasItems = productosCompletos.map(p => limpiar(p.alergiasComensal)).filter(Boolean);
@@ -331,11 +345,73 @@ export const agregarProductoAlPedido = async (req, res) => {
       pedido: pedidoModificado.toObject(),
     });
 
+    const labelTipoPrecio = (tp = '') => {
+      const t = tp.toLowerCase();
+      if (!t || t === 'preciobase' || t === 'base' || t === 'precio base') return '';
+      const mapa = {
+        tapa: 'tapa',
+        racion: 'ración',
+        media: 'media ración',
+        surtido: 'surtido',
+      };
+      return mapa[t] || '';
+    };
+
+    const itemsDetallados = productosCompletos
+      .filter(p => ['plato', 'tapaRacion'].includes(p.tipo))
+      .map(p => {
+        const nombre = p.nombre || 'Producto';
+        const tipoPrecio = labelTipoPrecio(p.tipoPrecio);
+        const partes = [
+          `${p.cantidad} ${nombre}`,
+          tipoPrecio ? tipoPrecio : '', // 👈 solo si aplica
+          p.adicionales?.length ? `con ${p.adicionales.join(', ')}` : '',
+          p.extras?.length ? `extras: ${p.extras.join(', ')}` : '',
+        ].filter(Boolean);
+        return { ...p, texto: partes.join(', ') };
+      });
+
+
+    const notasGlobales = productosCompletos.map(p => (p.mensaje || '').trim()).filter(Boolean).join('. ');
+    const alergiasItems = productosCompletos.map(p => (p.alergiasComensal || '').trim()).filter(Boolean);
+    const lecturaKey = `${pedidoModificado._id}:${mesa.numero}:${itemsDetallados.map(i => i.texto).join('|')}`;
+
+    req.io.emit('nuevaComanda', {
+      area: 'cocina',
+      mesa: mesa.numero,
+      items: itemsDetallados,
+      itemsTexto: itemsDetallados.map(i => i.texto),
+      alergias: alergiasItems,
+      notas: notasGlobales,
+      lecturaKey,
+    });
+
     res.json({
       message: 'Producto agregado correctamente',
       mesaNumero: mesa.numero,
       totalMesa: mesa.total,
     });
+
+    try {
+      const productosParaImpresion = productosCompletos.map(p => ({
+        nombre: p.nombre,
+        cantidad: p.cantidad,
+        tipoPrecio: p.tipoPrecio,
+        adicionales: p.adicionales || [],
+        extras: p.extras || [],
+      }));
+
+      await axios.post(`${process.env.IMPRESION_SERVER}/imprimir`, {
+        mesaNumero: mesa.numero,
+        comensales: mesa.comensales || 0,
+        productos: productosParaImpresion,
+        total: mesa.total,
+      });
+
+      logger.info(`🖨️ Impresión enviada correctamente para mesa ${mesa.numero}`);
+    } catch (error) {
+      logger.warn(`⚠️ No se pudo imprimir el agregado de productos: ${error.message}`);
+    }
   } catch (error) {
     logger.error('Error al agregar producto:', error);
     res.status(500).json({ error: 'Error al agregar producto' });

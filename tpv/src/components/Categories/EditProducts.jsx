@@ -71,7 +71,6 @@ const EditProduct = ({ product, onSave, onCancel, onDelete }) => {
       [name]: validateField(name, value),
     }));
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -95,7 +94,16 @@ const EditProduct = ({ product, onSave, onCancel, onDelete }) => {
       setErrors(newErrors);
       return;
     }
-    onSave(formData); // Llama a la función onSave con los datos válidos
+
+    // ✅ convertir aliasesText a array antes de guardar
+    const aliases =
+      (formData.aliasesText || "")
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean);
+
+    // ✅ guardar una sola vez
+    onSave({ ...formData, aliases });
   };
 
   const hasErrors = Object.values(errors).some((error) => error);
@@ -395,18 +403,13 @@ const EditProduct = ({ product, onSave, onCancel, onDelete }) => {
           Aliases (separados por comas):
           <input
             type="text"
-            value={formData.aliases?.join(", ") || ""}
-            onChange={(e) => {
-              const input = e.target.value;
-              const nuevosAliases = input
-                .split(",")
-                .map((alias) => alias.trim())
-                .filter((alias) => alias.length > 0);
+            value={formData.aliasesText || formData.aliases?.join(", ") || ""}
+            onChange={(e) =>
               setFormData((prev) => ({
                 ...prev,
-                aliases: nuevosAliases,
-              }));
-            }}
+                aliasesText: e.target.value, // guardamos texto plano
+              }))
+            }
             className="input--editar"
             placeholder="Ej: croqueta, jamón, croquetas jamón"
           />

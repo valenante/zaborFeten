@@ -4,8 +4,9 @@ import mongoose from 'mongoose';
 const eventoFacturaSchema = new mongoose.Schema({
   tipoEvento: { type: String, required: true }, // "rectificación", "creación", etc.
   numeroFactura: { type: String, required: true },
-  clienteNombre: { type: String, required: true },
-  clienteNIF: { type: String, required: true },
+  clienteNombre: { type: String, required: function () { return !this.facturaSinIdentificar; } },
+  clienteNIF: { type: String, required: function () { return !this.facturaSinIdentificar; } },
+  facturaSinIdentificar: { type: Boolean, default: false },
   motivo: { type: String },
   importeTotal: { type: Number, required: true },
   fecha: { type: Date, default: Date.now },
