@@ -111,6 +111,10 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
       fechaEnvio: new Date(),
       estado: verifactuEnabled ? "pendiente" : "generada",
       hashFactura,
+      hashAnterior: huellaAnterior,
+      fechaHoraHusoGenRegistro: fechaHoraRegistro,
+      cuotaTotal,
+      importeTotal: Number(datos.importeTotal) || 0,
       huellaTCR: hashFactura,
       errores: [],
     });

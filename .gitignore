@@ -11,3 +11,5 @@ api/logs/requests.log.1
 api/logs/requests.log.2     
 logs/*.log
 api/logs/*.log
+api/temp-in.xml
+api/temp-out.xml

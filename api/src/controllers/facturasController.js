@@ -6,9 +6,10 @@ import EventoFactura from '../models/EventosFactura.js';
 import { emitirRegistroVerifactu } from '../../utils/emitirFactura.js';
 import { generarNumeroFacturaRectificativa } from '../../utils/numeracionRectificativas.js';
 import { generarProductoRectificativo } from '../../utils/generarProductoRectificativo.js';
-import { generarVerifactuXML } from '../../utils/generarVerifactuXML.js';
-import { enviarFacturaAEAT } from '../../utils/enviarAEAT.js';
+import EventosFactura from '../models/EventosFactura.js';
+import { generarHashFactura } from "../../utils/hashFactura.js";
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
+import xml2js from "xml2js";
 
 function formatFechaDDMMYYYY(date) {
   const d = new Date(date);
@@ -16,6 +17,45 @@ function formatFechaDDMMYYYY(date) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = d.getFullYear();
   return `${dd}-${mm}-${yyyy}`;
+}
+
+
+async function extraerCamposDeXML(xmlRaw) {
+  try {
+    const parsed = await xml2js.parseStringPromise(xmlRaw, { explicitArray: false });
+    const body =
+      parsed["soapenv:Envelope"]?.["soapenv:Body"] ||
+      parsed["Envelope"]?.["Body"] ||
+      parsed?.Body ||
+      parsed;
+
+    const regAlta =
+      body?.["sum:RegFactuSistemaFacturacion"]?.["sum:RegistroFactura"]?.["sum1:RegistroAlta"] ||
+      body?.RegFactuSistemaFacturacion?.RegistroFactura?.RegistroAlta;
+
+    if (!regAlta) return {};
+
+    const idFactura = regAlta?.["sum1:IDFactura"] || {};
+    const encadenamiento = regAlta?.["sum1:Encadenamiento"]?.["sum1:RegistroAnterior"];
+
+    return {
+      fechaExpedicionXML: idFactura?.["sum1:FechaExpedicionFactura"],
+      tipoFactura: regAlta?.["sum1:TipoFactura"],
+      cuotaTotal: regAlta?.["sum1:CuotaTotal"]
+        ? Number(regAlta["sum1:CuotaTotal"])
+        : undefined,
+      importeTotal: regAlta?.["sum1:ImporteTotal"]
+        ? Number(regAlta["sum1:ImporteTotal"])
+        : undefined,
+      fechaHoraHusoGenRegistro: regAlta?.["sum1:FechaHoraHusoGenRegistro"],
+      huellaAnterior: encadenamiento?.["sum1:Huella"]
+        ? encadenamiento["sum1:Huella"].toUpperCase()
+        : undefined,
+    };
+  } catch (err) {
+    console.warn("⚠️ Error al parsear XML:", err.message);
+    return {};
+  }
 }
 
 export const listarFacturasEncadenadas = async (req, res) => {
@@ -103,7 +143,7 @@ export const exportarFacturasCSV = async (req, res) => {
     logger.error('❌ Error al exportar facturas:', error);
     res.status(500).json({ error: 'Error al exportar facturas.' });
   }
-};export const rectificarFactura = async (req, res) => {
+}; export const rectificarFactura = async (req, res) => {
   const { id } = req.params;
   const {
     motivo,
@@ -135,10 +175,10 @@ export const exportarFacturasCSV = async (req, res) => {
     const productosRectificativos = productos.length
       ? productos
       : generarProductoRectificativo(
-          importeTotal,
-          10,
-          motivo || "Rectificación de factura"
-        );
+        importeTotal,
+        10,
+        motivo || "Rectificación de factura"
+      );
 
     // 5️⃣ Emitir la nueva factura rectificativa
     const nuevaFactura = await emitirRegistroVerifactu({
@@ -166,8 +206,8 @@ export const exportarFacturasCSV = async (req, res) => {
           ["R1", "R2"].includes(tipoFactura)
             ? tipoRectificativa || "I"
             : ["R3", "R4"].includes(tipoFactura)
-            ? "S"
-            : undefined,
+              ? "S"
+              : undefined,
       },
     });
 
@@ -219,34 +259,143 @@ export const exportarFacturasCSV = async (req, res) => {
 };
 
 export const verificarFactura = async (req, res) => {
-  const { hash } = req.params;
+  try {
+    const hashParam = (req.params.hash || "").toUpperCase();
+    console.log(`🟪 Verificando factura con hash recibido: ${hashParam}`);
 
-  const factura = await RegistroVerifactu.findOne({ hash }).lean();
-  if (!factura) return res.status(404).json({ error: 'Factura no encontrada' });
+    // 1️⃣ Buscar factura por hash
+    const factura = await RegistroVerifactu.findOne({
+      $or: [
+        { hashFactura: hashParam },
+        { huellaTCR: hashParam },
+        { hash: hashParam },
+      ],
+    }).lean();
 
-  const fecha = new Date(factura.fechaExpedicion).toISOString().slice(0, 10);
-  const datosOriginales = [
-    factura.numeroFactura,
-    fecha,
-    factura.clienteNombre, // ✅ Agregado aquí
-    factura.clienteNIF,
-    Number(factura.importeTotal).toFixed(2),
-    factura.hashAnterior || ''
-  ].join('');
+    if (!factura) {
+      console.log("❌ No se encontró ninguna factura con ese hash");
+      return res.status(404).json({ error: "Factura no encontrada" });
+    }
 
-  const hashCalculado = crypto.createHash('sha256').update(datosOriginales).digest('base64');
+    console.log(`✅ Factura encontrada: ${factura.numeroFactura}`);
+    console.log("📄 Datos brutos de la factura encontrada:", {
+      numeroFactura: factura.numeroFactura,
+      hashFactura: factura.hashFactura,
+      huellaTCR: factura.huellaTCR,
+      hashAnterior: factura.hashAnterior,
+      fechaExpedicion: factura.fechaExpedicion,
+      fechaExpedicionXML: factura.fechaExpedicionXML,
+      fechaHoraHusoGenRegistro: factura.fechaHoraHusoGenRegistro,
+      cuotaTotal: factura.cuotaTotal,
+      importeTotal: factura.importeTotal,
+    });
 
-  res.json({
-    numeroFactura: factura.numeroFactura,
-    fecha,
-    cliente: factura.clienteNombre,
-    clienteNIF: factura.clienteNIF,
-    total: Number(factura.importeTotal).toFixed(2),
-    hash: factura.hash,
-    hashCalculado,
-    hashAnterior: factura.hashAnterior,
-    valido: hashCalculado === factura.hash
-  });
+    // 2️⃣ Buscar evento (cliente, total, etc.)
+    const evento = await EventosFactura.findOne({
+      numeroFactura: factura.numeroFactura,
+      tipoEvento: "creacion",
+    }).lean();
+
+    let clienteNombre = evento?.clienteNombre || factura?.clienteNombre || "";
+    let clienteNIF = evento?.clienteNIF || factura?.clienteNIF || "";
+    let importeTotal = Number(evento?.importeTotal ?? factura?.importeTotal ?? 0);
+    let cuotaTotal = Number(factura?.cuotaTotal ?? 0);
+    let fechaHora = factura.fechaHoraHusoGenRegistro || factura.fechaHoraRegistro;
+    let fechaExp = factura.fechaExpedicionXML
+      ? factura.fechaExpedicionXML
+      : new Date(factura.fechaExpedicion)
+          .toLocaleDateString("es-ES")
+          .replace(/\//g, "-");
+    let tipoFactura = factura.tipoFactura || "F1";
+    let huellaAnterior = factura.hashAnterior || "";
+    const idEmisor = factura.emisorNIF || factura.IDEmisorFactura || "X6063327K";
+    const numeroFactura = factura.numeroFactura;
+
+    // 3️⃣ Fallback: si faltan campos, usar XML o cadenaHashAEAT
+    if ((!cuotaTotal || !fechaHora) && (factura.xmlAEAT || factura.xmlFirmado)) {
+      const extra = await extraerCamposDeXML(factura.xmlAEAT || factura.xmlFirmado);
+      cuotaTotal = extra.cuotaTotal ?? cuotaTotal;
+      importeTotal = extra.importeTotal ?? importeTotal;
+      fechaHora = extra.fechaHoraHusoGenRegistro ?? fechaHora;
+      huellaAnterior = extra.huellaAnterior ?? huellaAnterior;
+      tipoFactura = extra.tipoFactura ?? tipoFactura;
+      fechaExp = extra.fechaExpedicionXML ?? fechaExp;
+      console.log("📤 Campos completados desde XML:", {
+        cuotaTotal,
+        importeTotal,
+        fechaHora,
+        huellaAnterior,
+        fechaExp,
+      });
+    }
+
+    // Si guardas cadenaHashAEAT en la BD, úsala directamente
+    let cadena = factura.cadenaHashAEAT;
+    if (!cadena) {
+      cadena =
+        `IDEmisorFactura=${idEmisor}` +
+        `&NumSerieFactura=${numeroFactura}` +
+        `&FechaExpedicionFactura=${fechaExp}` +
+        `&TipoFactura=${tipoFactura}` +
+        `&CuotaTotal=${Number(cuotaTotal).toFixed(2)}` +
+        `&ImporteTotal=${Number(importeTotal).toFixed(2)}` +
+        `&Huella=${huellaAnterior}` +
+        `&FechaHoraHusoGenRegistro=${fechaHora}`;
+    }
+
+    console.log("🧾 Datos que se usarán para construir la cadena:");
+    console.table({
+      IDEmisorFactura: idEmisor,
+      NumSerieFactura: numeroFactura,
+      FechaExpedicionFactura: fechaExp,
+      TipoFactura: tipoFactura,
+      CuotaTotal: Number(cuotaTotal).toFixed(2),
+      ImporteTotal: Number(importeTotal).toFixed(2),
+      HuellaAnterior: huellaAnterior,
+      FechaHoraHusoGenRegistro: fechaHora,
+    });
+
+    console.log("🧩 Cadena base construida:");
+    console.log(cadena);
+
+    // 4️⃣ Calcular hash SHA-256
+    const hashCalculado = crypto
+      .createHash("sha256")
+      .update(cadena, "utf8")
+      .digest("hex")
+      .toUpperCase();
+
+    console.log(`🔐 Hash recalculado: ${hashCalculado}`);
+
+    const hashGuardado = (
+      factura.hashFactura ||
+      factura.huellaTCR ||
+      factura.hash ||
+      ""
+    ).toUpperCase();
+
+    console.log(`📦 Hash guardado en BD: ${hashGuardado}`);
+
+    const coincide = hashGuardado === hashCalculado;
+    console.log(coincide ? "✅ Coincide correctamente" : "❌ No coincide");
+
+    // 5️⃣ Responder al frontend
+    return res.json({
+      numeroFactura,
+      fecha: new Date(factura.fechaExpedicion).toISOString().slice(0, 10),
+      cliente: clienteNombre,
+      clienteNIF,
+      total: importeTotal.toFixed(2),
+      hashGuardado,
+      hashCalculado,
+      hashAnterior: huellaAnterior || null,
+      coincide,
+      cadenaBase: cadena,
+    });
+  } catch (err) {
+    console.error("💥 Error en verificarFactura:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 };
 
 export const anularFactura = async (req, res) => {

@@ -71,6 +71,8 @@ export function generarHashFactura({
       `&FechaHoraHusoGenEvento=${trim(fechaHoraRegistro)}`;
   }
 
+  console.log(cadena, "CADENA A HASHEAR");
+
   return crypto
     .createHash("sha256")
     .update(cadena, "utf8")
