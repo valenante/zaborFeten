@@ -167,3 +167,41 @@ export const marcarItemListo = async (req, res) => {
   }
 };
 
+export const productosListosResumen = async (req, res) => {
+  try {
+    const hace30Min = Date.now() - 30 * 60 * 1000; // timestamp (en ms)
+
+    // Traemos los pedidos con productos listos en los últimos 30 minutos
+    const pedidos = await Pedido.find({
+      "productos.estadoPreparacion": "listo",
+      "productos.workflow.tListo": { $gte: hace30Min }
+    })
+      .populate("productos.producto")
+      .select("mesa.numero productos");
+
+    // 🔍 Transformar para agrupar cantidades
+    const resumen = {};
+
+    pedidos.forEach(pedido => {
+      pedido.productos
+        .filter(p => 
+          p.estadoPreparacion === "listo" &&
+          p.workflow?.tListo &&
+          p.workflow.tListo >= hace30Min
+        )
+        .forEach(p => {
+          const nombre = p.producto?.nombre || "Producto";
+          const tipo = p.tipoPrecio || "base";
+          const key = `${nombre} (${tipo})`;
+          resumen[key] = (resumen[key] || 0) + p.cantidad;
+        });
+    });
+
+    const resumenArray = Object.entries(resumen).map(([nombre, cantidad]) => ({ nombre, cantidad }));
+
+    res.json(resumenArray);
+  } catch (error) {
+    console.error("❌ Error en /productos-listos:", error);
+    res.status(500).json({ error: "Error obteniendo productos listos" });
+  }
+};

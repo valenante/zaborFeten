@@ -392,30 +392,9 @@ export const agregarProductoAlPedido = async (req, res) => {
       totalMesa: mesa.total,
     });
 
-    try {
-      const productosParaImpresion = productosCompletos.map(p => ({
-        nombre: p.nombre,
-        cantidad: p.cantidad,
-        tipoPrecio: p.tipoPrecio,
-        adicionales: p.adicionales || [],
-        extras: p.extras || [],
-      }));
-
-      await axios.post(`${process.env.IMPRESION_SERVER}/imprimir`, {
-        mesaNumero: mesa.numero,
-        comensales: mesa.comensales || 0,
-        productos: productosParaImpresion,
-        total: mesa.total,
-      });
-
-      logger.info(`🖨️ Impresión enviada correctamente para mesa ${mesa.numero}`);
     } catch (error) {
       logger.warn(`⚠️ No se pudo imprimir el agregado de productos: ${error.message}`);
     }
-  } catch (error) {
-    logger.error('Error al agregar producto:', error);
-    res.status(500).json({ error: 'Error al agregar producto' });
-  }
 };
 
 // Obtener todos los pedidos
@@ -550,31 +529,43 @@ export const obtenerPedidosPendientes = async (req, res) => {
   }
 };
 
-// Obtener pedidos finalizados
 export const obtenerPedidosFinalizados = async (req, res) => {
   try {
-    const { tipo } = req.query; // Obtener el tipo de la consulta (plato o bebida)
-    const hace20Minutos = new Date(Date.now() - 20 * 60 * 1000); // Fecha límite
+    const { tipo } = req.query;
+    const hace20Min = Date.now() - 20 * 60 * 1000;
 
-    const filter = {
-      estado: 'listo',
-      fecha: { $gte: hace20Minutos },
-    };
+    // Buscamos pedidos cuyo estado sea 'listo'
+    // y cuyos productos tengan marca de tiempo de finalización reciente
+    const pedidos = await Pedido.find({
+      estado: "listo",
+      "productos.workflow.tListo": { $gte: hace20Min }
+    })
+      .populate("mesa")
+      .populate("productos.producto");
 
-    if (tipo) {
-      filter['productos.tipo'] = tipo; // Filtrar productos por tipo si se especifica
-    }
+    // Filtrar por tipo (plato / bebida) si se indicó
+    const pedidosFiltrados = tipo
+      ? pedidos.map(p => ({
+          ...p.toObject(),
+          productos: p.productos.filter(pr => pr.tipo === tipo)
+        })).filter(p => p.productos.length > 0)
+      : pedidos;
 
-    const pedidosFinalizados = await Pedido.find(filter)
-      .populate('mesa')
-      .populate('productos.producto'); // Expande los detalles del producto
+    // ✅ Filtrar solo los productos que realmente fueron listos en los últimos 20 min
+    const pedidosRecientes = pedidosFiltrados.map(p => ({
+      ...p.toObject(),
+      productos: p.productos.filter(pr =>
+        pr.workflow?.tListo && pr.workflow.tListo >= hace20Min
+      ),
+    })).filter(p => p.productos.length > 0);
 
-    res.status(200).json(pedidosFinalizados);
+    res.json(pedidosRecientes);
   } catch (error) {
-    logger.error('Error al obtener pedidos finalizados:', error);
-    res.status(500).json({ error: 'Error al obtener pedidos finalizados' });
+    logger.error("❌ Error al obtener pedidos finalizados:", error);
+    res.status(500).json({ error: "Error al obtener pedidos finalizados" });
   }
 };
+
 
 export const actualizarProducto = async (req, res) => {
   try {

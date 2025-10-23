@@ -64,12 +64,17 @@ const CarritoModal = ({ cerrarModal }) => {
       logger.error("Error al eliminar el producto:", error);
     }
   };
-  const enviarPedidoAImpresora = async (mesaNumero, comensales, productos, total, tipo = 'platos') => {
-    const rutaBackend = tipo === 'bebidas'
-      ? '/imprimir/imprimir-bebidas'
-      : '/imprimir/imprimir';
 
+  const enviarPedidoAImpresora = async (mesaNumero, comensales, productos, total, tipo = 'platos') => {
     try {
+      // 🧠 Solo imprimir si el tipo es "bebidas"
+      if (tipo !== 'bebidas') {
+        console.log(`🧾 No se imprime nada (tipo: ${tipo})`);
+        return;
+      }
+
+      const rutaBackend = '/imprimir/imprimir-bebidas';
+
       await Promise.race([
         api.post(rutaBackend, {
           mesaNumero,
@@ -78,11 +83,13 @@ const CarritoModal = ({ cerrarModal }) => {
           total,
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000) // 3 segundos de timeout
-        )
+          setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
+        ),
       ]);
+
+      console.log(`🍹 Pedido de bebidas enviado a la impresora (Mesa ${mesaNumero})`);
     } catch (error) {
-      logger.error(`Error al imprimir el pedido de ${tipo}:`, error.message);
+      logger.error('❌ Error al imprimir pedido de bebidas:', error.message);
     }
   };
 

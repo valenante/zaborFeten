@@ -1,6 +1,6 @@
 import React from "react";
 
-const ListaPedidos = ({ pedidos, productosDetalles, eliminarProducto }) => {
+const ListaPedidos = ({ pedidos, productosDetalles, eliminarProducto, setAccionModal, setMostrarModalConfirmacion }) => {
   return (
     <ul className="lista-pedidos--mesadetalles">
       {pedidos.length > 0 ? (
@@ -18,8 +18,8 @@ const ListaPedidos = ({ pedidos, productosDetalles, eliminarProducto }) => {
                   <li
                     key={productoId}
                     className={`producto--mesadetalles ${producto.estadoPreparacion === "listo"
-                        ? "producto-listo"
-                        : ""
+                      ? "producto-listo"
+                      : ""
                       }`}
                   >
                     {detalle
@@ -27,7 +27,13 @@ const ListaPedidos = ({ pedidos, productosDetalles, eliminarProducto }) => {
                       : "Cargando producto..."}
                     <button
                       className="boton-eliminar--mesadetalles"
-                      onClick={eliminarProducto(pedido._id, productoId)}
+                      onClick={() =>
+                        setAccionModal({
+                          titulo: "Eliminar producto",
+                          mensaje: `¿Seguro que quieres eliminar ${detalle?.nombre || "este producto"} de la mesa?`,
+                          onConfirm: () => eliminarProducto(pedido._id, productoId),
+                        }) || setMostrarModalConfirmacion(true)
+                      }
                     >
                       x
                     </button>

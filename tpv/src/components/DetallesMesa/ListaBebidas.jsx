@@ -1,5 +1,5 @@
 
-const ListaBebidas = ({ pedidosBebidas, eliminarProducto }) => {
+const ListaBebidas = ({ pedidosBebidas, eliminarProducto, setAccionModal, setMostrarModalConfirmacion }) => {
   return (
     <ul className="lista-pedidos--mesadetalles">
       {pedidosBebidas.length > 0 ? (
@@ -16,18 +16,23 @@ const ListaBebidas = ({ pedidosBebidas, eliminarProducto }) => {
                   return (
                     <li
                       key={productoId}
-                      className={`producto--mesadetalles ${
-                        producto.estadoPreparacion === "listo"
+                      className={`producto--mesadetalles ${producto.estadoPreparacion === "listo"
                           ? "producto-listo"
                           : ""
-                      }`}
+                        }`}
                     >
                       {nombre
                         ? `${producto.cantidad} ${nombre}`
                         : "Cargando bebida..."}
                       <button
                         className="boton-eliminar--mesadetalles"
-                        onClick={eliminarProducto(pedido._id, productoId)}
+                        onClick={() =>
+                          setAccionModal({
+                            titulo: "Eliminar bebida",
+                            mensaje: `¿Seguro que quieres eliminar ${nombre || "esta bebida"} de la mesa?`,
+                            onConfirm: () => eliminarProducto(pedido._id, productoId),
+                          }) || setMostrarModalConfirmacion(true)
+                        }
                       >
                         x
                       </button>

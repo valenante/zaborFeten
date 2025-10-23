@@ -4,7 +4,8 @@ import {
 listarItemsCocina,
 solicitarItem,
 empezarItem,
-marcarItemListo
+marcarItemListo,
+productosListosResumen
 } from '../controllers/cocinaController.js';
 
 import { requireEstacion } from '../middlewares/cocinaPermisos.js';
@@ -85,6 +86,6 @@ router.post(
   marcarItemListo
 );
 
-
+router.get('/productos-listos', productosListosResumen);
 
 export default router;

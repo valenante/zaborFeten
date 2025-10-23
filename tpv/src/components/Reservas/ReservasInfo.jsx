@@ -133,6 +133,7 @@ const ReservasInfo = () => {
               <th>Teléfono</th>
               <th>Personas</th>
               <th>Hora</th>
+              <th>Alergias</th>
               <th>Mensaje</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -152,6 +153,7 @@ const ReservasInfo = () => {
                     hour12: false,
                   })}
                 </td>
+                <td>{reserva.alergias || "—"}</td>
                 <td>{reserva.mensaje || "—"}</td>
                 <td>{reserva.estado}</td>
                 <td>

@@ -19,7 +19,8 @@ const Reserva = () => {
     nombre: "",
     email: "",
     telefono: "",
-    personas: 1,
+    personas: "",
+    alergias: "",
     franjaSeleccionada: null,
     horaSeleccionada: "",
     mensaje: "",
@@ -141,7 +142,6 @@ const Reserva = () => {
     });
     obtenerReservasEnFranja(franja.horaInicio, franja.horaFin);
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -171,14 +171,20 @@ const Reserva = () => {
       return;
     }
 
+    // ✅ Crear la fecha local justo antes de enviar
+    const [year, month, day] = fechaSeleccionada.split("-");
+    const [hour, minute] = formulario.horaSeleccionada.split(":");
+    const fechaHora = `${year}-${month}-${day}T${hour}:${minute}:00`;
+
     try {
       const body = {
         nombre: formulario.nombre,
         email: formulario.email,
         telefono: formulario.telefono,
         personas: parseInt(formulario.personas),
-        hora: `${fechaSeleccionada}T${formulario.horaSeleccionada}:00`,
+        hora: fechaHora,
         mensaje: formulario.mensaje,
+        alergias: formulario.alergias,
       };
 
       const res = await api.post("/reservas", body);
@@ -188,7 +194,8 @@ const Reserva = () => {
         nombre: "",
         email: "",
         telefono: "",
-        personas: 1,
+        personas: "",
+        alergias: "",
         franjaSeleccionada: null,
         horaSeleccionada: "",
         mensaje: "",
@@ -253,6 +260,14 @@ const Reserva = () => {
             value={formulario.personas}
             onChange={handleChange}
             required
+          />
+
+          <input
+            type="text"
+            name="alergias"
+            placeholder="Alergias o intolerancias"
+            value={formulario.alergias}
+            onChange={handleChange}
           />
 
           <textarea

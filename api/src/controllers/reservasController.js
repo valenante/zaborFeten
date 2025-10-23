@@ -38,23 +38,24 @@ const enviarConfirmacionEmail = async (reserva) => {
     attachments: ['public/images/logoZf.jpg'],
   });
 };
-
 export const crearReserva = async (req, res) => {
-  const { nombre, email, telefono, personas, hora, mensaje } = req.body;
-
-  if (!nombre || !email || !telefono || !personas || !hora) {
-    return res.status(400).json({ mensaje: 'Faltan datos obligatorios.' });
-  }
-
   try {
-    const fecha = hora.slice(0, 10); // "YYYY-MM-DD"
+    const { nombre, email, telefono, personas, hora, mensaje, alergias } = req.body;
+
+    // 🧩 Validación de datos obligatorios
+    if (!nombre || !email || !telefono || !personas || !hora || !alergias) {
+      return res.status(400).json({ mensaje: 'Faltan datos obligatorios.' });
+    }
+
+    // 📅 Fecha y hora locales
+    const fecha = hora.slice(0, 10); // YYYY-MM-DD
+    const horaStr = hora.slice(11, 16);
+
+    // 🔍 Buscar configuración específica o usar última configuración guardada
     let config = await ConfiguracionReserva.findOne({ fecha });
 
     if (!config) {
-      const ultimaConfig = await ConfiguracionReserva.findOne().sort({
-        fecha: -1,
-      });
-
+      const ultimaConfig = await ConfiguracionReserva.findOne().sort({ fecha: -1 });
       config = ultimaConfig || {
         franjas: [
           { horaInicio: '13:00', horaFin: '15:00', maxReservas: 10 },
@@ -63,8 +64,7 @@ export const crearReserva = async (req, res) => {
       };
     }
 
-    const horaStr = hora.slice(11, 16);
-
+    // 🔐 Evitar reservas duplicadas por día
     const inicioDia = new Date(`${fecha}T00:00:00`);
     const finDia = new Date(`${fecha}T23:59:59`);
 
@@ -75,18 +75,21 @@ export const crearReserva = async (req, res) => {
     });
 
     if (yaReservo) {
-      return res
-        .status(400)
-        .json({ mensaje: 'Ya tienes una reserva para este día.' });
+      return res.status(400).json({
+        mensaje: 'Ya tienes una reserva registrada para este día.',
+      });
     }
 
+    console.log('Hora de reserva solicitada:', horaStr);
+
+    // ⏰ Validar franja horaria
     const franja = config.franjas.find(
       (f) => horaStr >= f.horaInicio && horaStr <= f.horaFin
     );
 
     if (!franja) {
       return res.status(400).json({
-        mensaje: 'La hora seleccionada no está en una franja válida.',
+        mensaje: 'La hora seleccionada no pertenece a una franja válida.',
       });
     }
 
@@ -99,8 +102,9 @@ export const crearReserva = async (req, res) => {
     });
 
     const hayDisponibilidad = reservasExistentes < franja.maxReservas;
-    let nuevaReserva;
 
+    // 🪑 Lógica de auto-confirmación si hay mesas disponibles
+    let nuevaReserva;
     if (personas <= 4 && hayDisponibilidad) {
       const mesas = await Mesa.find();
       const reservasMismoHorario = await Reserva.find({
@@ -119,12 +123,13 @@ export const crearReserva = async (req, res) => {
           personas,
           hora,
           mensaje,
+          alergias,
           estado: 'pendiente',
           mesaAsignada: null,
         });
 
         return res.status(200).json({
-          mensaje: 'No hay mesas libres. Solicitud enviada para confirmar.',
+          mensaje: 'No hay mesas libres. Tu solicitud ha sido enviada para confirmar.',
         });
       }
 
@@ -135,6 +140,7 @@ export const crearReserva = async (req, res) => {
         personas,
         hora,
         mensaje,
+        alergias,
         estado: 'auto-confirmada',
         mesaAsignada: mesaLibre.numero,
       });
@@ -142,10 +148,11 @@ export const crearReserva = async (req, res) => {
       await enviarConfirmacionEmail(nuevaReserva);
 
       return res.status(200).json({
-        mensaje: 'Reserva confirmada automáticamente. ¡Te esperamos!',
+        mensaje: 'Reserva confirmada automáticamente. ¡Te esperamos pronto!',
       });
     }
 
+    // 🕐 Si no cumple las condiciones, queda pendiente
     nuevaReserva = await Reserva.create({
       nombre,
       email,
@@ -153,15 +160,16 @@ export const crearReserva = async (req, res) => {
       personas,
       hora,
       mensaje,
+      alergias,
       estado: 'pendiente',
       mesaAsignada: null,
     });
 
     res.status(200).json({
-      mensaje: 'Tu solicitud ha sido enviada. Te confirmaremos pronto.',
+      mensaje: 'Tu solicitud ha sido enviada. Te confirmaremos en breve.',
     });
   } catch (error) {
-    logger.error('Error al crear reserva:', error);
+    logger.error('❌ Error al crear reserva:', error);
     res.status(500).json({ mensaje: 'Error al crear la reserva.' });
   }
 };

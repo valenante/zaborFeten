@@ -40,6 +40,11 @@ const reservaSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  alergias: {
+    type: String,
+    trim: true,
+    default: '',
+  },
   creadaEn: {
     type: Date,
     default: Date.now,

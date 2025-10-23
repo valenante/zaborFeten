@@ -10,6 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import "../styles/DetallesMesa.css";
 import AlertaMensaje from "../components/AlertaMensaje/AlertaMensaje";
 import ModalTransferencia from "../components/Modal/ModalTransferencia";
+import ModalConfirmacion from "../components/Modal/ModalConfirmacion";
 import ListaPedidos from "../components/DetallesMesa/ListaPedidos";
 import ListaBebidas from "../components/DetallesMesa/ListaBebidas";
 
@@ -36,6 +37,8 @@ const DetalleMesa = () => {
   const [metodoPagoFactura, setMetodoPagoFactura] = useState(null);
   useState(false);
   const [mostrarModalTransferir, setMostrarModalTransferir] = useState(false);
+  const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
+  const [accionModal, setAccionModal] = useState(null);
 
   // ⛔ AÑADE ESTO AQUÍ ANTES DEL RETURN
   if (!mesa) {
@@ -93,14 +96,17 @@ const DetalleMesa = () => {
           pedidos={mesa.pedidos || []}
           productosDetalles={productosDetalles}
           eliminarProducto={eliminarProducto}
+          setAccionModal={setAccionModal}
+          setMostrarModalConfirmacion={setMostrarModalConfirmacion}
         />
 
         <ListaBebidas
           pedidosBebidas={mesa.pedidosBebidas || []}
           eliminarProducto={eliminarProducto}
+          setAccionModal={setAccionModal}
+          setMostrarModalConfirmacion={setMostrarModalConfirmacion}
         />
-
-
+          
         {mesa.estado === "abierta" && (
           <>
             <button
@@ -175,6 +181,19 @@ const DetalleMesa = () => {
           />
         )
       }
+
+      {mostrarModalConfirmacion && (
+        <ModalConfirmacion
+          titulo={accionModal?.titulo}
+          mensaje={accionModal?.mensaje}
+          onConfirm={() => {
+            accionModal?.onConfirm();
+            setMostrarModalConfirmacion(false);
+          }}
+          onClose={() => setMostrarModalConfirmacion(false)}
+        />
+      )}
+
     </div >
   );
 };

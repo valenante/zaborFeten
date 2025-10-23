@@ -74,10 +74,6 @@
   color: var(--blanco);
 }
 
-.carrito-icono {
-  margin-left: 1rem;
-}
-
 /* === MOBILE === */
 .navbar-contenedor {
   display: flex;
@@ -196,6 +192,40 @@
   background-color: #e05a00;
 }
 
+/* === BOTONES DE PLATOS Y BEBIDAS === */
+.navbar-btn.activo {
+  background-color: var(--color-principal);
+  color: var(--blanco);
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* === CARRITO FLOTANTE === */
+.carrito-flotante {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--color-principal);
+  border-radius: 50%;
+  width: 6vh;
+  height: 6vh;
+  display: flex;
+  color: white;
+  font-weight: 6000;
+  font-size: 1.4rem;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 5000;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, background-color 0.3s ease;
+}
+
+.carrito-flotante:hover {
+  transform: scale(1.1);
+  background-color: var(--color-principal-oscuro);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -216,10 +246,6 @@
     width: 100%;
   }
 
-  .carrito-icono {
-    margin-left: 0;
-  }
-
   .modal-pedido {
     background: white;
     padding: 25px 30px;
@@ -233,4 +259,10 @@
     text-align: center;
   }
 
+  .carrito-flotante {
+    width: 50px;
+    height: 50px;
+    bottom: 15px;
+    right: 15px;
+  }
 }

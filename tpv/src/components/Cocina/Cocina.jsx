@@ -115,6 +115,8 @@ const Cocina = () => {
   const { habilitado, activar, encolarLectura, silenciar } = useLecturaVoz(1, 8000);
   const { activo, iniciarContinua, detenerContinua, onResultado, onFin, onError, soportado } = useReconocimientoVoz({ idioma: "es-ES" });
   const [estacion, setEstacion] = useState(() => localStorage.getItem('cocina_estacion') || 'frito');
+  const [resumenProductosListos, setResumenProductosListos] = useState([]);
+  const [mostrarResumenListos, setMostrarResumenListos] = useState(false);
 
   const cerrarSeccion = async (pedidoId) => {
     try {
@@ -176,17 +178,57 @@ const Cocina = () => {
   };
 
 
-  const marcarItemListo = async (pedidoId, itemId) => {
-    try {
-      const pedido = pedidos.find(p => p._id === pedidoId);
-      const item = pedido?.productos.find(x => x._id === itemId);
-      const next = (item?.workflow?.estado === 'listo') ? 'pendiente' : 'listo';
-      await api.post(`/cocina/${pedidoId}/items/${itemId}/estado`, { estado: next });
-    } catch (err) {
-      logger.error('Error al cambiar estado item:', err);
-    }
-  };
+const marcarItemListo = async (pedidoId, itemId) => {
+  try {
+    const pedido = pedidos.find(p => p._id === pedidoId);
+    const item = pedido?.productos.find(x => x._id === itemId);
+    if (!item) return;
 
+    const next = (item?.workflow?.estado === 'listo') ? 'pendiente' : 'listo';
+
+    // 1️⃣ Cambiar el estado en backend
+    await api.post(`/cocina/${pedidoId}/items/${itemId}/estado`, { estado: next });
+
+    // 2️⃣ Si se marcó como listo, imprimir inmediatamente
+    if (next === 'listo') {
+      try {
+        const rutaBackend = '/imprimir/imprimir'; // usamos la ruta estándar de platos
+
+        const productoImprimir = {
+          mesaNumero: pedido.mesa.numero,
+          comensales: pedido.comensales || 1,
+          productos: [
+            {
+              nombre: item.producto?.nombre || 'Producto sin nombre',
+              cantidad: item.cantidad,
+              tipoPrecio: item.tipoPrecio,
+              nombreComensal: item.nombreComensal || '',
+              alergiasComensal: item.alergiasComensal || '',
+              seccion: item.seccion || '',
+              estacion: item.estacion || '',
+            },
+          ],
+          total: item.total || 0,
+        };
+
+        // Llamada directa a la impresora (con timeout de seguridad)
+        await Promise.race([
+          api.post(rutaBackend, productoImprimir),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
+          ),
+        ]);
+
+        console.log(`🖨️ Producto listo impreso: ${item.producto?.nombre || 'Desconocido'}`);
+      } catch (error) {
+        logger.error('❌ Error al imprimir producto listo:', error.message);
+      }
+    }
+
+  } catch (err) {
+    logger.error('Error al cambiar estado item:', err);
+  }
+};
 
   const calcularResumenProductos = (listaPedidos) => {
     const resumen = {};
@@ -207,6 +249,14 @@ const Cocina = () => {
     setResumenProductos(resumenArray);
   };
 
+  const cargarResumenListos = async () => {
+    try {
+      const { data } = await api.get("/cocina/productos-listos");
+      setResumenProductosListos(data);
+    } catch (error) {
+      logger.error("Error al cargar productos listos:", error);
+    }
+  };
 
   const cargarPedidos = async () => {
     try {
@@ -576,8 +626,6 @@ const Cocina = () => {
           </div>
         </div>
 
-        <h1 className="titulo--cocina">Pedidos Pendientes</h1>
-
         <button onClick={() => setMostrarFinalizados(true)} className="boton-finalizados--cocina">
           Ver Pedidos Finalizados
         </button>
@@ -628,10 +676,14 @@ const Cocina = () => {
                               const disabledSolicitar = !((estacion || '').toLowerCase().startsWith('frito') && estado === 'pendiente');
 
                               return (
-                                <li key={producto._id} className={
-                                  "producto-item--cocina" +
-                                  (highlight.has(`${pedido._id}:${producto._id}`) ? " flash-solicitado" : "")
-                                }>
+                                <li
+                                  key={producto._id}
+                                  className={
+                                    "producto-item--cocina" +
+                                    (producto.workflow?.estado === "listo" ? " listo" : "") + // 👈 NUEVO
+                                    (highlight.has(`${pedido._id}:${producto._id}`) ? " flash-solicitado" : "")
+                                  }
+                                >
                                   <label>
                                     <input
                                       type="checkbox"
@@ -676,7 +728,13 @@ const Cocina = () => {
                         <h4 className="seccion-titulo--cocina">PRODUCTOS</h4>
                         <ul className="productos-list--cocina">
                           {visibles.map((producto) => (
-                            <li key={producto._id} className="producto-item--cocina">
+                            <li
+                              key={producto._id}
+                              className={
+                                "producto-item--cocina" +
+                                (producto.workflow?.estado === "listo" ? " listo" : "")
+                              }
+                            >
                               <label>
                                 <input
                                   type="checkbox"
@@ -731,6 +789,18 @@ const Cocina = () => {
         📋
       </button>
 
+      <button
+        onClick={() => {
+          cargarResumenListos();
+          setMostrarResumenListos(true);
+        }}
+        className="boton-resumen--cocina boton-resumen-listos"
+        title="Ver productos listos en los últimos 30 minutos"
+        style={{ right: '70px', backgroundColor: 'var(--color-secundario)' }}
+      >
+        ✅
+      </button>
+
       {/* Panel lateral del resumen */}
       {mostrarResumen && (
         <div className="resumen-panel--cocina">
@@ -745,6 +815,25 @@ const Cocina = () => {
           </ul>
         </div>
       )}
+
+      {mostrarResumenListos && (
+        <div className="resumen-panel--cocina">
+          <div className="resumen-header--cocina">
+            <h3>Resumen de Productos Listos</h3>
+            <button onClick={() => setMostrarResumenListos(false)}>✕</button>
+          </div>
+          <ul>
+            {resumenProductosListos.length > 0 ? (
+              resumenProductosListos.map((item, i) => (
+                <li key={i}><strong>{item.cantidad}x</strong> {item.nombre}</li>
+              ))
+            ) : (
+              <li>No hay productos listos.</li>
+            )}
+          </ul>
+        </div>
+      )}
+
     </>
   );
 };

@@ -123,6 +123,7 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
     .filter((categoria, index, self) => self.indexOf(categoria) === index);
 
   return (
+    <>
     <nav className="navbar-navbar-custom">
       {/* 📌 PANTALLAS GRANDES: Estructura normal */}
       {!pantallaPequena ? (
@@ -143,8 +144,24 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
               ))}
             </select>
 
-            <button className="navbar-btn me-3" onClick={mostrarBebidas}>
-              {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
+            <button
+              className={`navbar-btn ${!mostrarSoloBebidas ? "activo" : ""}`}
+              onClick={() => {
+                setMostrarSoloBebidas(false);
+                setCategoriaSeleccionada("");
+              }}
+            >
+              <Trans id="platos">Platos</Trans>
+            </button>
+
+            <button
+              className={`navbar-btn ${mostrarSoloBebidas ? "activo" : ""}`}
+              onClick={() => {
+                setMostrarSoloBebidas(true);
+                setCategoriaSeleccionada("");
+              }}
+            >
+              <Trans id="bebidas">Bebidas</Trans>
             </button>
 
             {numeroMesa && (
@@ -158,9 +175,6 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
                 <Trans id="cuenta">Cuenta</Trans>
               </button>
             )}
-
-
-
 
             <div className="idiomas-navbar ms-auto">
               <button
@@ -182,14 +196,6 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
                 Français
               </button>
             </div>
-
-            {numeroMesa && (
-              <>
-                <div className="carrito-icono">
-                  <CarritoIcono abrirModal={() => setMostrarModal(true)} />
-                </div>
-              </>
-            )}
           </div>
         </div>
       ) : (
@@ -246,14 +252,6 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
               <button className="navbar-btn" onClick={mostrarBebidas}>
                 {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
               </button>
-
-              {numeroMesa && (
-                <>
-                  <div className="carrito-icono">
-                    <CarritoIcono abrirModal={() => setMostrarModal(true)} />
-                  </div>
-                </>
-              )}
             </div>
 
             {/* Fila 3: Botón de Cuenta (centrado) */}
@@ -313,6 +311,12 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
         </div>
       )}
     </nav>
+    {numeroMesa && (
+      <div className="carrito-flotante">
+        <CarritoIcono abrirModal={() => setMostrarModal(true)} />
+      </div>
+    )}
+    </>
   );
 };
 

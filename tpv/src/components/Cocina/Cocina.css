@@ -329,6 +329,26 @@
     gap: 0.5rem;
 }
 
+/* === Productos marcados como listos === */
+.producto-item--cocina.listo {
+  opacity: 0.45;                /* reduce visibilidad sin ocultar */
+  text-decoration: line-through; /* tachado horizontal limpio */
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(0, 0, 0, 0.4); /* color del tachado suave */
+  transition: all 0.3s ease;    /* animación sutil al marcar listo */
+}
+
+/* Si quieres que además cambie ligeramente el fondo: */
+.producto-item--cocina.listo {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+}
+
+/* El texto interno (cantidad y nombre) se ajusta también */
+.producto-item--cocina.listo span {
+  color: #555;
+}
+
 /* Responsive: apilar en móviles y dar toque “sticky” al header */
 @media (max-width: 780px) {
     .cocina-header {
