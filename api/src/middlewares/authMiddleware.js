@@ -1,27 +1,52 @@
 // middlewares/auth.js
-import jwt from 'jsonwebtoken';
-import logger from '../../utils/logger.js';
+import jwt from "jsonwebtoken";
+import logger from "../../utils/logger.js";
 
 export const authMiddleware = (req, res, next) => {
-  // lee cookie o header Bearer
+  // ⚙️ En desarrollo: omitir verificación JWT
+  if (process.env.NODE_ENV !== "production") {
+    if (req.session?.user) {
+      req.user = req.session.user;
+    } else {
+      // Usuario simulado por defecto (modo dev)
+      req.user = {
+        id: "dev-user",
+        name: "Desarrollador",
+        role: "admin",
+        estacion: "frito",
+      };
+    }
+    logger.info("🔓 [DEV MODE] authMiddleware -> Usuario asignado:", req.user.name);
+    return next();
+  }
+
+  // 🧱 En producción: validar token normalmente
   const bearer = req.headers.authorization;
-  const token = req.cookies?.token || (bearer?.startsWith('Bearer ') ? bearer.slice(7) : null);
+  const token =
+    req.cookies?.token ||
+    (bearer?.startsWith("Bearer ") ? bearer.slice(7) : null);
 
   if (!token) {
-    return res.status(401).json({ error: 'No autorizado. Token no proporcionado.' });
+    return res.status(401).json({ error: "No autorizado. Token no proporcionado." });
   }
 
   try {
     const verified = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+
     // inferir estación desde role si no viene
-    if (!verified.estacion && typeof verified.role === 'string' && verified.role.startsWith('cocina-')) {
-      verified.estacion = verified.role.split('-')[1]; // 'frio'|'frito'|'plancha'
+    if (
+      !verified.estacion &&
+      typeof verified.role === "string" &&
+      verified.role.startsWith("cocina-")
+    ) {
+      verified.estacion = verified.role.split("-")[1]; // 'frio'|'frito'|'plancha'
     }
+
     req.user = verified; // { id, name, role, estacion? }
-    logger.info(`Token verificado para el usuario: ${verified.id}`);
+    logger.info(`🔒 Token verificado para el usuario: ${verified.name || verified.id}`);
     next();
   } catch (error) {
-    logger.error('❌ Error al verificar el token:', error.message);
-    res.status(401).json({ error: 'Token inválido o expirado.' });
+    logger.error("❌ Error al verificar el token:", error.message);
+    res.status(401).json({ error: "Token inválido o expirado." });
   }
 };

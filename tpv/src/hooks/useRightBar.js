@@ -104,8 +104,6 @@ export const useRightBar = (mesaId) => {
           : null
       ]);
 
-      console.log(mensajesSeccion);
-
       setCarrito([]);
       setCarritoBebidas([]);
       setMensajeAlerta({ tipo: "exito", mensaje: "Pedido enviado correctamente." });

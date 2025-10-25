@@ -198,8 +198,6 @@ const CrearUsuario = () => {
     }
   };
 
-  console.log(usuarios);
-
   return (
     <div className="crear-usuario--register">
       <h2 className="titulo--register">Gestión de Usuarios</h2>

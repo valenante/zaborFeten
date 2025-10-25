@@ -67,13 +67,20 @@ export const renovarToken = async (req, res) => {
     return res.status(403).json({ error: 'Refresh token inválido.' });
   }
 };
-
 export const logout = async (req, res) => {
   const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
 
+  // 🧩 En desarrollo no exigimos token real
+  if (process.env.NODE_ENV !== "production") {
+    res.clearCookie("refreshToken");
+    res.clearCookie("token");
+    return res.status(200).json({ message: "Logout (modo desarrollo)." });
+  }
+
+  // 🔒 En producción sí exigimos refresh token
   if (!refreshToken) {
     return res.status(400).json({
-      error: 'No se proporcionó refresh token para el cierre de sesión.',
+      error: "No se proporcionó refresh token para el cierre de sesión.",
     });
   }
 
@@ -87,33 +94,33 @@ export const logout = async (req, res) => {
 
     await tokenRevocado.save();
 
-    res.clearCookie('refreshToken', {
+    res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
     });
 
-    res.status(200).json({ message: 'Cierre de sesión exitoso.' });
+    res.status(200).json({ message: "Cierre de sesión exitoso." });
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      logger.error('Token inválido:', error.message);
+    if (error.name === "JsonWebTokenError") {
+      logger.error("Token inválido:", error.message);
       return res
         .status(401)
-        .json({ error: 'El token proporcionado es inválido.' });
+        .json({ error: "El token proporcionado es inválido." });
     }
 
-    if (error.name === 'TokenExpiredError') {
+    if (error.name === "TokenExpiredError") {
       console.warn(
-        'Intento de cerrar sesión con un token expirado:',
+        "Intento de cerrar sesión con un token expirado:",
         error.message
       );
-      return res.status(401).json({ error: 'El token ya ha expirado.' });
+      return res.status(401).json({ error: "El token ya ha expirado." });
     }
 
-    logger.error('Error inesperado al cerrar sesión:', error);
+    logger.error("Error inesperado al cerrar sesión:", error);
     res
       .status(500)
-      .json({ error: 'Ocurrió un error inesperado al cerrar sesión.' });
+      .json({ error: "Ocurrió un error inesperado al cerrar sesión." });
   }
 };
 
@@ -301,36 +308,59 @@ export const eliminarUsuario = async (req, res) => {
   }
 };
 
+
 export const protegerRuta = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  // ⚙️ Si estás en desarrollo, saltamos la validación JWT
+  if (process.env.NODE_ENV !== "production") {
+    // Si existe un usuario de sesión, lo usamos
+    if (req.session?.user) {
+      req.user = req.session.user;
+    } else {
+      // Usuario “falso” de desarrollo
+      req.user = {
+        id: "dev-user",
+        name: "Desarrollador",
+        role: "admin",
+        estacion: "frito",
+      };
+    }
+
+    logger.info("🔓 [DEV MODE] Ruta protegida sin token. Usuario simulado:", req.user);
+    return next();
+  }
+
+  // 🧱 En producción, se requiere token válido
+  const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
-    warn('Intento de acceso no autorizado: Token no proporcionado');
-    return res
-      .status(401)
-      .json({ error: 'Acceso no autorizado. Se requiere un token válido.' });
+    logger.warn("Intento de acceso no autorizado: Token no proporcionado");
+    return res.status(401).json({
+      error: "Acceso no autorizado. Se requiere un token válido.",
+    });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     req.user = decoded;
     next();
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      warn('Intento de acceso con token expirado');
+    if (error.name === "TokenExpiredError") {
+      logger.warn("Intento de acceso con token expirado");
       return res.status(401).json({
-        error: 'El token ha expirado. Por favor, inicia sesión nuevamente.',
+        error: "El token ha expirado. Por favor, inicia sesión nuevamente.",
       });
     }
-    if (error.name === 'JsonWebTokenError') {
-      warn('Intento de acceso con token inválido');
+
+    if (error.name === "JsonWebTokenError") {
+      logger.warn("Intento de acceso con token inválido");
       return res.status(401).json({
-        error: 'Token inválido. Por favor, verifica tu autenticación.',
+        error: "Token inválido. Por favor, verifica tu autenticación.",
       });
     }
+
     logger.error(`Error desconocido al verificar el token: ${error.message}`);
     return res
       .status(500)
-      .json({ error: 'Ocurrió un error al procesar la autenticación.' });
+      .json({ error: "Ocurrió un error al procesar la autenticación." });
   }
 };

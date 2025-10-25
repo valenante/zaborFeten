@@ -10,6 +10,7 @@ import { useReconocimientoVoz, extraerNumeroMesa } from '../../hooks/useReconoci
 import { parseCocinaCommand } from '../../Voice/intentsCocina';
 import './Cocina.css';
 import DetallesProducto from './DetallesProducto';
+import stringSimilarity from "string-similarity";
 
 const ESTACIONES = ['frito', 'frio', 'plancha'];
 
@@ -80,27 +81,46 @@ const resumenPendientesTexto = (pedidos) => {
 };
 
 
-// Busca producto por índice 1‑based o por nombre aproximado
+// Busca producto por índice 1‑based o por nombre aproximado// Busca producto por índice, nombre o alias con coincidencia parcial
 const findProductoPendienteEnPedido = (pedido, { idx, nombre }) => {
   const ordenSecciones = { entrante: 1, medio: 2, final: 3 };
 
   const lista = pedido.productos
     .filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo')
-    .sort((a, b) => {
-      const sa = ordenSecciones[a.seccion] || 99;
-      const sb = ordenSecciones[b.seccion] || 99;
-      return sa - sb; // primero entrantes, luego medios, luego finales
-    });
+    .sort((a, b) => (ordenSecciones[a.seccion] || 99) - (ordenSecciones[b.seccion] || 99));
+
+  // 1️⃣ Si se menciona por índice (plato 2, etc.)
   if (idx != null) {
     const i = idx - 1;
     return (i >= 0 && i < lista.length) ? lista[i] : null;
   }
+
+  // 2️⃣ Si se menciona por nombre o alias
   if (nombre) {
-    const n = nombre.trim();
-    // match contiene el nombre del producto
-    return lista.find(pr => (pr.producto?.nombre || '').toLowerCase().includes(n));
+  const n = nombre.trim().toLowerCase();
+  const opciones = lista.map(pr => ({
+    pr,
+    nombres: [
+      pr.producto?.nombre?.toLowerCase() || "",
+      ...(pr.producto?.aliases || []).map(a => a.toLowerCase())
+    ]
+  }));
+
+  let mejorMatch = null;
+  let mejorPuntaje = 0.5; // umbral mínimo
+
+  for (const { pr, nombres } of opciones) {
+    for (const alias of nombres) {
+      const score = stringSimilarity.compareTwoStrings(n, alias);
+      if (score > mejorPuntaje) {
+        mejorMatch = pr;
+        mejorPuntaje = score;
+      }
+    }
   }
-  return null;
+
+  return mejorMatch;
+  }
 };
 
 const Cocina = () => {
@@ -218,8 +238,6 @@ const Cocina = () => {
               setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
             ),
           ]);
-
-          console.log(`🖨️ Producto listo impreso: ${item.producto?.nombre || 'Desconocido'}`);
         } catch (error) {
           logger.error('❌ Error al imprimir producto listo:', error.message);
         }
@@ -362,25 +380,6 @@ const Cocina = () => {
       if (intent.type === 'RESUMEN_PENDIENTES') {
         const t = resumenPendientesTexto(pedidos);
         encolarLectura({ area: 'cocina', mesa: '', itemsTexto: [t], notas: '', lecturaKey: `resumen-${Date.now()}` });
-        return;
-      }
-
-      const rePedidoListo = /(marca|marcar|termina|terminar|finaliza|finalizar|cierra|cerrar).*(list[oa])?/i;
-      const reMencionaPlato = /\bplato\b/i;
-      const mesaNum = extraerNumeroMesa(texto);
-
-      if (rePedidoListo.test(texto) && mesaNum != null && !reMencionaPlato.test(texto)) {
-        const pedido = pedidos.find(p => p.mesa?.numero === mesaNum && p.estado !== 'listo');
-        if (!pedido) {
-          encolarLectura({ area: 'cocina', mesa: mesaNum, itemsTexto: [], notas: `No encontré pedido pendiente en la mesa ${mesaNum}.`, lecturaKey: `no-pedido-${mesaNum}-${Date.now()}` });
-          return;
-        }
-        try {
-          await marcarPedidoComoListo(pedido._id);
-          encolarLectura({ area: 'cocina', mesa: mesaNum, itemsTexto: [`Pedido de la mesa ${mesaNum} marcado listo.`], notas: '', lecturaKey: `ok-pedido-${mesaNum}-${Date.now()}` });
-        } catch (e) {
-          encolarLectura({ area: 'cocina', mesa: mesaNum, itemsTexto: [], notas: `No pude marcar listo el pedido de la mesa ${mesaNum}.`, lecturaKey: `err-pedido-${mesaNum}-${Date.now()}` });
-        }
         return;
       }
 

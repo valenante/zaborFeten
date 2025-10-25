@@ -150,14 +150,16 @@ export const marcarItemListo = async (req, res) => {
     pedido.markModified('productos');
     await pedido.save();
 
-    // 🔥 evento global para que el front recargue
-    req.io.emit('cocina:refresh', {
-      source: 'item:estado',
+    req.io.to('cocina:frito').emit('kitchen:update', {
+      type: 'itemEstadoCambiado',
       pedidoId,
-      itemId: item._id.toString(),
-      estado: item.workflow.estado,
-      estadoPreparacion: item.estadoPreparacion,
-      ts: Date.now(),
+      item: item.toObject(),
+    });
+
+    req.io.to(`cocina:${item.estacion}`).emit('kitchen:update', {
+      type: 'itemEstadoCambiado',
+      pedidoId,
+      item: item.toObject(),
     });
 
     return res.json({ ok: true, item });
@@ -184,7 +186,7 @@ export const productosListosResumen = async (req, res) => {
 
     pedidos.forEach(pedido => {
       pedido.productos
-        .filter(p => 
+        .filter(p =>
           p.estadoPreparacion === "listo" &&
           p.workflow?.tListo &&
           p.workflow.tListo >= hace30Min

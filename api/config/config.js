@@ -36,7 +36,7 @@ export const sessionConfig = {
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: true, // Solo true en producción
+    secure: false, // Solo true en producción
     sameSite: 'Lax' ? 'None' : 'Lax',
     maxAge: 5 * 60 * 60 * 1000, // ⏱️ 5 horas en milisegundos
   },

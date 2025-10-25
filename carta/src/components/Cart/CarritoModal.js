@@ -69,7 +69,6 @@ const CarritoModal = ({ cerrarModal }) => {
     try {
       // 🧠 Solo imprimir si el tipo es "bebidas"
       if (tipo !== 'bebidas') {
-        console.log(`🧾 No se imprime nada (tipo: ${tipo})`);
         return;
       }
 
@@ -86,8 +85,6 @@ const CarritoModal = ({ cerrarModal }) => {
           setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
         ),
       ]);
-
-      console.log(`🍹 Pedido de bebidas enviado a la impresora (Mesa ${mesaNumero})`);
     } catch (error) {
       logger.error('❌ Error al imprimir pedido de bebidas:', error.message);
     }

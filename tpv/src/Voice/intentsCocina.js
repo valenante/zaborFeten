@@ -6,14 +6,14 @@ const norm = (s) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
 
-// Extrae número 1–99 en cifras o palabras muy usadas
+// === Conversión de palabras a números ===
 const spanishNumberToInt = (raw) => {
   if (!raw) return NaN;
   const s = norm(raw).replace(/-/g, " ");
-  const units = { cero:0, uno:1, una:1, un:1, dos:2, tres:3, cuatro:4, cinco:5, seis:6, siete:7, ocho:8, nueve:9 };
-  const teens = { diez:10, once:11, doce:12, trece:13, catorce:14, quince:15, dieciseis:16, diecisiete:17, dieciocho:18, diecinueve:19 };
-  const twenties = { veinte:20, veintiuno:21, veintidos:22, veintitres:23, veinticuatro:24, veinticinco:25, veintiseis:26, veintisiete:27, veintiocho:28, veintinueve:29 };
-  const tens = { treinta:30, cuarenta:40, cincuenta:50, sesenta:60, setenta:70, ochenta:80, noventa:90 };
+  const units = { cero: 0, uno: 1, una: 1, un: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9 };
+  const teens = { diez: 10, once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19 };
+  const twenties = { veinte: 20, veintiuno: 21, veintidos: 22, veintitres: 23, veinticuatro: 24, veinticinco: 25, veintiseis: 26, veintisiete: 27, veintiocho: 28, veintinueve: 29 };
+  const tens = { treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90 };
 
   if (s in units) return units[s];
   if (s in teens) return teens[s];
@@ -28,7 +28,7 @@ const spanishNumberToInt = (raw) => {
   return NaN;
 };
 
-const extraerNumeroMesaAny = (texto) => {
+export const extraerNumeroMesaAny = (texto) => {
   const t = norm(texto);
 
   // cifras
@@ -43,53 +43,64 @@ const extraerNumeroMesaAny = (texto) => {
   }
   return null;
 };
-
+// === PARSER PRINCIPAL ===
 export const parseCocinaCommand = (rawText) => {
   const text = norm(rawText);
 
-  // --- INTENT: RESUMEN PENDIENTES
-  // "resumen", "pendientes", "que falta", "que hay pendiente"
+  // --- INTENT: RESUMEN PENDIENTES ---
   if (/(resumen|pendientes|que\s+falta|que\s+hay\s+pendiente|dame\s+el\s+resumen)/.test(text)) {
-    return { type: 'RESUMEN_PENDIENTES' };
+    const result = { type: "RESUMEN_PENDIENTES" };
+    return result;
   }
 
-  // --- INTENT: CONSULTAR MESA
-  // "que tiene la mesa 5", "que hay en la mesa 5", "que tiene mesa 5", "mesa 5 que tiene"
+  // --- INTENT: CONSULTAR MESA ---
   if (/(que\s+(tiene|hay)\s+la?\s*mesa|mesa\s+\d+\s+(tiene|hay)|que\s+tiene\s+mesa)/.test(text)) {
     const mesa = extraerNumeroMesaAny(text);
-    if (mesa != null) return { type: 'CONSULTAR_MESA', mesa };
-  }
-
-  // --- INTENT: MARCAR PEDIDO LISTO
-  // "mesa 5 lista", "marcar pedido mesa 5", "terminar pedido mesa cinco", "cerrar mesa 7"
-  if (/(marc(a|ar)|termin(a|ar)|finaliz(a|ar)|cierr(a|ar)).*(pedido|mesa)?|lista\b/.test(text)) {
-    const mesa = extraerNumeroMesaAny(text);
-    // Evitar confundir con producto (si dice "plato", lo tratamos en otro intent)
-    if (mesa != null && !/\bplato\b/.test(text)) {
-      return { type: 'MARCAR_PEDIDO_LISTO', mesa };
+    if (mesa != null) {
+      const result = { type: "CONSULTAR_MESA", mesa };
+      return result;
     }
   }
 
-  // --- INTENT: MARCAR PRODUCTO LISTO
-  // "marcar plato 2 de la mesa 3", "plato dos mesa 3 listo", "marcar la ensalada de la mesa 4"
-  if (/\bplato\b/.test(text) || /\bmarcar\b.*\b(ensalada|hamburguesa|croquetas|pasta|pizza|tarta|cafe|café)\b/.test(text)) {
-    const mesa = extraerNumeroMesaAny(text);
-    // por índice "plato 2"
-    const idxM = text.match(/\bplato\s+(\d{1,2})\b/);
-    const idx = idxM ? parseInt(idxM[1], 10) : null;
+  // --- INTENT: MARCAR PRODUCTO LISTO ---
+  // Acepta frases con "marca", "como listo", "el plato", "los...", etc.
+  if (/\bmarc(a|ar)\b/.test(text) || /\bplato\b/.test(text) || /\btermin(a|ar)\b/.test(text)) {
+    // ⚠️ Si contiene "pedido", NO se considera producto (se delega abajo)
+    if (!/\bpedido\b/.test(text)) {
+      const mesa = extraerNumeroMesaAny(text);
 
-    // por nombre aproximado (palabra clave después de "marcar" o "plato")
-    let nombre = null;
-    const byName = text.match(/(?:marcar|plato)\s+([a-zñ]+(?:\s+[a-zñ]+){0,3})/);
-    if (byName) {
-      const cand = byName[1].trim();
-      if (!/^\d+$/.test(cand)) nombre = cand; // no es número puro
-    }
+      // 1️⃣ Por índice ("plato 2")
+      const idxMatch = text.match(/\bplato\s+(\d{1,2})\b/);
+      const idx = idxMatch ? parseInt(idxMatch[1], 10) : null;
 
-    if (mesa != null && (idx != null || nombre)) {
-      return { type: 'MARCAR_PRODUCTO_LISTO', mesa, idx, nombre };
+      // 2️⃣ Por nombre del plato (“pimientos del padrón”, “patatas bravas”)
+      const nombreMatch = text.match(
+        /(?:marca(?:r)?(?:\s+como\s+list[oa]?)?\s+(?:el|la|los|las)?\s*|plato\s+)([a-zñáéíóúü\s]{2,}?)(?=\s+(?:de\s+la\s+mesa|mesa|\b\d+\b|list[oa]?|$))/
+      );
+
+      let nombre = null;
+      if (nombreMatch) {
+        nombre = nombreMatch[1]
+          .trim()
+          .replace(/\b(de|como|la|el|las|los)\b/g, "")
+          .trim();
+      }
+
+      if (mesa != null && (idx != null || nombre)) {
+        const result = { type: "MARCAR_PRODUCTO_LISTO", mesa, idx, nombre };
+        return result;
+      }
     }
   }
 
-  return { type: 'NONE' };
+  // --- INTENT: MARCAR PEDIDO LISTO ---
+  // ⚙️ Solo se activa si se dice explícitamente la palabra “pedido”
+  const mesa = extraerNumeroMesaAny(text);
+  if (/\bpedido\b/.test(text) && mesa != null) {
+    const result = { type: "MARCAR_PEDIDO_LISTO", mesa };
+    return result;
+  }
+
+  // --- INTENT: NONE ---
+  return { type: "NONE" };
 };

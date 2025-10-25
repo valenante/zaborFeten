@@ -80,8 +80,6 @@ export const crearReserva = async (req, res) => {
       });
     }
 
-    console.log('Hora de reserva solicitada:', horaStr);
-
     // ⏰ Validar franja horaria
     const franja = config.franjas.find(
       (f) => horaStr >= f.horaInicio && horaStr <= f.horaFin
