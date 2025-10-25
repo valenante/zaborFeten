@@ -9,6 +9,7 @@ const ProductoDetalle = ({
   cerrarModal,
   onConfirm,
   seleccionPrecioInicial,
+  modoEdicion
 }) => {
   const [cantidad, setCantidad] = useState(1);
   const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState([
@@ -265,7 +266,7 @@ const ProductoDetalle = ({
             </li>
           ))}
         </ul>
-        
+
         <textarea
           placeholder="Mensaje para cocina/barra sobre este producto (opcional)"
           value={mensajeProducto}
@@ -282,9 +283,9 @@ const ProductoDetalle = ({
           </button>
           <button
             className="boton-agregar--productoDetalle"
-            onClick={confirmarProducto} // ✅ Llamar a la función que ya tienes
+            onClick={confirmarProducto}
           >
-            Agregar
+            {modoEdicion ? "Guardar cambios" : "Agregar"}
           </button>
         </div>
       </div>

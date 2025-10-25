@@ -178,57 +178,57 @@ const Cocina = () => {
   };
 
 
-const marcarItemListo = async (pedidoId, itemId) => {
-  try {
-    const pedido = pedidos.find(p => p._id === pedidoId);
-    const item = pedido?.productos.find(x => x._id === itemId);
-    if (!item) return;
+  const marcarItemListo = async (pedidoId, itemId) => {
+    try {
+      const pedido = pedidos.find(p => p._id === pedidoId);
+      const item = pedido?.productos.find(x => x._id === itemId);
+      if (!item) return;
 
-    const next = (item?.workflow?.estado === 'listo') ? 'pendiente' : 'listo';
+      const next = (item?.workflow?.estado === 'listo') ? 'pendiente' : 'listo';
 
-    // 1️⃣ Cambiar el estado en backend
-    await api.post(`/cocina/${pedidoId}/items/${itemId}/estado`, { estado: next });
+      // 1️⃣ Cambiar el estado en backend
+      await api.post(`/cocina/${pedidoId}/items/${itemId}/estado`, { estado: next });
 
-    // 2️⃣ Si se marcó como listo, imprimir inmediatamente
-    if (next === 'listo') {
-      try {
-        const rutaBackend = '/imprimir/imprimir'; // usamos la ruta estándar de platos
+      // 2️⃣ Si se marcó como listo, imprimir inmediatamente
+      if (next === 'listo') {
+        try {
+          const rutaBackend = '/imprimir/imprimir'; // usamos la ruta estándar de platos
 
-        const productoImprimir = {
-          mesaNumero: pedido.mesa.numero,
-          comensales: pedido.comensales || 1,
-          productos: [
-            {
-              nombre: item.producto?.nombre || 'Producto sin nombre',
-              cantidad: item.cantidad,
-              tipoPrecio: item.tipoPrecio,
-              nombreComensal: item.nombreComensal || '',
-              alergiasComensal: item.alergiasComensal || '',
-              seccion: item.seccion || '',
-              estacion: item.estacion || '',
-            },
-          ],
-          total: item.total || 0,
-        };
+          const productoImprimir = {
+            mesaNumero: pedido.mesa.numero,
+            comensales: pedido.comensales || 1,
+            productos: [
+              {
+                nombre: item.producto?.nombre || 'Producto sin nombre',
+                cantidad: item.cantidad,
+                tipoPrecio: item.tipoPrecio,
+                nombreComensal: item.nombreComensal || '',
+                alergiasComensal: item.alergiasComensal || '',
+                seccion: item.seccion || '',
+                estacion: item.estacion || '',
+              },
+            ],
+            total: item.total || 0,
+          };
 
-        // Llamada directa a la impresora (con timeout de seguridad)
-        await Promise.race([
-          api.post(rutaBackend, productoImprimir),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
-          ),
-        ]);
+          // Llamada directa a la impresora (con timeout de seguridad)
+          await Promise.race([
+            api.post(rutaBackend, productoImprimir),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
+            ),
+          ]);
 
-        console.log(`🖨️ Producto listo impreso: ${item.producto?.nombre || 'Desconocido'}`);
-      } catch (error) {
-        logger.error('❌ Error al imprimir producto listo:', error.message);
+          console.log(`🖨️ Producto listo impreso: ${item.producto?.nombre || 'Desconocido'}`);
+        } catch (error) {
+          logger.error('❌ Error al imprimir producto listo:', error.message);
+        }
       }
-    }
 
-  } catch (err) {
-    logger.error('Error al cambiar estado item:', err);
-  }
-};
+    } catch (err) {
+      logger.error('Error al cambiar estado item:', err);
+    }
+  };
 
   const calcularResumenProductos = (listaPedidos) => {
     const resumen = {};
@@ -668,6 +668,14 @@ const marcarItemListo = async (pedidoId, itemId) => {
                       productosAgrupados[seccion]?.length > 0 && (
                         <div key={seccion} className="seccion-pedido--cocina">
                           <h4 className="seccion-titulo--cocina">{seccion.toUpperCase()}</h4>
+
+                          {/* ✅ Mensaje de la sección (si existe) */}
+                          {pedido.mensajesSeccion?.[seccion] && pedido.mensajesSeccion[seccion].trim() !== "" && (
+                            <div className="nota-seccion--cocina">
+                              📝 {pedido.mensajesSeccion[seccion]}
+                            </div>
+                          )}
+
                           <ul className="productos-list--cocina">
                             {productosAgrupados[seccion].map((producto) => {
                               const estado = producto?.workflow?.estado ?? 'pendiente';
@@ -680,7 +688,7 @@ const marcarItemListo = async (pedidoId, itemId) => {
                                   key={producto._id}
                                   className={
                                     "producto-item--cocina" +
-                                    (producto.workflow?.estado === "listo" ? " listo" : "") + // 👈 NUEVO
+                                    (producto.workflow?.estado === "listo" ? " listo" : "") +
                                     (highlight.has(`${pedido._id}:${producto._id}`) ? " flash-solicitado" : "")
                                   }
                                 >

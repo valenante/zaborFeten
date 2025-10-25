@@ -18,6 +18,11 @@ export const useRightBar = (mesaId) => {
   const [carritoBebidas, setCarritoBebidas] = useState([]);
   const [productosYaPedidos, setProductosYaPedidos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [mensajesSeccion, setMensajesSeccion] = useState({
+    entrante: "",
+    medio: "",
+    final: "",
+  });
 
   const { categories, fetchCategories, products, fetchProducts } = useCategorias();
 
@@ -92,12 +97,14 @@ export const useRightBar = (mesaId) => {
 
       await Promise.all([
         payloadPlatos.length > 0
-          ? api.post(`/pedidos/${mesaId}/agregar-producto`, { productos: payloadPlatos })
+          ? api.post(`/pedidos/${mesaId}/agregar-producto`, { productos: payloadPlatos, mensajesSeccion,})
           : null,
         payloadBebidas.length > 0
-          ? api.post(`/pedidosBebidas/${mesaId}/agregar-producto`, { productos: payloadBebidas })
+          ? api.post(`/pedidosBebidas/${mesaId}/agregar-producto`, { productos: payloadBebidas, mensajesSeccion, })
           : null
       ]);
+
+      console.log(mensajesSeccion);
 
       setCarrito([]);
       setCarritoBebidas([]);
@@ -157,6 +164,8 @@ export const useRightBar = (mesaId) => {
     mostrarModalCategoria,
     productosCategoriaActual,
     productosYaPedidos,
-    setMostrarModalCategoria
+    setMostrarModalCategoria,
+    mensajesSeccion,
+    setMensajesSeccion,
   };
 };

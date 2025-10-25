@@ -349,6 +349,18 @@
   color: #555;
 }
 
+.nota-seccion--cocina {
+  background-color: white;
+  border-left: 4px solid var(--color-secundario);
+  padding: 6px 10px;
+  margin: 6px 0 10px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: #444;
+}
+
+
 /* Responsive: apilar en móviles y dar toque “sticky” al header */
 @media (max-width: 780px) {
     .cocina-header {

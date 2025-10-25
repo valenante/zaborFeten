@@ -22,7 +22,7 @@ const WorkflowSchema = new Schema({
     enum: ['pendiente', 'solicitado', 'en_preparacion', 'listo'],
     default: 'pendiente'
   },
-  solicitadoPor: { type: String, enum: ['frito', 'sala', null], default: null },
+  solicitadoPor: { type: String, enum: ['frito', 'sala', 'caja', null], default: null },
   solicitadoA: { type: String, enum: ['frio', 'plancha', 'frito', null], default: null },
   tPendiente: { type: Number },   // epoch ms
   tSolicitado: { type: Number },
@@ -41,6 +41,11 @@ const PedidoSchema = new Schema({
     frio: { type: Boolean, default: false },
     plancha: { type: Boolean, default: false },
     frito: { type: Boolean, default: false }, // opcional, si quieres que central también se marque
+  },
+   mensajesSeccion: {
+    entrante: { type: String, default: "" },
+    medio: { type: String, default: "" },
+    final: { type: String, default: "" },
   },
   productos: [
     {

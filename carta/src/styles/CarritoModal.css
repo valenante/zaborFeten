@@ -1,4 +1,4 @@
-/* Fondo del modal superpuesto */
+/* === Fondo del modal === */
 .modal-overlay-carritoModal {
   position: fixed;
   top: 0;
@@ -6,32 +6,40 @@
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.6);
-  /* Fondo oscuro semitransparente */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
 
-/* Contenido del modal */
+/* === Contenedor principal === */
 .modal-content-carritoModal {
-  background: #ffffff;
-  border-radius: 10px;
-  padding: 20px;
-  height: fit-content;
-  max-height: 70vh;
-  overflow-y: auto;
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 24px;
   width: 90%;
-  max-width: 500px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  font-family: 'Roboto', sans-serif;
-  /* Fuente moderna y fina */
-  color: #333;
-  /* Texto más elegante */
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   position: relative;
+  font-family: "Roboto", sans-serif;
+  color: #333;
+  animation: fadeInCarrito 0.2s ease-out;
 }
 
-/* Botón para cerrar el modal */
+@keyframes fadeInCarrito {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* === Botón cerrar (X) === */
 .modal-close-carritoModal {
   position: absolute;
   top: 10px;
@@ -40,89 +48,167 @@
   border: none;
   font-size: 20px;
   cursor: pointer;
-  color: var(--color-principal);
+  color: var(--color-secundario);
+  transition: color 0.2s ease;
 }
 
-/* Lista de productos */
-.modal-items-carritoModal {
-  list-style: none;
-  padding: 0;
-  margin: 20px 0;
+.modal-close-carritoModal:hover {
+  color: #ff1a1a;
 }
 
-.modal-item-carritoModal {
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ddd;
+/* === Checkbox “Servir todo a la vez” === */
+.checkbox-servirTodo {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #444;
 }
 
-/* Título del producto */
-.item-name-carritoModal {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: var(--color-principal);
-  /* Fondo morado */
+.checkbox-servirTodo input {
+  transform: scale(1.2);
+  accent-color: var(--color-principal);
 }
 
-/* Título del producto */
-.item-title-carritoModal {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-/* Detalles del producto */
-.item-details-carritoModal {
-  font-size: 0.9rem;
-  color: #555;
-  margin: 3px 0;
-}
-
-/* Precio del producto */
-.item-price-carritoModal {
-  font-size: 1rem;
-  font-weight: bold;
-  color: var(--color-principal);
-}
-
-/* Botón de eliminar */
-.btn-delete-carritoModal {
-  background-color: var(--color-secundario);;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
+/* === Secciones del carrito === */
+.carrito-section {
+  background: #fafafa;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  overflow: hidden;
   transition: background-color 0.3s ease;
 }
 
-.btn-delete-carritoModal:hover {
-  background-color: #ff1a1a;
+.carrito-section.drag-over {
+  background-color: #f4ecff;
 }
 
-/* Total del carrito */
-.total-carritoModal {
-  font-size: 1.4rem;
+/* === Título de sección === */
+.carrito-section-title {
+  background-color: var(--color-principal);
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.5px;
+}
+
+/* === Item del carrito === */
+.carrito-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  font-size: 0.95rem;
+  color: #333;
+  cursor: grab;
+  transition: background 0.2s ease;
+}
+
+.carrito-item:last-child {
+  border-bottom: none;
+}
+
+.carrito-item:hover {
+  background-color: #f9f9f9;
+}
+
+.carrito-item.dragging {
+  background-color: #fff4e8;
+}
+
+/* === Nombre del producto === */
+.carrito-item-nombre {
+  flex: 1;
+  font-weight: 500;
+  color: #222;
+}
+
+/* === Botón eliminar === */
+.carrito-eliminar-button {
+  background: var(--color-secundario);
+  border: none;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
   font-weight: bold;
-  margin-top: 20px;
-  color: var(--color-principal);
+  transition: background 0.25s ease;
 }
 
-/* Botón de enviar pedido */
+.carrito-eliminar-button:hover {
+  background: #e04600;
+}
+
+/* === Total === */
+.total-carritoModal {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-principal);
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+/* === Botón Enviar === */
 .btn-submit-carritoModal {
+  display: block;
+  width: 100%;
   background-color: var(--color-principal);
   color: #fff;
   border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
+  padding: 12px 0;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
-  margin-top: 10px;
-  transition: background-color 0.3s ease;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 .btn-submit-carritoModal:hover {
-  background-color: var(--color-principal), 20, 108, 0.8);
+  background-color: var(--color-principal-oscuro);
+  transform: scale(1.02);
+}
+
+.btn-submit-carritoModal:active {
+  transform: scale(0.98);
+}
+
+/* === Scroll limpio === */
+.modal-content-carritoModal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content-carritoModal::-webkit-scrollbar-thumb {
+  background: var(--color-principal);
+  border-radius: 10px;
+}
+
+.modal-content-carritoModal::-webkit-scrollbar-thumb:hover {
+  background: var(--color-principal-oscuro);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .modal-content-carritoModal {
+    width: 94%;
+    max-width: 420px;
+    padding: 16px;
+  }
+
+  .carrito-item {
+    font-size: 0.9rem;
+  }
+
+  .carrito-eliminar-button {
+    padding: 5px 8px;
+    font-size: 0.85rem;
+  }
 }

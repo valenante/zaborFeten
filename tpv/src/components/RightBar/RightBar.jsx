@@ -14,7 +14,8 @@ const RightBar = ({ mesaId }) => {
     enviarPedido, mensajeAlerta, setMensajeAlerta, isLoading,
     mostrarResumen, setMostrarResumen, categories,
     handleClickCategoria, mostrarModalCategoria,
-    productosCategoriaActual, productosYaPedidos, setMostrarModalCategoria
+    productosCategoriaActual, productosYaPedidos, setMostrarModalCategoria,
+    mensajesSeccion, setMensajesSeccion,
   } = useRightBar(mesaId);
 
   const eliminarBebidaDelCarrito = (indexAEliminar) => {
@@ -99,6 +100,8 @@ const RightBar = ({ mesaId }) => {
               setCarrito={setCarrito}
               enviarPedido={enviarPedido}
               isLoading={isLoading}
+              mensajesSeccion={mensajesSeccion}
+              setMensajesSeccion={setMensajesSeccion}
             />
 
             {/* Bebidas */}

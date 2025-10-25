@@ -237,6 +237,49 @@
   background: var(--color-secundario);
 }
 
+/* === Botón Solicitar === */
+.boton-solicitar--mesadetalles {
+  background-color: var(--color-principal);
+  color: var(--blanco);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 6px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.boton-solicitar--mesadetalles:hover:enabled {
+  background-color: var(--color-principal-oscuro);
+  transform: scale(1.03);
+}
+
+.boton-solicitar--mesadetalles:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Badge "Solicitado" */
+.badge-solicitado--mesadetalles {
+  background-color: var(--color-secundario);
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Contenedor de los botones por producto */
+.botones-producto--mesadetalles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* 🔹 Responsive */
 @media (max-width: 500px) {
   .modal-contenido {

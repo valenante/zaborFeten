@@ -132,7 +132,7 @@ const Navbar = () => {
             <option value="/tpv/admin">Firma Digital</option>
             <option value="/tpv/estadisticas">Estadísticas</option>
             <option value="/tpv/eliminaciones">Eliminaciones</option>
-            <option value="password">Contraseña</option> 
+            <option value="password">Contraseña (Carta)</option> 
             <option value="/tpv/cajaDiaria">Caja Diaria</option>
             <option value="cerrarCaja" disabled={!cajaAbierta}>
               {cajaAbierta ? "Cerrar Caja" : "Cerrar Caja (cerrada)"}

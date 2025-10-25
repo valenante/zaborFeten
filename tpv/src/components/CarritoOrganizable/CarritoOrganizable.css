@@ -11,7 +11,7 @@
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: background-color 0.3s ease;
 }
@@ -101,6 +101,163 @@
   background-color: var(--gris);
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+/* ======= MENSAJE DE SECCIÓN ======= */
+.mensaje-seccion {
+  width: 100%;
+  min-height: 3vh;
+  margin: 1vh 0;
+  font-size: 0.95rem;
+  font-family: inherit;
+  border: none;
+  outline: none;
+  resize: none;
+  background-color: white;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+/* ======= MODAL DE EDICIÓN DE PRODUCTO ======= */
+.modal-editar {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: #fff;
+  width: 90%;
+  max-width: 360px;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content h4 {
+  margin-top: 0;
+  color: var(--color-principal);
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+}
+
+/* Campos del modal */
+.modal-content label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: var(--color-secundario);
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="number"] {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-content input:focus {
+  border-color: var(--color-principal);
+  box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.15);
+  outline: none;
+}
+
+/* Botones del modal */
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-guardar,
+.btn-cancelar {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.btn-guardar {
+  background: var(--color-principal);
+  color: #fff;
+}
+
+.btn-guardar:hover {
+  background: var(--color-principal-oscuro);
+  transform: scale(1.03);
+}
+
+.btn-cancelar {
+  background: var(--color-secundario);
+  color: white;
+}
+
+.btn-cancelar:hover {
+  background: #dcdcdc;
+  transform: scale(1.03);
+}
+
+/* ======= RESPONSIVE MODAL ======= */
+@media (max-width: 500px) {
+  .modal-content {
+    width: 80%;
+    padding: 18px;
+  }
+
+  .modal-content input[type="text"],
+  .modal-content input[type="number"] {
+    font-size: 0.9rem;
+    width: 80%;
+  }
+
+  .modal-content label{
+    margin-top: 1.5vh;
+  }
+
+  .btn-guardar,
+  .btn-cancelar {
+    font-size: 0.95rem;
+    padding: 9px 0;
+  }
 }
 
 /* Responsive */

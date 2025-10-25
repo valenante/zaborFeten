@@ -1,60 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "./CarritoOrganizable.css";
+import ProductoDetalle from "../RightBar/ProductoDetalle";
 
 const SECCIONES = ["entrante", "medio", "final"];
 
-const CarritoOrganizable = ({ carrito, setCarrito }) => {
+const CarritoOrganizable = ({ carrito, setCarrito, mensajesSeccion, setMensajesSeccion }) => {
+  const [productoEditando, setProductoEditando] = useState(null);
+  const [edicion, setEdicion] = useState({});
+
   const onDragEnd = (result) => {
     if (!result.destination) return;
 
     const { source, destination } = result;
-
-    // Si no cambia de sitio, no hacemos nada
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
-    ) {
-      return;
-    }
+    ) return;
 
     setCarrito((prev) => {
       const items = Array.from(prev);
-
-      // Filtra solo los items de la sección origen
       const sourceItems = items.filter((i) => i.seccion === source.droppableId);
       const destItems = items.filter((i) => i.seccion === destination.droppableId);
-
-      // Obtenemos el item a mover
       const movedItem = sourceItems[source.index];
 
-      // Eliminar del array global en su posición real
       const itemIndexGlobal = items.findIndex((i) => i.uid === movedItem.uid);
       items.splice(itemIndexGlobal, 1);
 
-      // Actualizar la sección si cambió
       if (source.droppableId !== destination.droppableId) {
         movedItem.seccion = destination.droppableId;
       }
 
-      // Calcular dónde insertar dentro del array global
-      // 1. Encontrar todos los items del destino en el array global
       const destUids = destItems.map((d) => d.uid);
-      // 2. Si el destino está vacío → empujar al final del array
       if (destUids.length === 0) {
         items.push(movedItem);
       } else {
-        // Buscar uid del item que ahora está en la posición destino
         const destItemUid = destItems[destination.index]?.uid;
         if (destItemUid) {
           const destGlobalIndex = items.findIndex((i) => i.uid === destItemUid);
           items.splice(destGlobalIndex, 0, movedItem);
         } else {
-          // si no hay item en ese index (drag al final), añadir al final
           items.push(movedItem);
         }
       }
-
       return items;
     });
   };
@@ -63,54 +51,61 @@ const CarritoOrganizable = ({ carrito, setCarrito }) => {
     setCarrito((prev) => prev.filter((item) => item.uid !== uid));
   };
 
+  const handleMensajeChange = (seccion, valor) => {
+    setMensajesSeccion((prev) => ({ ...prev, [seccion]: valor }));
+  };
+
+  const abrirEdicion = (item) => {
+    setProductoEditando(item.uid);
+    setEdicion({ ...item });
+  };
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="carrito-organizable-container">
         {SECCIONES.map((seccion) => {
-          const productosSeccion = carrito.filter(
-            (item) => item.seccion === seccion
-          );
+          const productosSeccion = carrito.filter((item) => item.seccion === seccion);
 
           return (
-            <Droppable
-              key={seccion}
-              droppableId={seccion}
-              isCombineEnabled={false}
-              ignoreContainerClipping={false}
-            >
+            <Droppable key={seccion} droppableId={seccion}>
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`carrito-section ${snapshot.isDraggingOver ? "drag-over" : ""
-                    }`}
+                  className={`carrito-section ${snapshot.isDraggingOver ? "drag-over" : ""}`}
                 >
                   <h5 className="carrito-section-title">
                     {seccion.charAt(0).toUpperCase() + seccion.slice(1)}
                   </h5>
 
+                  <textarea
+                    className="mensaje-seccion"
+                    placeholder="Mensaje para cocina (opcional)..."
+                    value={mensajesSeccion[seccion]}
+                    onChange={(e) => handleMensajeChange(seccion, e.target.value)}
+                  />
+
                   {productosSeccion.map((item, index) => (
-                    <Draggable
-                      key={item.uid}
-                      draggableId={item.uid}
-                      index={index}
-                    >
+                    <Draggable key={item.uid} draggableId={item.uid} index={index}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className={`carrito-item ${snapshot.isDragging ? "dragging" : ""
-                            }`}
+                          className={`carrito-item ${snapshot.isDragging ? "dragging" : ""}`}
+                          onClick={() => abrirEdicion(item)}
                         >
                           <div className="carrito-item-nombre">
                             {item.nombre} x{item.cantidad}
+                            {item.mensaje && <small> — {item.mensaje}</small>}
                           </div>
                           <div className="carrito-item-eliminar">
                             <button
-                              onClick={() => eliminarProducto(item.uid)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                eliminarProducto(item.uid);
+                              }}
                               className="carrito-eliminar-button"
-                              title="Eliminar"
                             >
                               ❌
                             </button>
@@ -126,6 +121,22 @@ const CarritoOrganizable = ({ carrito, setCarrito }) => {
             </Droppable>
           );
         })}
+
+        {productoEditando && (
+          <ProductoDetalle
+            producto={edicion}
+            cerrarModal={() => setProductoEditando(null)}
+            seleccionPrecioInicial={edicion.precioSeleccionado}
+            modoEdicion={true}
+            onConfirm={(productoActualizado) => {
+              // actualiza el producto dentro del carrito
+              setCarrito(prev =>
+                prev.map(p => (p.uid === productoEditando ? { ...p, ...productoActualizado } : p))
+              );
+              setProductoEditando(null);
+            }}
+          />
+        )}
       </div>
     </DragDropContext>
   );

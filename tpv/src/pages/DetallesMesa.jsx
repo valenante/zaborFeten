@@ -13,6 +13,8 @@ import ModalTransferencia from "../components/Modal/ModalTransferencia";
 import ModalConfirmacion from "../components/Modal/ModalConfirmacion";
 import ListaPedidos from "../components/DetallesMesa/ListaPedidos";
 import ListaBebidas from "../components/DetallesMesa/ListaBebidas";
+import api from "../utils/api";
+import { error, info, warn } from "../utils/logger";
 
 const DetalleMesa = () => {
   const { id } = useParams(); // Obtener el `id` de la mesa desde la URL  
@@ -39,6 +41,7 @@ const DetalleMesa = () => {
   const [mostrarModalTransferir, setMostrarModalTransferir] = useState(false);
   const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
   const [accionModal, setAccionModal] = useState(null);
+  const [isProcessingFactura, setIsProcessingFactura] = useState(false);
 
   // ⛔ AÑADE ESTO AQUÍ ANTES DEL RETURN
   if (!mesa) {
@@ -46,6 +49,24 @@ const DetalleMesa = () => {
       <p className="cargando--mesadetalles">Cargando detalles de la mesa...</p>
     );
   }
+  const solicitarProducto = async (pedidoId, itemId, estacion) => {
+    try {
+      await api.post(`/cocina/${pedidoId}/items/${itemId}/solicitar`, {
+        solicitadoA: estacion,
+        solicitadoPor: 'caja',
+      });
+      setMensajeAlerta({
+        tipo: "exito",
+        mensaje: "Producto solicitado correctamente.",
+      });
+    } catch (err) {
+      error("Error al solicitar producto:", err); // ✅ ahora sí llama a tu función logger.error
+      setMensajeAlerta({
+        tipo: "error",
+        mensaje: "Error al solicitar producto.",
+      });
+    }
+  };
 
   return (
     <div className="detalle-mesa--mesadetalles">
@@ -74,15 +95,42 @@ const DetalleMesa = () => {
                   setDatosFactura({ ...datosFactura, nif: e.target.value })
                 }
               />
+              {/* === BOTÓN BLOQUEADO PROFESIONALMENTE === */}
               <button
-                onClick={() =>
-                  emitirFactura(metodoPagoFactura, {
-                    nombre: datosFactura.nombre,
-                    nif: datosFactura.nif,
-                  }, user?.name)
-                }
+                disabled={isProcessingFactura} // 🔒 evita doble clic
+                onClick={async () => {
+                  if (isProcessingFactura) return; // seguridad extra
+                  setIsProcessingFactura(true); // activa bloqueo
+                  try {
+                    const idempotencyKey =
+                      typeof crypto !== "undefined" && crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : `idem_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+                    await emitirFactura(
+                      metodoPagoFactura,
+                      {
+                        nombre: datosFactura.nombre,
+                        nif: datosFactura.nif,
+                        idempotencyKey, // 🔐 pásalo al backend
+                      },
+                      user?.name
+                    );
+
+                    // 🔚 al terminar correctamente, cierra modal
+                    setMostrarFacturaModal(false);
+                  } catch (err) {
+                    console.error("❌ Error al emitir factura:", err);
+                    // 🔁 si falla, permite reintentar
+                    setIsProcessingFactura(false);
+                  }
+                }}
+                style={{
+                  opacity: isProcessingFactura ? 0.6 : 1,
+                  cursor: isProcessingFactura ? "not-allowed" : "pointer",
+                }}
               >
-                Emitir Factura
+                {isProcessingFactura ? "Procesando..." : "Emitir Factura"}
               </button>
               <button onClick={() => setMostrarFacturaModal(false)}>
                 Cancelar
@@ -98,6 +146,7 @@ const DetalleMesa = () => {
           eliminarProducto={eliminarProducto}
           setAccionModal={setAccionModal}
           setMostrarModalConfirmacion={setMostrarModalConfirmacion}
+          solicitarProducto={solicitarProducto}
         />
 
         <ListaBebidas
@@ -106,7 +155,7 @@ const DetalleMesa = () => {
           setAccionModal={setAccionModal}
           setMostrarModalConfirmacion={setMostrarModalConfirmacion}
         />
-          
+
         {mesa.estado === "abierta" && (
           <>
             <button

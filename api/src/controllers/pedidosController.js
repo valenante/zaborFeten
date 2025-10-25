@@ -214,7 +214,7 @@ export const crearPedido = async (req, res) => {
 };
 export const agregarProductoAlPedido = async (req, res) => {
   const { mesaId } = req.params;
-  const { productos } = req.body;
+  const { productos , mensajesSeccion = {}} = req.body;
 
   if (!Array.isArray(productos) || productos.length === 0) {
     return res.status(400).json({ error: 'Debes enviar al menos un producto válido.' });
@@ -286,6 +286,12 @@ export const agregarProductoAlPedido = async (req, res) => {
           pedidoExistente.cerradoPorEstacion[p.estacion] = false;
         }
       });
+
+       pedidoExistente.mensajesSeccion = {
+        ...pedidoExistente.mensajesSeccion,
+        ...mensajesSeccion,
+      };
+
       pedidoExistente.sesionId = mesa.sesionActiva;
       pedidoModificado = await pedidoExistente.save();
     } else {
@@ -293,6 +299,7 @@ export const agregarProductoAlPedido = async (req, res) => {
         mesa: mesa._id,
         sesionId: mesa.sesionActiva,
         productos: productosCompletos,
+        mensajesSeccion,
         estado: 'pendiente',
         total: Number(productosCompletos.reduce((sum, p) => sum + p.total, 0).toFixed(2)),
         cerradoPorEstacion: { frio: false, plancha: false, frito: false },
@@ -337,6 +344,8 @@ export const agregarProductoAlPedido = async (req, res) => {
         await productoEnDB.save();
       }
     }
+
+    console.log(mensajesSeccion);
 
     // === Sockets
     req.io.emit('nuevoPedido', {
