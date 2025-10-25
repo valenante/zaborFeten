@@ -51,16 +51,59 @@ const DetalleMesa = () => {
   }
   const solicitarProducto = async (pedidoId, itemId, estacion) => {
     try {
+      // ✅ 1. Actualización optimista local
+      setMesa((prevMesa) => ({
+        ...prevMesa,
+        pedidos: prevMesa.pedidos.map((p) =>
+          p._id === pedidoId
+            ? {
+              ...p,
+              productos: p.productos.map((prod) =>
+                prod._id === itemId
+                  ? {
+                    ...prod,
+                    workflow: { ...(prod.workflow || {}), estado: "solicitado" },
+                  }
+                  : prod
+              ),
+            }
+            : p
+        ),
+      }));
+
+      // ✅ 2. Enviar al backend
       await api.post(`/cocina/${pedidoId}/items/${itemId}/solicitar`, {
         solicitadoA: estacion,
         solicitadoPor: 'caja',
       });
+
+      // ✅ 3. Mostrar mensaje de éxito
       setMensajeAlerta({
         tipo: "exito",
         mensaje: "Producto solicitado correctamente.",
       });
     } catch (err) {
-      error("Error al solicitar producto:", err); // ✅ ahora sí llama a tu función logger.error
+      // ❌ 4. Si falla, revertimos cambio local
+      setMesa((prevMesa) => ({
+        ...prevMesa,
+        pedidos: prevMesa.pedidos.map((p) =>
+          p._id === pedidoId
+            ? {
+              ...p,
+              productos: p.productos.map((prod) =>
+                prod._id === itemId
+                  ? {
+                    ...prod,
+                    workflow: { ...(prod.workflow || {}), estado: "pendiente" },
+                  }
+                  : prod
+              ),
+            }
+            : p
+        ),
+      }));
+
+      error("Error al solicitar producto:", err);
       setMensajeAlerta({
         tipo: "error",
         mensaje: "Error al solicitar producto.",
@@ -147,6 +190,7 @@ const DetalleMesa = () => {
           setAccionModal={setAccionModal}
           setMostrarModalConfirmacion={setMostrarModalConfirmacion}
           solicitarProducto={solicitarProducto}
+          setMesa={setMesa}
         />
 
         <ListaBebidas

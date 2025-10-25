@@ -121,7 +121,7 @@ export const registro = async (req, res) => {
   const { name, password, role, estacion } = req.body;
 
   try {
-    const nuevoUsuario = new User({ name, password, role, estacion });
+    const nuevoUsuario = new User({ name, password, role, estacion , claveVisible: password});
     await nuevoUsuario.save();
 
     const accessToken = generarAccessToken(nuevoUsuario);
@@ -220,6 +220,84 @@ export const obtenerUsuario = async (req, res) => {
   } catch (error) {
     logger.error('❌ Error al obtener usuario:', error);
     return res.status(500).json({ error: 'Error del servidor.' });
+  }
+};
+
+export const obtenerUsuarios = async (req, res) => {
+  try {
+    const usuarios = await User.find({}, "name role estacion createdAt claveVisible");
+    res.status(200).json(usuarios);
+  } catch (error) {
+    logger.error("Error al obtener usuarios:", error);
+    res.status(500).json({ error: "Error al obtener los usuarios." });
+  }
+};
+export const editarUsuario = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, role, estacion, password } = req.body;
+
+    const usuario = await User.findById(id);
+    if (!usuario)
+      return res.status(404).json({ error: "Usuario no encontrado" });
+
+    // Actualizar campos básicos
+    usuario.name = name || usuario.name;
+    usuario.role = role || usuario.role;
+    usuario.estacion = role === "cocinero" ? estacion : undefined;
+
+    // ✅ Actualizar contraseña y su versión visible
+    if (password && password.trim() !== "") {
+      usuario.password = password; // bcrypt se encarga del hash
+      usuario.claveVisible = password; // visible para el admin
+    }
+
+    await usuario.save();
+
+    res.status(200).json({ message: "Usuario actualizado correctamente" });
+  } catch (error) {
+    logger.error("Error al editar usuario:", error);
+    res.status(500).json({ error: "Error al editar el usuario" });
+  }
+};
+
+export const cambiarPasswordUsuario = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({
+        error: "La nueva contraseña debe tener al menos 8 caracteres.",
+      });
+    }
+
+    const usuario = await User.findById(id);
+    if (!usuario) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    usuario.password = password; // el modelo ya se encarga del hash
+    await usuario.save();
+
+    res.status(200).json({ message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    logger.error("Error al cambiar contraseña:", error);
+    res.status(500).json({ error: "Error al cambiar la contraseña" });
+  }
+};
+
+export const eliminarUsuario = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const usuario = await User.findByIdAndDelete(id);
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado." });
+    }
+
+    res.status(200).json({ message: "Usuario eliminado correctamente." });
+  } catch (error) {
+    logger.error("Error al eliminar usuario:", error);
+    res.status(500).json({ error: "Error al eliminar el usuario." });
   }
 };
 

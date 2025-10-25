@@ -1,4 +1,5 @@
 import React from "react";
+import * as logger from "../../utils/logger";
 
 const ListaPedidos = ({
   pedidos,
@@ -6,8 +7,58 @@ const ListaPedidos = ({
   eliminarProducto,
   setAccionModal,
   setMostrarModalConfirmacion,
-  solicitarProducto, // 👈 nuevo prop
+  solicitarProducto,
+  setMesa, // ✅ recibimos setMesa en lugar de setPedidos
 }) => {
+  const handleSolicitar = async (pedidoId, productoId, estacion) => {
+    try {
+      // 🧠 Actualización optimista sobre mesa.pedidos
+      setMesa((prevMesa) => ({
+        ...prevMesa,
+        pedidos: prevMesa.pedidos.map((p) =>
+          p._id === pedidoId
+            ? {
+                ...p,
+                productos: p.productos.map((prod) =>
+                  prod._id === productoId
+                    ? {
+                        ...prod,
+                        workflow: { ...(prod.workflow || {}), estado: "solicitado" },
+                      }
+                    : prod
+                ),
+              }
+            : p
+        ),
+      }));
+
+      // 🚀 Enviar solicitud real al backend
+      await solicitarProducto(pedidoId, productoId, estacion);
+    } catch (error) {
+      logger.error("Error al solicitar producto:", error);
+
+      // 🔄 Si falla, revertimos el cambio local
+      setMesa((prevMesa) => ({
+        ...prevMesa,
+        pedidos: prevMesa.pedidos.map((p) =>
+          p._id === pedidoId
+            ? {
+                ...p,
+                productos: p.productos.map((prod) =>
+                  prod._id === productoId
+                    ? {
+                        ...prod,
+                        workflow: { ...(prod.workflow || {}), estado: "pendiente" },
+                      }
+                    : prod
+                ),
+              }
+            : p
+        ),
+      }));
+    }
+  };
+
   return (
     <ul className="lista-pedidos--mesadetalles">
       {pedidos.length > 0 ? (
@@ -19,19 +70,17 @@ const ListaPedidos = ({
                   typeof producto.producto === "string"
                     ? producto.producto
                     : producto.producto?._id;
-                const detalle = productosDetalles[productoId];
 
-                const estacion = producto.estacion || "frito"; // por defecto
+                const detalle = productosDetalles[productoId];
+                const estacion = producto.estacion || "frito";
                 const estado = producto.workflow?.estado || "pendiente";
-                const solicitadoA = producto.workflow?.solicitadoA;
+                const estaListo = producto.estadoPreparacion === "listo";
 
                 return (
                   <li
                     key={productoId}
                     className={`producto--mesadetalles ${
-                      producto.estadoPreparacion === "listo"
-                        ? "producto-listo"
-                        : ""
+                      estaListo ? "producto-listo" : ""
                     }`}
                   >
                     <div className="producto-info--mesadetalles">
@@ -49,11 +98,13 @@ const ListaPedidos = ({
                       <button
                         className="boton-solicitar--mesadetalles"
                         onClick={() =>
-                          solicitarProducto(pedido._id, producto._id, estacion)
+                          handleSolicitar(pedido._id, producto._id, estacion)
                         }
-                        disabled={estado === "solicitado"}
+                        disabled={estado === "solicitado" || estaListo}
                         title={
-                          estado === "solicitado"
+                          estaListo
+                            ? "El producto ya está listo"
+                            : estado === "solicitado"
                             ? "Ya solicitado"
                             : `Enviar a ${estacion}`
                         }
@@ -63,13 +114,17 @@ const ListaPedidos = ({
 
                       <button
                         className="boton-eliminar--mesadetalles"
-                        onClick={() =>
+                        onClick={() => {
                           setAccionModal({
                             titulo: "Eliminar producto",
-                            mensaje: `¿Seguro que quieres eliminar ${detalle?.nombre || "este producto"} de la mesa?`,
-                            onConfirm: () => eliminarProducto(pedido._id, productoId),
-                          }) || setMostrarModalConfirmacion(true)
-                        }
+                            mensaje: `¿Seguro que quieres eliminar ${
+                              detalle?.nombre || "este producto"
+                            } de la mesa?`,
+                            onConfirm: () =>
+                              eliminarProducto(pedido._id, productoId),
+                          });
+                          setMostrarModalConfirmacion(true);
+                        }}
                       >
                         x
                       </button>

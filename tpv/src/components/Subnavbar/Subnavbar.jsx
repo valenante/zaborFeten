@@ -4,7 +4,6 @@ import api from "../../utils/api";
 import PasswordModal from "../Password/PasswordModal";
 import CerrarCajaModal from "../Caja/CerrarCajaModal";
 import * as logger from '../../utils/logger';
-import RecuperarMesaModal from "../MesasCerradas/ModalMesasCerradas";
 import VentasHoyModal from "../Stock/VentasHoyModal";
 import { useAuth } from "../../context/AuthContext";
 import "./Subnavbar.css";
@@ -14,13 +13,9 @@ const SubNavbar = () => {
   const { logout } = useAuth(); // Obtiene la función logout del contexto
   const [mostrarModal, setMostrarModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [mostrarRecuperarModal, setMostrarRecuperarModal] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false); // Estado para el menú hamburguesa
   const [cajaAbierta, setCajaAbierta] = useState(false); // Estado para verificar si la caja está abierta
   const [mostrarVentasHoy, setMostrarVentasHoy] = useState(false);
-
-  const abrirRecuperarModal = () => setMostrarRecuperarModal(true);
-  const cerrarRecuperarModal = () => setMostrarRecuperarModal(false);
 
   const toggleMenu = () => {
     setMenuAbierto((prevState) => !prevState);
@@ -55,10 +50,6 @@ const SubNavbar = () => {
         className={`subnavbar-menu--subnavbar ${menuAbierto ? "open--subnavbar" : "closed--subnavbar"
           }`}
       >
-        <button onClick={abrirRecuperarModal} className="subnavbar-button--subnavbar">Recuperar Mesa</button>
-        {mostrarRecuperarModal && (
-          <RecuperarMesaModal onClose={cerrarRecuperarModal} />
-        )}
         <button
           onClick={() => navigate("/mesas-cerradas")}
           className="subnavbar-button--subnavbar"

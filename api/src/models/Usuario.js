@@ -6,6 +6,7 @@ const userSchema = new Schema(
   {
     name: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    claveVisible: { type: String, select: false }, // ⬅️ NUEVO: almacenar contraseña visible temporalmente
 
     // Rol general (permite gatear pantallas/acciones)
     role: {

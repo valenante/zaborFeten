@@ -7,6 +7,10 @@ import {
   renovarToken,
   logout,
   obtenerUsuario,
+  obtenerUsuarios,
+  editarUsuario,
+  cambiarPasswordUsuario,
+  eliminarUsuario
 } from '../controllers/authController.js';
 import rateLimit from 'express-rate-limit';
 
@@ -103,5 +107,17 @@ router.post('/refresh-token', renovarToken);
 
 // Endpoint para cerrar sesión
 router.post('/logout', logout);
+
+// Endpoint para obtener todos los usuarios
+router.get('/usuarios', obtenerUsuarios);
+
+// Endpoint para editar un usuario
+router.put('/usuarios/:id', editarUsuario);
+
+// Endpoint para cambiar la contraseña de un usuario
+router.put('/usuarios/:id/password', cambiarPasswordUsuario);
+
+// Endpoint para eliminar un usuario
+router.delete('/usuarios/:id', eliminarUsuario);
 
 export default router;
