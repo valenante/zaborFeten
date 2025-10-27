@@ -47,6 +47,7 @@ const PedidoSchema = new Schema({
     medio: { type: String, default: "" },
     final: { type: String, default: "" },
   },
+  servirTodoJunto: { type: Boolean, default: false }, // Indica si se deben servir todos los platos juntos
   productos: [
     {
       producto: {

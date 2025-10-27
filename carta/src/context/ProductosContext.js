@@ -18,13 +18,14 @@ export const ProductosProvider = ({ children }) => {
   const cargarCarrito = useCallback(async () => {
     try {
       const { data } = await api.get(`/cart?numeroMesa=${numeroMesa}`); // ✅ Enviar número de mesa
-      setCarrito(data); 
+      setCarrito(data);
     } catch (error) {
       if (error.response && error.response.status === 404) {
         console.warn(`No se encontró un carrito para la mesa ${numeroMesa}. Inicializando vacío...`);
-        setCarrito({ items: [] });
+        setCarrito({ items: [] }); // ✅ Así React verá el cambio
       } else {
         logger.error('Error al cargar el carrito:', error);
+        setCarrito({ items: [] }); // 👈 en caso de error genérico también vaciamos
       }
     }
   }, [numeroMesa]);
@@ -63,27 +64,27 @@ export const ProductosProvider = ({ children }) => {
 
   const obtenerMesaId = useCallback(async (numeroMesa) => {
     try {
-        // Si numeroMesa no es un número válido, mostramos un warning y detenemos la ejecución
-        if (!numeroMesa || isNaN(numeroMesa)) {
-            console.warn(`⚠️ El valor de numeroMesa es inválido: ${numeroMesa}`);
-            return;
-        }
+      // Si numeroMesa no es un número válido, mostramos un warning y detenemos la ejecución
+      if (!numeroMesa || isNaN(numeroMesa)) {
+        console.warn(`⚠️ El valor de numeroMesa es inválido: ${numeroMesa}`);
+        return;
+      }
 
-        // Petición a la API
-        const { data } = await api.get(`/mesas`);
+      // Petición a la API
+      const { data } = await api.get(`/mesas`);
 
-        // Filtramos la mesa que coincide con el numeroMesa
-        const mesa = data.find(mesa => Number(mesa.numero) === Number(numeroMesa));
+      // Filtramos la mesa que coincide con el numeroMesa
+      const mesa = data.find(mesa => Number(mesa.numero) === Number(numeroMesa));
 
-        if (mesa) {
-            setMesaId(mesa._id);
-        } else {
-            console.warn(`⚠️ No se encontró una mesa con el número ${numeroMesa}`);
-        }
+      if (mesa) {
+        setMesaId(mesa._id);
+      } else {
+        console.warn(`⚠️ No se encontró una mesa con el número ${numeroMesa}`);
+      }
     } catch (error) {
-        logger.error(`❌ Error al obtener el ID de la mesa ${numeroMesa}:`, error);
+      logger.error(`❌ Error al obtener el ID de la mesa ${numeroMesa}:`, error);
     }
-}, []);
+  }, []);
 
   return (
     <ProductosContext.Provider

@@ -57,10 +57,9 @@ async function extraerCamposDeXML(xmlRaw) {
     return {};
   }
 }
-
 export const listarFacturasEncadenadas = async (req, res) => {
   try {
-    const page = parseInt(req.query.page || '1', 10);
+    const page = parseInt(req.query.page || "1", 10);
     const limit = 20;
     const skip = (page - 1) * limit;
 
@@ -70,30 +69,29 @@ export const listarFacturasEncadenadas = async (req, res) => {
       { $limit: limit },
       {
         $lookup: {
-          from: 'eventofacturas',        // nombre **real** de la colección
-          let: { num: '$numeroFactura' },
+          from: "eventofacturas",
+          let: { num: "$numeroFactura" },
           pipeline: [
-            { $match: { $expr: { $eq: ['$numeroFactura', '$$num'] } } },
-            { $sort: { fecha: -1, _id: -1 } }, // último evento por fecha
+            { $match: { $expr: { $eq: ["$numeroFactura", "$$num"] } } },
+            { $sort: { fecha: -1, _id: -1 } },
             { $limit: 1 },
           ],
-          as: 'ultimoEvento',
+          as: "ultimoEvento",
         },
       },
-      { $unwind: { path: '$ultimoEvento', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$ultimoEvento", preserveNullAndEmptyArrays: true } },
       {
         $project: {
           _id: 1,
           numeroFactura: 1,
-          // si no existe 'fechaExpedicion' en el doc, usar createdAt
-          fechaExpedicion: { $ifNull: ['$fechaExpedicion', '$createdAt'] },
-          clienteNombre: '$ultimoEvento.clienteNombre',
-          clienteNIF: '$ultimoEvento.clienteNIF',
-          // si guardas importeTotal en el registro, úsalo de respaldo
-          importeTotal: { $ifNull: ['$ultimoEvento.importeTotal', '$importeTotal'] },
-          hash: '$hashFactura',          // en tu UI lo llamas f.hash
-          hashAnterior: 1,               // si lo tienes guardado en RegistroVerifactu
+          fechaExpedicion: { $ifNull: ["$fechaExpedicion", "$createdAt"] },
+          clienteNombre: "$ultimoEvento.clienteNombre",
+          clienteNIF: "$ultimoEvento.clienteNIF",
+          importeTotal: { $ifNull: ["$ultimoEvento.importeTotal", "$importeTotal"] },
+          hash: "$hashFactura",
+          hashAnterior: 1,
           xmlFirmado: 1,
+          respuestaAEAT: 1, // 👈🔥 AÑADIDO AQUÍ
           estado: 1,
         },
       },
@@ -104,10 +102,15 @@ export const listarFacturasEncadenadas = async (req, res) => {
       RegistroVerifactu.countDocuments(),
     ]);
 
-    res.json({ facturas, totalPaginas: Math.ceil(totalFacturas / limit) });
+    res.json({
+      facturas,
+      totalPaginas: Math.ceil(totalFacturas / limit),
+    });
   } catch (error) {
-    logger.error('❌ Error al obtener facturas:', error);
-    res.status(500).json({ error: 'Error al obtener las facturas encadenadas.' });
+    logger.error("❌ Error al obtener facturas:", error);
+    res.status(500).json({
+      error: "Error al obtener las facturas encadenadas.",
+    });
   }
 };
 

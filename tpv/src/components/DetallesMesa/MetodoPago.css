@@ -97,7 +97,7 @@
   }
   
   .boton-confirmar--cuenta:hover {
-    background-color: #e55b00;
+    background-color: var(--color-secundario);
   }
   
   /* Animación de entrada */

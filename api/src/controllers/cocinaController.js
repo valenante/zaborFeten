@@ -110,7 +110,7 @@ export const empezarItem = async (req, res) => {
 
   res.json({ ok: true, item });
 };
-// POST /api/v1/cocina/:pedidoId/items/:itemId/listo
+// POST /api/v1/cocina/:pedidoId/items/:itemId/// POST /api/v1/cocina/:pedidoId/items/:itemId/listo
 export const marcarItemListo = async (req, res) => {
   try {
     const { pedidoId, itemId } = req.params;
@@ -132,9 +132,10 @@ export const marcarItemListo = async (req, res) => {
     item.workflow = item.workflow || { estado: 'pendiente', tPendiente: Date.now() };
 
     const ahora = Date.now();
-    const next = (req.body?.estado === 'pendiente' || req.body?.estado === 'listo')
-      ? req.body.estado
-      : 'listo'; // por defecto marcar a listo
+    const next =
+      req.body?.estado === 'pendiente' || req.body?.estado === 'listo'
+        ? req.body.estado
+        : 'listo'; // por defecto marcar a listo
 
     // ⬇️ SINCRONIZA AMBOS CAMPOS SIEMPRE
     if (next === 'listo') {
@@ -150,6 +151,37 @@ export const marcarItemListo = async (req, res) => {
     pedido.markModified('productos');
     await pedido.save();
 
+    // 🧾 IMPRIMIR AUTOMÁTICAMENTE SI EL ITEM PASA A LISTO
+    if (next === 'listo') {
+      try {
+        const productoImprimir = {
+          mesaNumero: pedido.mesa.numero,
+          comensales: pedido.comensales || 1,
+          productos: [
+            {
+              nombre: item.producto?.nombre || 'Producto sin nombre',
+              cantidad: item.cantidad,
+              tipoPrecio: item.tipoPrecio,
+              nombreComensal: item.nombreComensal || '',
+              alergiasComensal: item.alergiasComensal || '',
+              seccion: item.seccion || '',
+              estacion: item.estacion || '',
+            },
+          ],
+          total: item.total || 0,
+        };
+
+        // 👇 Aquí mandamos el ticket al microservicio de impresión
+        const axios = await import('axios');
+        await axios.default.post(`${process.env.IMPRESION_SERVER}/v1/imprimir`, productoImprimir, {
+          timeout: 3000,
+        });
+      } catch (err) {
+        console.error('🖨️ Error al imprimir producto listo:', err.message);
+      }
+    }
+
+    // 🔄 Emitir actualización por Socket.IO
     req.io.to('cocina:frito').emit('kitchen:update', {
       type: 'itemEstadoCambiado',
       pedidoId,

@@ -96,36 +96,29 @@ const RightBar = ({ mesaId }) => {
 
             {/* Platos */}
             <CarritoOrganizable
-              carrito={carrito}
-              setCarrito={setCarrito}
+              
+              carrito={[
+                ...carrito.map(p => ({ ...p, tipo: p.tipo || "plato" })),
+                ...carritoBebidas.map(b => ({ ...b, tipo: "bebida", seccion: "bebidas" }))
+              ]}
+
+              
+              setCarrito={(nuevoCarrito) => {
+
+                if (!Array.isArray(nuevoCarrito)) {
+                  console.warn("⚠️ setCarrito recibió un valor no array:", nuevoCarrito);
+                  return;
+                }
+                const soloPlatos = nuevoCarrito.filter(i => i.tipo === "plato" || i.tipo === undefined);
+                const soloBebidas = nuevoCarrito.filter(i => i.tipo === "bebida");
+                setCarrito(soloPlatos);
+                setCarritoBebidas(soloBebidas);
+              }}
               enviarPedido={enviarPedido}
               isLoading={isLoading}
               mensajesSeccion={mensajesSeccion}
               setMensajesSeccion={setMensajesSeccion}
             />
-
-            {/* Bebidas */}
-            {carritoBebidas.length > 0 && (
-              <div className="carrito-section">
-                <h4 className="carrito-section-title">Bebidas</h4>
-                {carritoBebidas.map((bebida, index) => (
-                  <div key={index} className="carrito-item">
-                    <div className="carrito-item-nombre">
-                      {bebida.nombre} x{bebida.cantidad}
-                    </div>
-                    <div className="carrito-item-eliminar">
-                      <button
-                        onClick={() => eliminarBebidaDelCarrito(index)}
-                        className="carrito-eliminar-button"
-                        title="Eliminar"
-                      >
-                        ❌
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Botón al final */}
             <div className="carrito-enviar-container">

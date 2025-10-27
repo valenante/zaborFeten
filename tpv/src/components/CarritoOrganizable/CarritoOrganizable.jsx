@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "./CarritoOrganizable.css";
 import ProductoDetalle from "../RightBar/ProductoDetalle";
 
-const SECCIONES = ["entrante", "medio", "final"];
+const SECCIONES = ["entrante", "medio", "final", "bebidas"];
 
 const CarritoOrganizable = ({ carrito, setCarrito, mensajesSeccion, setMensajesSeccion }) => {
   const [productoEditando, setProductoEditando] = useState(null);
@@ -31,18 +31,14 @@ const CarritoOrganizable = ({ carrito, setCarrito, mensajesSeccion, setMensajesS
         movedItem.seccion = destination.droppableId;
       }
 
-      const destUids = destItems.map((d) => d.uid);
-      if (destUids.length === 0) {
-        items.push(movedItem);
+      const destItemUid = destItems[destination.index]?.uid;
+      if (destItemUid) {
+        const destGlobalIndex = items.findIndex((i) => i.uid === destItemUid);
+        items.splice(destGlobalIndex, 0, movedItem);
       } else {
-        const destItemUid = destItems[destination.index]?.uid;
-        if (destItemUid) {
-          const destGlobalIndex = items.findIndex((i) => i.uid === destItemUid);
-          items.splice(destGlobalIndex, 0, movedItem);
-        } else {
-          items.push(movedItem);
-        }
+        items.push(movedItem);
       }
+
       return items;
     });
   };
@@ -64,7 +60,10 @@ const CarritoOrganizable = ({ carrito, setCarrito, mensajesSeccion, setMensajesS
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="carrito-organizable-container">
         {SECCIONES.map((seccion) => {
-          const productosSeccion = carrito.filter((item) => item.seccion === seccion);
+          const productosSeccion =
+            seccion === "bebidas"
+              ? carrito.filter((item) => item.tipo === "bebida")
+              : carrito.filter((item) => item.seccion === seccion && item.tipo !== "bebida");
 
           return (
             <Droppable key={seccion} droppableId={seccion}>
@@ -75,15 +74,19 @@ const CarritoOrganizable = ({ carrito, setCarrito, mensajesSeccion, setMensajesS
                   className={`carrito-section ${snapshot.isDraggingOver ? "drag-over" : ""}`}
                 >
                   <h5 className="carrito-section-title">
-                    {seccion.charAt(0).toUpperCase() + seccion.slice(1)}
+                    {seccion === "bebidas"
+                      ? "Bebidas"
+                      : seccion.charAt(0).toUpperCase() + seccion.slice(1)}
                   </h5>
 
-                  <textarea
-                    className="mensaje-seccion"
-                    placeholder="Mensaje para cocina (opcional)..."
-                    value={mensajesSeccion[seccion]}
-                    onChange={(e) => handleMensajeChange(seccion, e.target.value)}
-                  />
+                  {seccion !== "bebidas" && (
+                    <textarea
+                      className="mensaje-seccion"
+                      placeholder="Mensaje para cocina (opcional)..."
+                      value={mensajesSeccion[seccion] || ""}
+                      onChange={(e) => handleMensajeChange(seccion, e.target.value)}
+                    />
+                  )}
 
                   {productosSeccion.map((item, index) => (
                     <Draggable key={item.uid} draggableId={item.uid} index={index}>
@@ -123,19 +126,24 @@ const CarritoOrganizable = ({ carrito, setCarrito, mensajesSeccion, setMensajesS
         })}
 
         {productoEditando && (
-          <ProductoDetalle
-            producto={edicion}
-            cerrarModal={() => setProductoEditando(null)}
-            seleccionPrecioInicial={edicion.precioSeleccionado}
-            modoEdicion={true}
-            onConfirm={(productoActualizado) => {
-              // actualiza el producto dentro del carrito
-              setCarrito(prev =>
-                prev.map(p => (p.uid === productoEditando ? { ...p, ...productoActualizado } : p))
-              );
-              setProductoEditando(null);
-            }}
-          />
+          <>
+            <ProductoDetalle
+              producto={edicion}
+              cerrarModal={() => {
+                setProductoEditando(null);
+              }}
+              seleccionPrecioInicial={edicion.precioSeleccionado}
+              modoEdicion={true}
+              onConfirm={(productoActualizado) => {
+                // Creamos el nuevo carrito directamente, sin callback
+                const nuevoCarrito = carrito.map((p) =>
+                  p.uid === productoEditando ? { ...p, ...productoActualizado } : p
+                );
+                setCarrito(nuevoCarrito); // ✅ ahora enviamos un array real
+                setProductoEditando(null);
+              }}
+            />
+          </>
         )}
       </div>
     </DragDropContext>

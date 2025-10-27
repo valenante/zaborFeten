@@ -14,13 +14,6 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:154
-#: src/components/Navbar/Navbar.js:234
-#: src/components/Navbar/Navbar.js:264
-msgid "mi-pedido"
-msgstr "Mi pedido"
-
-#. js-lingui-explicit-id
 #: src/pages/Valoraciones.js:106
 msgid "valora-experiencia"
 msgstr "Valora tu experiencia"
@@ -81,32 +74,39 @@ msgid "Continuar"
 msgstr "Continuar"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:134
-#: src/components/Navbar/Navbar.js:222
+#: src/components/Navbar/Navbar.js:139
+#: src/components/Navbar/Navbar.js:238
 msgid "todas-categorias"
 msgstr "categorias"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:144
-#: src/components/Navbar/Navbar.js:232
+#: src/components/Navbar/Navbar.js:155
+#: src/components/Navbar/Navbar.js:254
 msgid "platos"
 msgstr "Platos"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:144
-#: src/components/Navbar/Navbar.js:232
+#: src/components/Navbar/Navbar.js:165
+#: src/components/Navbar/Navbar.js:254
 msgid "bebidas"
 msgstr "Bebidas"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:149
-#: src/components/Navbar/Navbar.js:248
+#: src/components/Navbar/Navbar.js:170
+#: src/components/Navbar/Navbar.js:249
+#: src/components/Navbar/Navbar.js:278
+msgid "mi-pedido"
+msgstr "Mi pedido"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:176
+#: src/components/Navbar/Navbar.js:262
 msgid "cuenta"
 msgstr "Cuenta"
 
 #. js-lingui-explicit-id
-#: src/components/Carta/ProductoCard.js:115
-#: src/components/Carta/ProductoCard.js:129
+#: src/components/Carta/ProductoCard.js:114
+#: src/components/Carta/ProductoCard.js:139
 msgid "agregar-carrito"
 msgstr "Agregar al carrito"
 
@@ -157,92 +157,102 @@ msgstr "agregar al carrito"
 #~ msgstr "Sin valoraciones"
 
 #. placeholder {0}: producto.nombre
-#. placeholder {0}: opcion.tipo
-#: src/components/Carta/ProductoDetalle.js:201
-#: src/components/Carta/ProductoDetalle.js:233
+#: src/components/Carta/ProductoDetalle.js:194
 msgid "{0}"
 msgstr "{0}"
 
-#: src/components/Carta/ProductoDetalle.js:387
+#: src/components/Carta/ProductoDetalle.js:353
 msgid "{nombre}"
 msgstr ""
 
 #: src/components/Carta/ProductoDetalle.js:244
-msgid "{op}"
-msgstr "{op}"
+#~ msgid "{op}"
+#~ msgstr "{op}"
 
-#: src/components/Carta/ProductoDetalle.js:374
+#: src/components/Carta/ProductoDetalle.js:340
 msgid "Acompañante:"
-msgstr ""
+msgstr "Acompañante"
 
-#: src/components/Carta/ProductoDetalle.js:430
+#: src/components/Carta/ProductoDetalle.js:396
 msgid "Agregar al carrito"
 msgstr "Agregar al carrito"
 
-#: src/components/Carta/ProductoDetalle.js:340
+#: src/components/Carta/ProductoDetalle.js:306
 msgid "Botella"
-msgstr ""
+msgstr "Botella"
 
-#: src/components/Carta/ProductoDetalle.js:425
+#: src/components/Carta/ProductoDetalle.js:391
 msgid "Cancelar"
 msgstr "Cancelar"
 
-#: src/components/Carta/ProductoDetalle.js:253
+#: src/components/Carta/ProductoDetalle.js:219
 msgid "Cantidad:"
 msgstr "Cantidad:"
 
-#: src/components/Carta/ProductoDetalle.js:358
+#: src/components/Carta/ProductoDetalle.js:324
 msgid "Compartir"
 msgstr "Compartir"
 
-#: src/components/Carta/ProductoDetalle.js:335
+#: src/components/Carta/ProductoDetalle.js:301
 msgid "Copa"
-msgstr ""
+msgstr "Copa"
 
-#: src/components/Carta/ProductoDetalle.js:361
+#: src/components/Cart/CarritoModal.js:265
+msgid "Enviar Pedido"
+msgstr "Enviar Pedido"
+
+#: src/components/Carta/ProductoDetalle.js:327
 msgid "Individual"
 msgstr "Individual"
 
-#: src/components/Carta/ProductoDetalle.js:205
+#: src/components/Carta/ProductoDetalle.js:198
 msgid "Ingredientes:"
 msgstr "Ingredientes:"
 
 #: src/components/Carta/ProductoDetalle.js:228
-msgid "Opciones:"
-msgstr "Opciones:"
+#~ msgid "Opciones:"
+#~ msgstr "Opciones:"
 
-#: src/components/Carta/ProductoDetalle.js:316
+#: src/components/Carta/ProductoDetalle.js:282
 msgid "Precio:"
-msgstr ""
+msgstr "Precio"
 
-#: src/components/Carta/ProductoDetalle.js:294
+#: src/components/Carta/ProductoDetalle.js:260
 msgid "Ración"
-msgstr ""
+msgstr "Ración"
 
 #: src/components/Carta/ProductoDetalle.js:263
 #~ msgid "Selecciona el tipo de plato:"
-#~ msgstr ""
+#~ msgstr "Selecciona el tipo de plato:"
 
 #: src/components/Carta/ProductoDetalle.js:315
 #~ msgid "Selecciona presentación:"
-#~ msgstr ""
+#~ msgstr "Selecciona presentación:"
 
-#: src/components/Carta/ProductoDetalle.js:383
+#: src/components/Carta/ProductoDetalle.js:349
 msgid "Selecciona un acompañante"
-msgstr ""
+msgstr "Selecciona un acompañante"
 
-#: src/components/Carta/ProductoDetalle.js:391
+#: src/components/Cart/CarritoOrganizableModal.jsx:79
+msgid "Servir todo junto"
+msgstr "Servir todo junto"
+
+#: src/components/Carta/ProductoDetalle.js:357
 msgid "Sin acompañante"
-msgstr ""
+msgstr "Sin acompañante"
 
-#: src/components/Carta/ProductoDetalle.js:300
+#: src/components/Carta/ProductoDetalle.js:266
 msgid "Surtido"
-msgstr ""
+msgstr "Surtido"
 
-#: src/components/Carta/ProductoDetalle.js:289
+#: src/components/Carta/ProductoDetalle.js:255
 msgid "Tapa"
-msgstr ""
+msgstr "Tapa"
 
 #: src/components/Carta/ProductoDetalle.js:349
 #~ msgid "Tipo de plato:"
 #~ msgstr "Tipo de plato"
+
+#: src/components/Cart/CarritoModal.js:262
+msgid "Total"
+msgstr "Total"

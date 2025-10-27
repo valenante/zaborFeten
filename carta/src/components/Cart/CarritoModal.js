@@ -1,10 +1,12 @@
 import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ProductosContext } from "../../context/ProductosContext";
-import { useComensal } from "../../context/ComensalesContext"; // 👈 Importar el hook
+import { Trans } from "@lingui/react/macro";
+import { useComensal } from "../../context/ComensalesContext";
 import api from "../../utils/api";
 import * as logger from '../../utils/logger';
 import AlertaMensaje from "../AlertaMensaje/AlertaMensaje";
+import CarritoOrganizableModal from "./CarritoOrganizableModal";
 import "../../styles/CarritoModal.css";
 
 const CarritoModal = ({ cerrarModal }) => {
@@ -15,11 +17,16 @@ const CarritoModal = ({ cerrarModal }) => {
   const { comensal } = useComensal();
   const { comensales } = comensal;
   const [mensajeAlerta, setMensajeAlerta] = useState(null);
+  const [servirTodoJunto, setServirTodoJunto] = useState(false);
+  const [itemsOrdenados, setItemsOrdenados] = useState(carrito.items || []);
 
   useEffect(() => {
-    // Aquí estamos llamando a la función para obtener el ID de la mesa (asumiendo que la mesa es la 1, o puedes pasar otro número de mesa)
     obtenerMesaId(numeroMesa);
   }, [obtenerMesaId, numeroMesa]);
+
+  useEffect(() => {
+    setItemsOrdenados(carrito.items || []);
+  }, [carrito]);
 
   const esLider = async () => {
     try {
@@ -28,16 +35,19 @@ const CarritoModal = ({ cerrarModal }) => {
         `/mesas/token-lider/token-lider/check/${mesaId}`
       );
       const tokenLider = response.data.tokenLider;
-      return tokenLocal === tokenLider; // Retorna true si es líder
+      return tokenLocal === tokenLider;
     } catch (error) {
       logger.error("Error al verificar el tokenLider:", error);
-      return false; // Asume que no es líder si ocurre un error
+      return false;
     }
   };
 
   const eliminarProducto = async (itemId) => {
     if (!(await esLider())) {
-      setMensajeAlerta({ tipo: "error", mensaje: "Solo el líder puede eliminar productos del carrito." });
+      setMensajeAlerta({
+        tipo: "error",
+        mensaje: "Solo el líder puede eliminar productos del carrito.",
+      });
       return;
     }
 
@@ -56,24 +66,24 @@ const CarritoModal = ({ cerrarModal }) => {
 
       if (carritoEliminado) {
         localStorage.removeItem("carritoMongoId");
-        cargarCarrito();
-      } else {
-        cargarCarrito();
       }
+      cargarCarrito();
     } catch (error) {
       logger.error("Error al eliminar el producto:", error);
     }
   };
 
-  const enviarPedidoAImpresora = async (mesaNumero, comensales, productos, total, tipo = 'platos') => {
+  const enviarPedidoAImpresora = async (
+    mesaNumero,
+    comensales,
+    productos,
+    total,
+    tipo = "platos"
+  ) => {
     try {
-      // 🧠 Solo imprimir si el tipo es "bebidas"
-      if (tipo !== 'bebidas') {
-        return;
-      }
+      if (tipo !== "bebidas") return;
 
-      const rutaBackend = '/imprimir/imprimir-bebidas';
-
+      const rutaBackend = "/imprimir/imprimir-bebidas";
       await Promise.race([
         api.post(rutaBackend, {
           mesaNumero,
@@ -82,23 +92,24 @@ const CarritoModal = ({ cerrarModal }) => {
           total,
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
+          setTimeout(() => reject(new Error("Tiempo de espera agotado")), 3000)
         ),
       ]);
     } catch (error) {
-      logger.error('❌ Error al imprimir pedido de bebidas:', error.message);
+      logger.error("❌ Error al imprimir pedido de bebidas:", error.message);
     }
   };
 
   const enviarPedido = async () => {
     try {
       const carritoId = localStorage.getItem(`carritoMongoId-${numeroMesa}`);
+      const itemsParaEnviar =
+        itemsOrdenados?.length > 0 ? itemsOrdenados : carrito.items;
 
-      // Separar productos en platos y bebidas
       const productosPlatos = [];
       const productosBebidas = [];
 
-      carrito.items.forEach((item) => {
+      itemsParaEnviar.forEach((item, index) => {
         const productoData = {
           producto: item.productId._id,
           nombre: item.productId.nombre,
@@ -108,12 +119,16 @@ const CarritoModal = ({ cerrarModal }) => {
           cantidad: item.cantidad,
           precioSeleccionado: item.precioSeleccionado,
           tipoPrecio: item.tipoPrecio,
-          total: (item.precioSeleccionado || item.productId.precios.precioBase) * item.cantidad,
+          total:
+            (item.precioSeleccionado || item.productId.precios.precioBase) *
+            item.cantidad,
           precios: item.productId.precios,
           nombreComensal: item.nombre,
           alergiasComensal: item.alergias,
           acompanante: item.acompanante,
           adicionales: item.adicionales,
+          seccion: item.seccion || "medio", // 👈 ✅ AÑADIDO AQUÍ
+          orden: index + 1,
         };
 
         if (item.productId.tipo === "bebida") {
@@ -125,83 +140,86 @@ const CarritoModal = ({ cerrarModal }) => {
         }
       });
 
-      // Crear pedidos separados si hay productos de ambos tipos
+      // Pedido de platos
       if (productosPlatos.length > 0) {
         const pedidoPlatos = {
           mesa: mesaId,
           cartId: carritoId,
           productos: productosPlatos,
-          total: productosPlatos.reduce((total, item) => total + item.total, 0),
+          total: productosPlatos.reduce((t, i) => t + i.total, 0),
           comensales,
+          servirTodoJunto,
         };
-        await api.post(
-          "/pedidos",
-          pedidoPlatos,
-          { params: { mesa: Number(numeroMesa) } } // ← importante: número
-        );
 
-        try {
-          await enviarPedidoAImpresora(
-            numeroMesa,
-            comensales,
-            productosPlatos.map(p => ({
-              nombre: p.nombre,
-              cantidad: p.cantidad,
-              opcionesPersonalizables: p.opcionesPersonalizables,
-              alergiasComensal: p.alergiasComensal,
-              tipoPrecio: p.tipoPrecio,
-              seccion: p.seccion,
-            })),
-            pedidoPlatos.total,
-            'platos'
-          );
-        } catch (err) {
-          logger.error("Error imprimiendo platos:", err);
-        }
+        await api.post("/pedidos", pedidoPlatos, {
+          params: { mesa: Number(numeroMesa) },
+        });
+
+        await enviarPedidoAImpresora(
+          numeroMesa,
+          comensales,
+          productosPlatos.map((p) => ({
+            nombre: p.nombre,
+            cantidad: p.cantidad,
+            opcionesPersonalizables: p.opcionesPersonalizables,
+            alergiasComensal: p.alergiasComensal,
+            tipoPrecio: p.tipoPrecio,
+            seccion: p.seccion,
+          })),
+          pedidoPlatos.total,
+          "platos"
+        );
       }
 
+      // Pedido de bebidas
       if (productosBebidas.length > 0) {
         const pedidoBebidas = {
           mesa: mesaId,
           cartId: carritoId,
           productos: productosBebidas,
-          total: productosBebidas.reduce((total, item) => total + item.total, 0),
+          total: productosBebidas.reduce((t, i) => t + i.total, 0),
           comensales,
+          servirTodoJunto,
         };
 
-        await api.post(
-          "/pedidosBebidas",
-          pedidoBebidas,
-          { params: { mesa: Number(numeroMesa) } }
+        await api.post("/pedidosBebidas", pedidoBebidas, {
+          params: { mesa: Number(numeroMesa) },
+        });
+
+        await enviarPedidoAImpresora(
+          numeroMesa,
+          comensales,
+          productosBebidas.map((p) => ({
+            nombre: p.nombre,
+            cantidad: p.cantidad,
+            opcionesPersonalizables: p.opcionesPersonalizables,
+            alergiasComensal: p.alergiasComensal,
+            tipoPrecio: p.tipoPrecio,
+            seccion: p.seccion,
+          })),
+          pedidoBebidas.total,
+          "bebidas"
         );
-        try {
-          await enviarPedidoAImpresora(
-            numeroMesa,
-            comensales,
-            productosBebidas.map(p => ({
-              nombre: p.nombre,
-              cantidad: p.cantidad,
-              opcionesPersonalizables: p.opcionesPersonalizables,
-              alergiasComensal: p.alergiasComensal,
-              tipoPrecio: p.tipoPrecio,
-              seccion: p.seccion,
-            })),
-            pedidoBebidas.total,
-            'bebidas'
-          );
-        } catch (err) {
-          logger.error("Error imprimiendo bebidas:", err);
-        }
       }
 
-      //Eliminar el carrito
-      await api.delete(`/cart/${carritoId}`, {
-        headers: { "X-Cart-ID": carritoId },
-      });
-
+      try {
+        await api.delete(`/cart`, { data: { mesa: numeroMesa } });
+        logger.info(`🧹 Carrito de la mesa ${numeroMesa} vaciado correctamente`);
+      } catch (error) {
+        logger.warn(`⚠️ No se pudo vaciar el carrito de la mesa ${numeroMesa}:`, error.message);
+      }
       localStorage.removeItem(`carritoMongoId-${numeroMesa}`);
 
-      cargarCarrito();
+      // 🧹 Limpiar estado visual antes de cerrar
+      setItemsOrdenados([]);
+      if (carrito) carrito.items = [];
+
+      // ✅ Mostrar mensaje visual
+      setMensajeAlerta({
+        tipo: "exito",
+        mensaje: "✅ Pedido enviado correctamente.",
+      });
+
       cerrarModal();
     } catch (error) {
       logger.error("Error al enviar el pedido:", error);
@@ -213,95 +231,39 @@ const CarritoModal = ({ cerrarModal }) => {
       ?.reduce((total, item) => {
         const precioBase =
           item.precioSeleccionado || item.productId.precios.precioBase;
-
-        // Sumar los precios de los adicionales seleccionados
         const totalAdicionales = (item.adicionales || []).reduce(
           (acc, adicional) => acc + (adicional.precio || 0),
           0
         );
-
         const precioFinalUnitario = precioBase + totalAdicionales;
-
         return total + precioFinalUnitario * item.cantidad;
       }, 0)
       .toFixed(2);
   };
 
-  const renderizarItems = () => {
-    const itemsAgrupados = [];
-
-    carrito.items?.forEach((item) => {
-      const opciones = JSON.stringify(item.opciones); // Convertimos las opciones a una cadena
-      const ingredientesEliminados = JSON.stringify(item.ingredientes); // Convertimos los ingredientes eliminados a una cadena
-
-      // Verifica si ya existe una entrada con la misma combinación de opciones e ingredientes eliminados
-      const key = `${item.productId._id}-${opciones}-${ingredientesEliminados}`;
-      const itemExistente = itemsAgrupados.find((i) => i.key === key);
-
-      if (itemExistente) {
-        itemExistente.cantidad += item.cantidad; // Sumar cantidades si ya existe la combinación
-      } else {
-        itemsAgrupados.push({
-          key,
-          item,
-        });
-      }
-    });
-
-    return itemsAgrupados.map(({ key, item }) => (
-      <li key={key} className="modal-item-carritoModal">
-        {item.nombre?.length > 0 && (
-          <h3 className="item-name-carritoModal">{item.nombre}</h3>
-        )}
-        <h3 className="item-title-carritoModal">{item.productId.nombre}</h3>
-        {item.ingredientes?.length > 0 && (
-          <p className="item-details-carritoModal">
-            Sin {item.ingredientes.join(", ")}
-          </p>
-        )}
-        {item.opciones && Object.entries(item.opciones).length > 0 && (
-          <p className="item-details-carritoModal">
-            {" "}
-            {Object.entries(item.opciones || {})
-              .map(([k, v]) => `${k}: ${v}`)
-              .join(", ")}
-          </p>
-        )}
-        <p className="item-details-carritoModal">
-          Precio:{" "}
-          {(
-            item.precioSeleccionado || item.productId.precios.precioBase
-          ).toFixed(2)}{" "}
-          €
-        </p>
-        <p className="item-details-carritoModal">Cantidad: {item.cantidad}</p>
-        <button
-          className="btn-delete-carritoModal"
-          onClick={() => eliminarProducto(item._id)}
-        >
-          Eliminar
-        </button>
-      </li>
-    ));
-  };
-
   return (
-    <div
-      className="modal-overlay-carritoModal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="titulo-carrito"
-    >
+    <div className="modal-overlay-carritoModal" role="dialog" aria-modal="true">
       <div className="modal-content-carritoModal">
         <button className="modal-close-carritoModal" onClick={cerrarModal}>
           ✖
         </button>
-        <ul className="modal-items-carritoModal">{renderizarItems()}</ul>
-        <h3 className="total-carritoModal">Total: {calcularTotal()} €</h3>
+
+        {/* ✅ Solo un componente organizador */}
+        <CarritoOrganizableModal
+          items={itemsOrdenados}
+          setItems={setItemsOrdenados}
+          servirTodoJunto={servirTodoJunto}
+          setServirTodoJunto={setServirTodoJunto}
+          eliminarProducto={eliminarProducto} // 👈 NUEVO
+        />
+
+        <h3 className="total-carritoModal"><Trans>Total</Trans>: {calcularTotal()} €</h3>
+
         <button onClick={enviarPedido} className="btn-submit-carritoModal">
-          Enviar Pedido
+          <Trans>Enviar Pedido</Trans>
         </button>
       </div>
+
       {mensajeAlerta && (
         <AlertaMensaje
           tipo={mensajeAlerta.tipo}

@@ -97,29 +97,29 @@ const findProductoPendienteEnPedido = (pedido, { idx, nombre }) => {
 
   // 2️⃣ Si se menciona por nombre o alias
   if (nombre) {
-  const n = nombre.trim().toLowerCase();
-  const opciones = lista.map(pr => ({
-    pr,
-    nombres: [
-      pr.producto?.nombre?.toLowerCase() || "",
-      ...(pr.producto?.aliases || []).map(a => a.toLowerCase())
-    ]
-  }));
+    const n = nombre.trim().toLowerCase();
+    const opciones = lista.map(pr => ({
+      pr,
+      nombres: [
+        pr.producto?.nombre?.toLowerCase() || "",
+        ...(pr.producto?.aliases || []).map(a => a.toLowerCase())
+      ]
+    }));
 
-  let mejorMatch = null;
-  let mejorPuntaje = 0.5; // umbral mínimo
+    let mejorMatch = null;
+    let mejorPuntaje = 0.5; // umbral mínimo
 
-  for (const { pr, nombres } of opciones) {
-    for (const alias of nombres) {
-      const score = stringSimilarity.compareTwoStrings(n, alias);
-      if (score > mejorPuntaje) {
-        mejorMatch = pr;
-        mejorPuntaje = score;
+    for (const { pr, nombres } of opciones) {
+      for (const alias of nombres) {
+        const score = stringSimilarity.compareTwoStrings(n, alias);
+        if (score > mejorPuntaje) {
+          mejorMatch = pr;
+          mejorPuntaje = score;
+        }
       }
     }
-  }
 
-  return mejorMatch;
+    return mejorMatch;
   }
 };
 
@@ -209,39 +209,21 @@ const Cocina = () => {
       // 1️⃣ Cambiar el estado en backend
       await api.post(`/cocina/${pedidoId}/items/${itemId}/estado`, { estado: next });
 
-      // 2️⃣ Si se marcó como listo, imprimir inmediatamente
-      if (next === 'listo') {
-        try {
-          const rutaBackend = '/imprimir/imprimir'; // usamos la ruta estándar de platos
-
-          const productoImprimir = {
-            mesaNumero: pedido.mesa.numero,
-            comensales: pedido.comensales || 1,
-            productos: [
-              {
-                nombre: item.producto?.nombre || 'Producto sin nombre',
-                cantidad: item.cantidad,
-                tipoPrecio: item.tipoPrecio,
-                nombreComensal: item.nombreComensal || '',
-                alergiasComensal: item.alergiasComensal || '',
-                seccion: item.seccion || '',
-                estacion: item.estacion || '',
-              },
-            ],
-            total: item.total || 0,
-          };
-
-          // Llamada directa a la impresora (con timeout de seguridad)
-          await Promise.race([
-            api.post(rutaBackend, productoImprimir),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Tiempo de espera agotado')), 3000)
-            ),
-          ]);
-        } catch (error) {
-          logger.error('❌ Error al imprimir producto listo:', error.message);
-        }
-      }
+      // 🔧 Actualiza el estado local inmediatamente sin esperar al socket
+      setPedidos(prev =>
+        prev.map(p =>
+          p._id === pedidoId
+            ? {
+              ...p,
+              productos: p.productos.map(it =>
+                it._id === itemId
+                  ? { ...it, workflow: { ...(it.workflow || {}), estado: next } }
+                  : it
+              ),
+            }
+            : p
+        )
+      );
 
     } catch (err) {
       logger.error('Error al cambiar estado item:', err);
@@ -660,77 +642,166 @@ const Cocina = () => {
                     <h3>Mesa {pedido.mesa.numero}</h3>
                     <p>{getComensalesPedido(pedido)} comensales</p>
                   </div>
-                  <p><strong>Hace:</strong> {calcularTiempoTranscurrido(pedido.fecha)}</p>
 
-                  {(['entrante', 'medio', 'final'].some(seccion => productosAgrupados[seccion]?.length > 0))
-                    ? ['entrante', 'medio', 'final'].map(seccion =>
-                      productosAgrupados[seccion]?.length > 0 && (
-                        <div key={seccion} className="seccion-pedido--cocina">
-                          <h4 className="seccion-titulo--cocina">{seccion.toUpperCase()}</h4>
+                  <p>
+                    <strong>Hace:</strong> {calcularTiempoTranscurrido(pedido.fecha)}
+                  </p>
 
-                          {/* ✅ Mensaje de la sección (si existe) */}
-                          {pedido.mensajesSeccion?.[seccion] && pedido.mensajesSeccion[seccion].trim() !== "" && (
-                            <div className="nota-seccion--cocina">
-                              📝 {pedido.mensajesSeccion[seccion]}
-                            </div>
-                          )}
+                  {pedido.servirTodoJunto ? (
+                    // ✅ Mostrar todo junto sin secciones
+                    <div className="seccion-pedido--cocina">
+                      <h4 className="seccion-titulo--cocina">A LA VEZ</h4>
+                      <ul className="productos-list--cocina">
+                        {visibles.map((producto) => (
+                          <li
+                            key={producto._id}
+                            className={
+                              "producto-item--cocina" +
+                              (producto.workflow?.estado === "listo" ? " listo" : "")
+                            }
+                          >
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={producto.workflow?.estado === "listo"}
+                                onChange={() => marcarItemListo(pedido._id, producto._id)}
+                              />
+                              <span
+                                style={{
+                                  color:
+                                    producto.tipoPlato === "individual" ? "green" : "purple",
+                                }}
+                              >
+                                {producto.cantidad}x{" "}
+                                {producto.tipoPrecio !== "precioBase" &&
+                                  `${producto.tipoPrecio} `}
+                                {producto.producto?.nombre ||
+                                  producto.nombre ||
+                                  "Producto no disponible"}
+                              </span>
+                            </label>
 
-                          <ul className="productos-list--cocina">
-                            {productosAgrupados[seccion].map((producto) => {
-                              const estado = producto?.workflow?.estado ?? 'pendiente';
-                              const solicitadoA = producto?.workflow?.solicitadoA ?? producto?.solicitadoA ?? null;
-                              const destino = producto?.estacion || 'frio';
-                              const disabledSolicitar = !((estacion || '').toLowerCase().startsWith('frito') && estado === 'pendiente');
+                            <DetallesProducto producto={producto} />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    // ✅ Caso normal: mostrar por secciones
+                    (["entrante", "medio", "final"].some(
+                      (seccion) => productosAgrupados[seccion]?.length > 0
+                    ) ? (
+                      ["entrante", "medio", "final"].map(
+                        (seccion) =>
+                          productosAgrupados[seccion]?.length > 0 && (
+                            <div key={seccion} className="seccion-pedido--cocina">
+                              <h4 className="seccion-titulo--cocina">
+                                {seccion.toUpperCase()}
+                              </h4>
 
-                              return (
-                                <li
-                                  key={producto._id}
-                                  className={
-                                    "producto-item--cocina" +
-                                    (producto.workflow?.estado === "listo" ? " listo" : "") +
-                                    (highlight.has(`${pedido._id}:${producto._id}`) ? " flash-solicitado" : "")
-                                  }
-                                >
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      checked={producto.workflow?.estado === 'listo'}
-                                      onChange={() => marcarItemListo(pedido._id, producto._id)}
-                                    />
-                                    <span style={{ color: producto.tipoPlato === 'individual' ? 'green' : 'purple' }}>
-                                      {producto.cantidad}x {producto.tipoPrecio !== 'precioBase' && `${producto.tipoPrecio} `}
-                                      {producto.producto?.nombre || producto.nombre || 'Producto no disponible'}
-                                      {producto.workflow?.estado === 'solicitado' && (
-                                        <span className="badge-solicitado">SOLICITADO</span>
+                              {pedido.mensajesSeccion?.[seccion] &&
+                                pedido.mensajesSeccion[seccion].trim() !== "" && (
+                                  <div className="nota-seccion--cocina">
+                                    📝 {pedido.mensajesSeccion[seccion]}
+                                  </div>
+                                )}
+
+                              <ul className="productos-list--cocina">
+                                {productosAgrupados[seccion].map((producto) => {
+                                  const estado = producto?.workflow?.estado ?? "pendiente";
+                                  const solicitadoA =
+                                    producto?.workflow?.solicitadoA ??
+                                    producto?.solicitadoA ??
+                                    null;
+                                  const destino = producto?.estacion || "frio";
+                                  const disabledSolicitar = !(
+                                    (estacion || "")
+                                      .toLowerCase()
+                                      .startsWith("frito") && estado === "pendiente"
+                                  );
+
+                                  return (
+                                    <li
+                                      key={producto._id}
+                                      className={
+                                        "producto-item--cocina" +
+                                        (producto.workflow?.estado === "listo"
+                                          ? " listo"
+                                          : "") +
+                                        (highlight.has(`${pedido._id}:${producto._id}`)
+                                          ? " flash-solicitado"
+                                          : "")
+                                      }
+                                    >
+                                      <label>
+                                        <input
+                                          type="checkbox"
+                                          checked={producto.workflow?.estado === "listo"}
+                                          onChange={() =>
+                                            marcarItemListo(pedido._id, producto._id)
+                                          }
+                                        />
+                                        <span
+                                          style={{
+                                            color:
+                                              producto.tipoPlato === "individual"
+                                                ? "green"
+                                                : "purple",
+                                          }}
+                                        >
+                                          {producto.cantidad}x{" "}
+                                          {producto.tipoPrecio !== "precioBase" &&
+                                            `${producto.tipoPrecio} `}
+                                          {producto.producto?.nombre ||
+                                            producto.nombre ||
+                                            "Producto no disponible"}
+                                          {producto.workflow?.estado === "solicitado" && (
+                                            <span className="badge-solicitado">
+                                              SOLICITADO
+                                            </span>
+                                          )}
+                                        </span>
+                                      </label>
+
+                                      <DetallesProducto producto={producto} />
+
+                                      {isCentral && (
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            gap: 6,
+                                            marginTop: 6,
+                                          }}
+                                        >
+                                          <button
+                                            className="btn--cocina btn--ghost"
+                                            onClick={() =>
+                                              solicitar({
+                                                pedidoId: pedido._id,
+                                                itemId: producto._id,
+                                                destino,
+                                              })
+                                            }
+                                            disabled={disabledSolicitar}
+                                            title={
+                                              disabledSolicitar
+                                                ? `No disponible (${estado}${solicitadoA ? " · solicitado" : ""
+                                                })`
+                                                : "Solicitar"
+                                            }
+                                          >
+                                            Solicitar
+                                          </button>
+                                        </div>
                                       )}
-                                    </span>
-                                  </label>
-
-                                  <DetallesProducto producto={producto} />
-
-                                  {isCentral && (
-                                    <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                                      <button
-                                        className="btn--cocina btn--ghost"
-                                        onClick={() => solicitar({ pedidoId: pedido._id, itemId: producto._id, destino })}
-                                        disabled={disabledSolicitar}
-                                        title={
-                                          disabledSolicitar
-                                            ? `No disponible (${estado}${solicitadoA ? ' · solicitado' : ''})`
-                                            : 'Solicitar'
-                                        }
-                                      >
-                                        Solicitar
-                                      </button>
-                                    </div>
-                                  )}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      ))
-                    : (
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          )
+                      )
+                    ) : (
                       <div className="seccion-pedido--cocina">
                         <h4 className="seccion-titulo--cocina">PRODUCTOS</h4>
                         <ul className="productos-list--cocina">
@@ -745,12 +816,23 @@ const Cocina = () => {
                               <label>
                                 <input
                                   type="checkbox"
-                                  checked={producto.workflow?.estado === 'listo'}
+                                  checked={producto.workflow?.estado === "listo"}
                                   onChange={() => marcarItemListo(pedido._id, producto._id)}
                                 />
-                                <span style={{ color: producto.tipoPlato === 'individual' ? 'green' : 'purple' }}>
-                                  {producto.cantidad}x {producto.tipoPrecio !== 'precioBase' && `${producto.tipoPrecio} `}
-                                  {producto.producto?.nombre || producto.nombre || 'Producto'}
+                                <span
+                                  style={{
+                                    color:
+                                      producto.tipoPlato === "individual"
+                                        ? "green"
+                                        : "purple",
+                                  }}
+                                >
+                                  {producto.cantidad}x{" "}
+                                  {producto.tipoPrecio !== "precioBase" &&
+                                    `${producto.tipoPrecio} `}
+                                  {producto.producto?.nombre ||
+                                    producto.nombre ||
+                                    "Producto"}
                                 </span>
                               </label>
 
@@ -759,8 +841,8 @@ const Cocina = () => {
                           ))}
                         </ul>
                       </div>
-                    )
-                  }
+                    ))
+                  )}
 
                   {/* Botón de cerrar o terminar */}
                   {isCentral ? (
@@ -774,7 +856,7 @@ const Cocina = () => {
                   ) : (
                     <button
                       onClick={() => cerrarSeccion(pedido._id)}
-                      disabled={!visibles.every(p => p.workflow?.estado === 'listo')}
+                      disabled={!visibles.every((p) => p.workflow?.estado === "listo")}
                       className="boton-terminar--cocina"
                     >
                       Cerrar

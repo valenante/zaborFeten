@@ -19,10 +19,11 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
     useContext(ProductosContext);
   const [pantallaPequena, setPantallaPequena] = useState(window.innerWidth <= 768);
   const [mostrarModal, setMostrarModal] = useState(false);
-  const { cargarCarrito } = useContext(ProductosContext);
+  const { carrito, cargarCarrito } = useContext(ProductosContext);
   const [pedidosListos, setPedidosListos] = useState(false);
   const [mostrarMiPedido, setMostrarMiPedido] = useState(false);
   const [pedidosMesa, setPedidosMesa] = useState([]);
+  
   const navigate = useNavigate();
   const { locale, cambiarIdioma } = useContext(LanguageContext); // 👈 Obtenemos idioma y función para cambiarlo
 
@@ -124,88 +125,59 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
 
   return (
     <>
-    <nav className="navbar-navbar-custom">
-      {/* 📌 PANTALLAS GRANDES: Estructura normal */}
-      {!pantallaPequena ? (
-        <div className="row w-100 align-items-center">
-          <div className="col-12 d-flex justify-content-left align-items-center p-3">
-            <select
-              value={categoriaSeleccionada}
-              onChange={handleCategoriaChange}
-              className="navbar-select me-3"
-            >
-              <option value="">
-                <Trans id="todas-categorias">Categorías</Trans>
-              </option>
-              {categoriasFiltradas.map((categoria) => (
-                <option key={categoria} value={categoria}>
-                  {categoria}
+      <nav className="navbar-navbar-custom">
+        {/* 📌 PANTALLAS GRANDES: Estructura normal */}
+        {!pantallaPequena ? (
+          <div className="row w-100 align-items-center">
+            <div className="col-12 d-flex justify-content-left align-items-center p-3">
+              <select
+                value={categoriaSeleccionada}
+                onChange={handleCategoriaChange}
+                className="navbar-select me-3"
+              >
+                <option value="">
+                  <Trans id="todas-categorias">Categorías</Trans>
                 </option>
-              ))}
-            </select>
+                {categoriasFiltradas.map((categoria) => (
+                  <option key={categoria} value={categoria}>
+                    {categoria}
+                  </option>
+                ))}
+              </select>
 
-            <button
-              className={`navbar-btn ${!mostrarSoloBebidas ? "activo" : ""}`}
-              onClick={() => {
-                setMostrarSoloBebidas(false);
-                setCategoriaSeleccionada("");
-              }}
-            >
-              <Trans id="platos">Platos</Trans>
-            </button>
-
-            <button
-              className={`navbar-btn ${mostrarSoloBebidas ? "activo" : ""}`}
-              onClick={() => {
-                setMostrarSoloBebidas(true);
-                setCategoriaSeleccionada("");
-              }}
-            >
-              <Trans id="bebidas">Bebidas</Trans>
-            </button>
-
-            {numeroMesa && (
-              <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
-                <Trans id="mi-pedido">Mi pedido</Trans>
-              </button>
-            )}
-
-            {pedidosListos && (
-              <button className="navbar-check" onClick={manejarPedirCuenta}>
-                <Trans id="cuenta">Cuenta</Trans>
-              </button>
-            )}
-
-            <div className="idiomas-navbar ms-auto">
               <button
-                className={`btn-idioma ${locale === "es" ? "activo" : ""}`}
-                onClick={() => cambiarIdioma("es")}
+                className={`navbar-btn ${!mostrarSoloBebidas ? "activo" : ""}`}
+                onClick={() => {
+                  setMostrarSoloBebidas(false);
+                  setCategoriaSeleccionada("");
+                }}
               >
-                Español
+                <Trans id="platos">Platos</Trans>
               </button>
+
               <button
-                className={`btn-idioma ${locale === "en" ? "activo" : ""}`}
-                onClick={() => cambiarIdioma("en")}
+                className={`navbar-btn ${mostrarSoloBebidas ? "activo" : ""}`}
+                onClick={() => {
+                  setMostrarSoloBebidas(true);
+                  setCategoriaSeleccionada("");
+                }}
               >
-                English
+                <Trans id="bebidas">Bebidas</Trans>
               </button>
-              <button
-                className={`btn-idioma ${locale === "fr" ? "activo" : ""}`}
-                onClick={() => cambiarIdioma("fr")}
-              >
-                Français
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* 📌 PANTALLAS PEQUEÑAS: Dos filas */
-        <>
-          {/* Contenedor padre para asegurar que las filas se apilen correctamente */}
-          <div className="navbar-contenedor">
-            {/* Fila 1: Idiomas (centrado) */}
-            <div className="navbar-fila navbar-fila-idiomas">
-              <div className="idiomas-navbar">
+
+              {numeroMesa && (
+                <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
+                  <Trans id="mi-pedido">Mi pedido</Trans>
+                </button>
+              )}
+
+              {pedidosListos && (
+                <button className="navbar-check" onClick={manejarPedirCuenta}>
+                  <Trans id="cuenta">Cuenta</Trans>
+                </button>
+              )}
+
+              <div className="idiomas-navbar ms-auto">
                 <button
                   className={`btn-idioma ${locale === "es" ? "activo" : ""}`}
                   onClick={() => cambiarIdioma("es")}
@@ -226,96 +198,133 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
                 </button>
               </div>
             </div>
+          </div>
+        ) : (
+          /* 📌 PANTALLAS PEQUEÑAS: Dos filas */
+          <>
+            {/* Contenedor padre para asegurar que las filas se apilen correctamente */}
+            <div className="navbar-contenedor">
+              {/* Fila 1: Idiomas (centrado) */}
+              <div className="navbar-fila navbar-fila-idiomas">
+                <div className="idiomas-navbar">
+                  <button
+                    className={`btn-idioma ${locale === "es" ? "activo" : ""}`}
+                    onClick={() => cambiarIdioma("es")}
+                  >
+                    Español
+                  </button>
+                  <button
+                    className={`btn-idioma ${locale === "en" ? "activo" : ""}`}
+                    onClick={() => cambiarIdioma("en")}
+                  >
+                    English
+                  </button>
+                  <button
+                    className={`btn-idioma ${locale === "fr" ? "activo" : ""}`}
+                    onClick={() => cambiarIdioma("fr")}
+                  >
+                    Français
+                  </button>
+                </div>
+              </div>
 
-            <div className="navbar-fila navbar-fila-opciones">
-              <select
-                value={categoriaSeleccionada}
-                onChange={handleCategoriaChange}
-                className="navbar-select"
-              >
-                <option value="">
-                  <Trans id="todas-categorias">Categorías</Trans>
-                </option>
-                {categoriasFiltradas.map((categoria) => (
-                  <option key={categoria} value={categoria}>
-                    {categoria}
+              <div className="navbar-fila navbar-fila-opciones">
+                <select
+                  value={categoriaSeleccionada}
+                  onChange={handleCategoriaChange}
+                  className="navbar-select"
+                >
+                  <option value="">
+                    <Trans id="todas-categorias">Categorías</Trans>
                   </option>
-                ))}
-              </select>
+                  {categoriasFiltradas.map((categoria) => (
+                    <option key={categoria} value={categoria}>
+                      {categoria}
+                    </option>
+                  ))}
+                </select>
 
-              {numeroMesa && (
-                <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
-                  <Trans id="mi-pedido">Mi pedido</Trans>
-                </button>
-              )}
+                {numeroMesa && (
+                  <button className="navbar-btn" onClick={() => setMostrarMiPedido(true)}>
+                    <Trans id="mi-pedido">Mi pedido</Trans>
+                  </button>
+                )}
 
-              <button className="navbar-btn" onClick={mostrarBebidas}>
-                {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
-              </button>
-            </div>
-
-            {/* Fila 3: Botón de Cuenta (centrado) */}
-            {pedidosListos && (
-              <div className="navbar-fila navbar-fila-cuenta">
-                <button className="navbar-check" onClick={manejarPedirCuenta}>
-                  <Trans id="cuenta">Cuenta</Trans>
+                <button className="navbar-btn" onClick={mostrarBebidas}>
+                  {mostrarSoloBebidas ? <Trans id="platos">Platos</Trans> : <Trans id="bebidas">Bebidas</Trans>}
                 </button>
               </div>
-            )}
 
-
-          </div>
-        </>
-      )}
-
-      {mostrarModal && (
-        <CarritoModal cerrarModal={() => setMostrarModal(false)} />
-      )}
-      {mostrarMiPedido && (
-        <div className="modal-overlay">
-          <div className="modal-pedido">
-            <h2><Trans id="mi-pedido">🧾 Mi pedido</Trans></h2>
-
-            {pedidosMesa.length === 0 ? (
-              <p className="modal-vacio">No hay productos todavía.</p>
-            ) : (
-              <>
-                <ul className="modal-lista-productos">
-                  {pedidosMesa.map((producto, index) => (
-                    <li key={producto._id || index} className="modal-pedido-item">
-                      <span className="cantidad">{producto.cantidad}x</span>
-                      <span className="nombre">{producto.producto?.nombre || 'Producto'}</span>
-                      <span className="precio">
-                        {(producto.precioFinal || producto.precioSeleccionado || producto.total || 0).toFixed(2)} €
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="modal-total">
-                  <span><strong>Total:</strong></span>
-                  <span>
-                    {pedidosMesa.reduce((acc, p) => {
-                      const precio = p.precioFinal || p.precioSeleccionado || p.total || 0;
-                      return acc + precio * p.cantidad;
-                    }, 0).toFixed(2)} €
-                  </span>
+              {/* Fila 3: Botón de Cuenta (centrado) */}
+              {pedidosListos && (
+                <div className="navbar-fila navbar-fila-cuenta">
+                  <button className="navbar-check" onClick={manejarPedirCuenta}>
+                    <Trans id="cuenta">Cuenta</Trans>
+                  </button>
                 </div>
-              </>
-            )}
+              )}
 
-            <button className="btn-cerrar-modal" onClick={() => setMostrarMiPedido(false)}>
-              Cerrar
-            </button>
+
+            </div>
+          </>
+        )}
+
+        {mostrarModal && (
+          <CarritoModal cerrarModal={() => setMostrarModal(false)} />
+        )}
+        {mostrarMiPedido && (
+          <div className="modal-overlay">
+            <div className="modal-pedido">
+              <h2><Trans id="mi-pedido">🧾 Mi pedido</Trans></h2>
+
+              {pedidosMesa.length === 0 ? (
+                <p className="modal-vacio">No hay productos todavía.</p>
+              ) : (
+                <>
+                  <ul className="modal-lista-productos">
+                    {pedidosMesa.map((producto, index) => (
+                      <li key={producto._id || index} className="modal-pedido-item">
+                        <span className="cantidad">{producto.cantidad}x</span>
+                        <span className="nombre">{producto.producto?.nombre || 'Producto'}</span>
+                        <span className="precio">
+                          {(producto.precioFinal || producto.precioSeleccionado || producto.total || 0).toFixed(2)} €
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="modal-total">
+                    <span><strong>Total:</strong></span>
+                    <span>
+                      {pedidosMesa.reduce((acc, p) => {
+                        const precio = p.precioFinal || p.precioSeleccionado || p.total || 0;
+                        return acc + precio * p.cantidad;
+                      }, 0).toFixed(2)} €
+                    </span>
+                  </div>
+                </>
+              )}
+
+              <button className="btn-cerrar-modal" onClick={() => setMostrarMiPedido(false)}>
+                Cerrar
+              </button>
+            </div>
           </div>
+        )}
+      </nav>
+      {numeroMesa && (
+        <div className="carrito-flotante">
+          <CarritoIcono
+            abrirModal={() => {
+              if (!carrito?.items?.length) {
+                // Puedes usar tu componente de alerta o un aviso visual
+                return;
+              }
+              setMostrarModal(true);
+            }}
+          />
         </div>
       )}
-    </nav>
-    {numeroMesa && (
-      <div className="carrito-flotante">
-        <CarritoIcono abrirModal={() => setMostrarModal(true)} />
-      </div>
-    )}
     </>
   );
 };

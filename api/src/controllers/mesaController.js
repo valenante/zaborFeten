@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid'; // Generador de UUID
 import EventoFactura from '../models/EventosFactura.js';
 import { obtenerNumeroFactura } from '../services/numeroFacturaServices.js';
 import { emitirRegistroVerifactu } from "../../utils/emitirFactura.js";
+import moment from "moment-timezone";
 import { abrirCajon } from './imprimirController.js'; // Importar la función para abrir el cajón
 
 
@@ -173,12 +174,13 @@ export const abrirMesaCamarero = async (req, res) => {
     res.status(500).json({ error: 'Error al reabrir la mesa' });
   }
 };
+
 export const cerrarMesa = async (req, res) => {
   const { id } = req.params;
   const { metodoPago, clienteNombre, clienteNIF, camarero } = req.body;
 
   try {
-    const ahora = new Date();
+    const ahora = moment().tz("Europe/Madrid").toDate();
     const mesa = await Mesa.findById(id)
       .populate({ path: "pedidos", populate: { path: "productos.producto" } })
       .populate({ path: "pedidosBebidas", populate: { path: "productos.producto" } });

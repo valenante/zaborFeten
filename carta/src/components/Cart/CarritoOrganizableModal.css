@@ -1,0 +1,139 @@
+/* === CARRITO ORGANIZABLE (MODAL) === */
+
+.carrito-organizable-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: var(--espaciado-base);
+  background-color: var(--blanco);
+  border-radius: var(--borde-redondeado);
+}
+
+/* --- Checkbox de "Servir todo junto" --- */
+.checkbox-servir-junto {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--gris-oscuro);
+}
+
+.checkbox-servir-junto input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+  accent-color: var(--color-principal);
+}
+
+/* --- Lista contenedora --- */
+.lista-carrito-organizable {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* --- Ítem draggable --- */
+.item-carrito-draggable {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--gris-claro);
+  border-radius: var(--borde-redondeado);
+  padding: 0.8rem 1rem;
+  box-shadow: var(--sombra-suave);
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.item-carrito-draggable:hover {
+  transform: scale(1.02);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Mientras se arrastra --- */
+.item-carrito-draggable.dragging {
+  background-color: var(--color-secundario);
+  color: var(--blanco);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+/* --- Contenido dentro del item --- */
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.item-info span {
+  font-weight: 600;
+  color: var(--gris-oscuro);
+}
+
+.item-info small {
+  font-size: 0.9rem;
+  color: var(--color-secundario);
+}
+
+/* --- Botón eliminar dentro del ítem --- */
+.btn-eliminar-item {
+  background-color: transparent;
+  border: none;
+  color: var(--color-principal);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.btn-eliminar-item:hover {
+  color: var(--color-principal-hover);
+  transform: scale(1.1);
+}
+
+/* === Secciones === */
+.carrito-section {
+  background-color: var(--gris-claro);
+  border-radius: var(--borde-redondeado);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.carrito-section-title {
+  margin: 0 0 0.6rem 0;
+  color: var(--color-secundario);
+  font-weight: 600;
+}
+
+.drag-over {
+  background-color: #e6eaff;
+}
+
+.bebidas-section {
+  border-top: 2px solid #ccc;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+}
+
+.no-drag {
+  opacity: 0.9;
+  cursor: default;
+}
+
+/* --- Responsivo --- */
+@media (max-width: 768px) {
+  .carrito-organizable-modal {
+    padding: 0.8rem;
+  }
+
+  .item-carrito-draggable {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .checkbox-servir-junto {
+    font-size: 0.9rem;
+  }
+}

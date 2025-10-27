@@ -122,6 +122,13 @@ const ProductoDetalle = ({
     cargarExtras();
   }, []);
 
+  // ✅ Mantener acompañante actual en modo edición
+  useEffect(() => {
+    if (modoEdicion && producto.acompanante) {
+      setAcompanante(producto.acompanante);
+    }
+  }, [modoEdicion, producto.acompanante]);
+
   const manejarCantidad = (inc) =>
     setCantidad((prev) => Math.max(1, prev + inc));
 
@@ -135,18 +142,26 @@ const ProductoDetalle = ({
       0
     );
 
-    const totalExtras = extrasSeleccionados.reduce((acc, e) => acc + e.precio, 0);
+    const totalExtras = extrasSeleccionados.reduce(
+      (acc, e) => acc + e.precio,
+      0
+    );
+
+    const acompananteFinal =
+      acompanante && acompanante.trim() !== ""
+        ? acompanante
+        : producto.acompanante || "Sin acompañante";
 
     const productoPersonalizado = {
       ...producto,
       cantidad,
       precioSeleccionado: precioSeleccionado + totalAdicionales + totalExtras,
       tipoPrecio,
-      acompanante,
+      acompanante: acompananteFinal,
       opciones: opcionesSeleccionadas,
       mensaje: mensajeProducto,
-      adicionales: adicionalesSeleccionados, // Guardamos los adicionales seleccionados
-      extras: extrasSeleccionados, // Guardamos los extras seleccionados
+      adicionales: adicionalesSeleccionados,
+      extras: extrasSeleccionados,
     };
 
     onConfirm(productoPersonalizado);

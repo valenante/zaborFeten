@@ -198,6 +198,9 @@ const DetalleMesa = () => {
           eliminarProducto={eliminarProducto}
           setAccionModal={setAccionModal}
           setMostrarModalConfirmacion={setMostrarModalConfirmacion}
+          solicitarProducto={solicitarProducto}
+          productosDetalles={productosDetalles}
+          setMesa={setMesa}
         />
 
         {mesa.estado === "abierta" && (

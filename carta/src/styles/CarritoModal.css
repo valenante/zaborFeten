@@ -1,41 +1,39 @@
 /* === Fondo del modal === */
 .modal-overlay-carritoModal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
 }
 
 /* === Contenedor principal === */
 .modal-content-carritoModal {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px 24px;
-  width: 90%;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px 22px;
+  width: 92%;
   max-width: 520px;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
   position: relative;
-  font-family: "Roboto", sans-serif;
+  font-family: "Inter", "Roboto", sans-serif;
   color: #333;
-  animation: fadeInCarrito 0.2s ease-out;
+  animation: fadeInCarrito 0.25s ease-out;
 }
 
 @keyframes fadeInCarrito {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: translateY(20px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -43,145 +41,191 @@
 .modal-close-carritoModal {
   position: absolute;
   top: 10px;
-  right: 10px;
-  background: none;
+  right: 12px;
+  background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 1.6rem;
   cursor: pointer;
-  color: var(--color-secundario);
-  transition: color 0.2s ease;
+  color: #888;
+  transition: color 0.25s ease, transform 0.1s ease;
 }
 
 .modal-close-carritoModal:hover {
-  color: #ff1a1a;
+  color: var(--color-secundario);
+  transform: rotate(90deg);
 }
 
-/* === Checkbox “Servir todo a la vez” === */
-.checkbox-servirTodo {
-  margin-bottom: 15px;
+/* === Checkbox “Servir todo junto” === */
+.checkbox-servir-junto {
+  margin-bottom: 18px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
-  color: #444;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
 }
 
-.checkbox-servirTodo input {
-  transform: scale(1.2);
+.checkbox-servir-junto input {
+  width: 18px;
+  height: 18px;
   accent-color: var(--color-principal);
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-/* === Secciones del carrito === */
+.checkbox-servir-junto input:hover {
+  transform: scale(1.1);
+}
+
+/* === Contenedor principal de secciones === */
+.carrito-organizable-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* === Sección del carrito === */
 .carrito-section {
   background: #fafafa;
-  border: 1px solid #e4e4e4;
-  border-radius: 10px;
-  margin-bottom: 16px;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
   overflow: hidden;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .carrito-section.drag-over {
-  background-color: #f4ecff;
+  background-color: #f3ebff;
+  box-shadow: 0 0 0 2px var(--color-principal);
 }
 
-/* === Título de sección === */
+/* === Título de cada sección === */
 .carrito-section-title {
-  background-color: var(--color-principal);
+  background: linear-gradient(
+    135deg,
+    var(--color-principal),
+    var(--color-principal-oscuro)
+  );
   color: #fff;
-  padding: 8px 10px;
+  padding: 8px 12px;
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   letter-spacing: 0.5px;
+  text-transform: capitalize;
 }
 
-/* === Item del carrito === */
-.carrito-item {
+/* === Items del carrito === */
+.item-carrito-draggable {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 14px;
   background: #fff;
   border-bottom: 1px solid #eee;
-  font-size: 0.95rem;
+  font-size: 0.96rem;
   color: #333;
   cursor: grab;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.carrito-item:last-child {
+.item-carrito-draggable:last-child {
   border-bottom: none;
 }
 
-.carrito-item:hover {
-  background-color: #f9f9f9;
+.item-carrito-draggable:hover {
+  background-color: #f8f8f8;
 }
 
-.carrito-item.dragging {
-  background-color: #fff4e8;
+.item-carrito-draggable.dragging {
+  background-color: #f7e8ff;
+  transform: scale(1.02);
+  box-shadow: 0 3px 10px rgba(106, 13, 173, 0.25);
 }
 
-/* === Nombre del producto === */
-.carrito-item-nombre {
+/* === Información del producto === */
+.item-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.item-info span {
   font-weight: 500;
   color: #222;
 }
 
-/* === Botón eliminar === */
-.carrito-eliminar-button {
+.item-info small {
+  color: #777;
+  font-size: 0.85rem;
+}
+
+/* === Botón eliminar producto === */
+.btn-eliminar-item {
   background: var(--color-secundario);
   border: none;
   color: #fff;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background 0.25s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.25s ease, transform 0.1s ease;
 }
 
-.carrito-eliminar-button:hover {
-  background: #e04600;
+.btn-eliminar-item:hover {
+  background: #e35d00;
+  transform: scale(1.05);
 }
 
 /* === Total === */
 .total-carritoModal {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: var(--color-principal);
   text-align: center;
-  margin-top: 15px;
-  margin-bottom: 10px;
+  margin-top: 20px;
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
 }
 
-/* === Botón Enviar === */
+/* === Botón Enviar Pedido === */
 .btn-submit-carritoModal {
   display: block;
   width: 100%;
-  background-color: var(--color-principal);
+  background: linear-gradient(
+    135deg,
+    var(--color-principal),
+    var(--color-principal-oscuro)
+  );
   color: #fff;
   border: none;
-  padding: 12px 0;
-  border-radius: 8px;
+  padding: 13px 0;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.4px;
-  transition: background-color 0.3s ease, transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(106, 13, 173, 0.25);
+  transition: background 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
 }
 
 .btn-submit-carritoModal:hover {
-  background-color: var(--color-principal-oscuro);
+  background: linear-gradient(
+    135deg,
+    var(--color-principal-oscuro),
+    var(--color-principal)
+  );
   transform: scale(1.02);
+  box-shadow: 0 5px 14px rgba(106, 13, 173, 0.35);
 }
 
 .btn-submit-carritoModal:active {
   transform: scale(0.98);
 }
 
-/* === Scroll limpio === */
+/* === Scroll suave === */
 .modal-content-carritoModal::-webkit-scrollbar {
   width: 6px;
 }
@@ -199,16 +243,26 @@
 @media (max-width: 768px) {
   .modal-content-carritoModal {
     width: 94%;
-    max-width: 420px;
-    padding: 16px;
+    max-width: 400px;
+    padding: 14px;
   }
 
-  .carrito-item {
+  .carrito-section-title {
+    font-size: 0.95rem;
+  }
+
+  .item-carrito-draggable {
     font-size: 0.9rem;
+    padding: 10px 12px;
   }
 
-  .carrito-eliminar-button {
+  .btn-eliminar-item {
+    font-size: 0.8rem;
     padding: 5px 8px;
-    font-size: 0.85rem;
+  }
+
+  .btn-submit-carritoModal {
+    font-size: 0.95rem;
+    padding: 11px 0;
   }
 }

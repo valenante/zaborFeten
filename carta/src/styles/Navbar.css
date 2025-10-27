@@ -189,7 +189,7 @@
 }
 
 .btn-cerrar-modal:hover {
-  background-color: #e05a00;
+  background-color: var(--color-principal);
 }
 
 /* === BOTONES DE PLATOS Y BEBIDAS === */

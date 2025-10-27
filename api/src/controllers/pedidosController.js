@@ -41,6 +41,7 @@ export const crearPedido = async (req, res) => {
       cartId,
       precioSeleccionado,
       tipoPrecio,
+      servirTodoJunto = false,
     } = req.body;
 
     const mesaExistente = await Mesa.findById(mesa);
@@ -101,6 +102,7 @@ export const crearPedido = async (req, res) => {
       sesionId: mesaExistente.sesionActiva,
       estado: 'pendiente',
       cerradoPorEstacion: { frio: false, plancha: false, frito: false },
+      servirTodoJunto,
     });
 
     await nuevoPedido.save();
@@ -214,7 +216,7 @@ export const crearPedido = async (req, res) => {
 };
 export const agregarProductoAlPedido = async (req, res) => {
   const { mesaId } = req.params;
-  const { productos , mensajesSeccion = {}} = req.body;
+  const { productos , mensajesSeccion = {}, servirTodoJunto} = req.body;
 
   if (!Array.isArray(productos) || productos.length === 0) {
     return res.status(400).json({ error: 'Debes enviar al menos un producto válido.' });
@@ -293,6 +295,7 @@ export const agregarProductoAlPedido = async (req, res) => {
       };
 
       pedidoExistente.sesionId = mesa.sesionActiva;
+      pedidoExistente.servirTodosJuntos = servirTodoJunto;
       pedidoModificado = await pedidoExistente.save();
     } else {
       const nuevoPedido = new Pedido({
@@ -303,6 +306,7 @@ export const agregarProductoAlPedido = async (req, res) => {
         estado: 'pendiente',
         total: Number(productosCompletos.reduce((sum, p) => sum + p.total, 0).toFixed(2)),
         cerradoPorEstacion: { frio: false, plancha: false, frito: false },
+        servirTodoJunto,
       });
       pedidoModificado = await nuevoPedido.save();
       mesa.pedidos.push(pedidoModificado._id);
@@ -344,8 +348,6 @@ export const agregarProductoAlPedido = async (req, res) => {
         await productoEnDB.save();
       }
     }
-
-    console.log(mensajesSeccion);
 
     // === Sockets
     req.io.emit('nuevoPedido', {
