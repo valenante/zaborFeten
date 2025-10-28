@@ -18,6 +18,7 @@ const CrearProducto = ({ onClose }) => {
     categoria: "",
     tipo: "",
     stock: 0,
+    seccion: "",
     img: "",
     estado: "habilitado",
     precios: { precioBase: 0, tapa: null, racion: null, precioCopa: null, precioBotella: null },
@@ -192,7 +193,7 @@ const CrearProducto = ({ onClose }) => {
               type="text"
               value={formData.traducciones?.fr?.descripcion || ""}
               onChange={(e) =>
-                
+
                 setFormData((prev) => ({
                   ...prev,
                   traducciones: {
@@ -285,6 +286,22 @@ const CrearProducto = ({ onClose }) => {
               <option value="">Seleccionar</option>
               <option value="plato">Plato</option>
               <option value="bebida">Bebida</option>
+            </select>
+          </label>
+
+          <label className="label--crear">
+            Sección:
+            <select
+              name="seccion"
+              value={formData.seccion}
+              onChange={handleChange}
+              className="input--crear"
+              required
+            >
+              <option value="">Seleccionar sección</option>
+              <option value="entrante">Entrante</option>
+              <option value="medio">Medio</option>
+              <option value="final">Final</option>
             </select>
           </label>
 

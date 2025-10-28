@@ -17,41 +17,35 @@
         <sum1:IDVersion>1.0</sum1:IDVersion>
         <sum1:IDFactura>
           <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>2025-0195</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>27-10-2025</sum1:FechaExpedicionFactura>
+          <sum1:NumSerieFactura>2025-0196</sum1:NumSerieFactura>
+          <sum1:FechaExpedicionFactura>28-10-2025</sum1:FechaExpedicionFactura>
         </sum1:IDFactura>
         <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
         
-        <sum1:TipoFactura>F1</sum1:TipoFactura>
+        <sum1:TipoFactura>F2</sum1:TipoFactura>
         
                 
                 
         <sum1:DescripcionOperacion>Factura de prueba VeriFactu</sum1:DescripcionOperacion>
-        
-    <sum1:Destinatarios>
-      <sum1:IDDestinatario>
-        <sum1:NombreRazon>antenucci aguilar valentino nahuel</sum1:NombreRazon>
-        <sum1:NIF>x6063327k</sum1:NIF>
-      </sum1:IDDestinatario>
-    </sum1:Destinatarios>
+        <sum1:FacturaSinIdentifDestinatarioArt61d>S</sum1:FacturaSinIdentifDestinatarioArt61d>
         <sum1:Desglose>
       <sum1:DetalleDesglose>
         <sum1:Impuesto>01</sum1:Impuesto>
         <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
         <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
         <sum1:TipoImpositivo>10</sum1:TipoImpositivo>
-        <sum1:BaseImponibleOimporteNoSujeto>7.55</sum1:BaseImponibleOimporteNoSujeto>
-        <sum1:CuotaRepercutida>0.75</sum1:CuotaRepercutida>
+        <sum1:BaseImponibleOimporteNoSujeto>25.55</sum1:BaseImponibleOimporteNoSujeto>
+        <sum1:CuotaRepercutida>2.55</sum1:CuotaRepercutida>
       </sum1:DetalleDesglose></sum1:Desglose>
-        <sum1:CuotaTotal>0.83</sum1:CuotaTotal>
-        <sum1:ImporteTotal>8.30</sum1:ImporteTotal>
+        <sum1:CuotaTotal>2.81</sum1:CuotaTotal>
+        <sum1:ImporteTotal>28.10</sum1:ImporteTotal>
         
   <sum1:Encadenamiento>
     <sum1:RegistroAnterior>
       <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-      <sum1:NumSerieFactura>2025-0194</sum1:NumSerieFactura>
+      <sum1:NumSerieFactura>2025-0195</sum1:NumSerieFactura>
       <sum1:FechaExpedicionFactura>27-10-2025</sum1:FechaExpedicionFactura>
-      <sum1:Huella>1243799D79A5BFDDD83482EBC61E53BCC090EBDFC288D5E3E661CABDA5F68EB1</sum1:Huella>
+      <sum1:Huella>4A2A2158F1576BC887B403E54A117BBBC7C28B5195BE38BCAE014FAAEB1CF270</sum1:Huella>
     </sum1:RegistroAnterior>
   </sum1:Encadenamiento>
         
@@ -66,9 +60,9 @@
       <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
       <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
     </sum1:SistemaInformatico>
-        <sum1:FechaHoraHusoGenRegistro>2025-10-28T00:10:25+01:00</sum1:FechaHoraHusoGenRegistro>
+        <sum1:FechaHoraHusoGenRegistro>2025-10-28T12:29:10+01:00</sum1:FechaHoraHusoGenRegistro>
         <sum1:TipoHuella>01</sum1:TipoHuella>
-        <sum1:Huella>4A2A2158F1576BC887B403E54A117BBBC7C28B5195BE38BCAE014FAAEB1CF270</sum1:Huella>
+        <sum1:Huella>B086233442F12948CC8FD933110F65B4EA974D3738C44EA4E2C17E7D4072791A</sum1:Huella>
       </sum1:RegistroAlta>
     </sum:RegistroFactura>
     </sum:RegFactuSistemaFacturacion>

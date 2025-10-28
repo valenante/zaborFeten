@@ -127,7 +127,7 @@ const CarritoModal = ({ cerrarModal }) => {
           alergiasComensal: item.alergias,
           acompanante: item.acompanante,
           adicionales: item.adicionales,
-          seccion: item.seccion || "medio", // 👈 ✅ AÑADIDO AQUÍ
+          seccion: item.seccion || item.productId?.seccion || "medio",
           orden: index + 1,
         };
 

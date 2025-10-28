@@ -28,6 +28,9 @@ const EditProduct = ({ product, onSave, onCancel, onDelete }) => {
       case "tipo":
         if (!value.trim()) error = "El tipo es obligatorio.";
         break;
+      case "seccion":
+        if (!value.trim()) error = "La sección es obligatoria.";
+        break;
       case "imagen":
         if (!value.trim()) error = "La imagen es obligatoria.";
         break;
@@ -275,6 +278,27 @@ const EditProduct = ({ product, onSave, onCancel, onDelete }) => {
           </select>
         </label>
         {errors.tipo && <p className="error--editar">{errors.tipo}</p>}
+
+        {formData.tipo === "plato" && (
+          <>
+            <label className="label--editar">
+              Sección:
+              <select
+                name="seccion"
+                value={formData.seccion || ""}
+                onChange={handleChange}
+                className="input--editar"
+                required
+              >
+                <option value="">Selecciona una sección</option>
+                <option value="entrante">Entrante</option>
+                <option value="medio">Medio</option>
+                <option value="final">Final</option>
+              </select>
+            </label>
+            {errors.seccion && <p className="error--editar">{errors.seccion}</p>}
+          </>
+        )}
 
         {/* Precios */}
         <fieldset className="fieldset--editar">

@@ -52,6 +52,12 @@ const productoSchema = new Schema(
       },
     },
 
+    seccion: {
+      type: String,
+      enum: ["entrante", "medio", "final"],
+      required: true,
+    },
+
     // Precios y stock
     precios: { type: precioSchema, required: true },
     stock: { type: Number, default: 0 },
