@@ -264,7 +264,6 @@ export const exportarFacturasCSV = async (req, res) => {
 export const verificarFactura = async (req, res) => {
   try {
     const hashParam = (req.params.hash || "").toUpperCase();
-    console.log(`🟪 Verificando factura con hash recibido: ${hashParam}`);
 
     // 1️⃣ Buscar factura por hash
     const factura = await RegistroVerifactu.findOne({
@@ -276,22 +275,8 @@ export const verificarFactura = async (req, res) => {
     }).lean();
 
     if (!factura) {
-      console.log("❌ No se encontró ninguna factura con ese hash");
       return res.status(404).json({ error: "Factura no encontrada" });
     }
-
-    console.log(`✅ Factura encontrada: ${factura.numeroFactura}`);
-    console.log("📄 Datos brutos de la factura encontrada:", {
-      numeroFactura: factura.numeroFactura,
-      hashFactura: factura.hashFactura,
-      huellaTCR: factura.huellaTCR,
-      hashAnterior: factura.hashAnterior,
-      fechaExpedicion: factura.fechaExpedicion,
-      fechaExpedicionXML: factura.fechaExpedicionXML,
-      fechaHoraHusoGenRegistro: factura.fechaHoraHusoGenRegistro,
-      cuotaTotal: factura.cuotaTotal,
-      importeTotal: factura.importeTotal,
-    });
 
     // 2️⃣ Buscar evento (cliente, total, etc.)
     const evento = await EventosFactura.findOne({
@@ -323,13 +308,6 @@ export const verificarFactura = async (req, res) => {
       huellaAnterior = extra.huellaAnterior ?? huellaAnterior;
       tipoFactura = extra.tipoFactura ?? tipoFactura;
       fechaExp = extra.fechaExpedicionXML ?? fechaExp;
-      console.log("📤 Campos completados desde XML:", {
-        cuotaTotal,
-        importeTotal,
-        fechaHora,
-        huellaAnterior,
-        fechaExp,
-      });
     }
 
     // Si guardas cadenaHashAEAT en la BD, úsala directamente
@@ -346,7 +324,6 @@ export const verificarFactura = async (req, res) => {
         `&FechaHoraHusoGenRegistro=${fechaHora}`;
     }
 
-    console.log("🧾 Datos que se usarán para construir la cadena:");
     console.table({
       IDEmisorFactura: idEmisor,
       NumSerieFactura: numeroFactura,
@@ -358,17 +335,12 @@ export const verificarFactura = async (req, res) => {
       FechaHoraHusoGenRegistro: fechaHora,
     });
 
-    console.log("🧩 Cadena base construida:");
-    console.log(cadena);
-
     // 4️⃣ Calcular hash SHA-256
     const hashCalculado = crypto
       .createHash("sha256")
       .update(cadena, "utf8")
       .digest("hex")
       .toUpperCase();
-
-    console.log(`🔐 Hash recalculado: ${hashCalculado}`);
 
     const hashGuardado = (
       factura.hashFactura ||
@@ -377,10 +349,7 @@ export const verificarFactura = async (req, res) => {
       ""
     ).toUpperCase();
 
-    console.log(`📦 Hash guardado en BD: ${hashGuardado}`);
-
     const coincide = hashGuardado === hashCalculado;
-    console.log(coincide ? "✅ Coincide correctamente" : "❌ No coincide");
 
     // 5️⃣ Responder al frontend
     return res.json({

@@ -116,7 +116,9 @@ export const marcarItemListo = async (req, res) => {
     const { pedidoId, itemId } = req.params;
     const { role, estacion } = req.user || {};
 
-    const pedido = await Pedido.findById(pedidoId);
+    const pedido = await Pedido.findById(pedidoId)
+      .populate('mesa')
+      .populate('productos.producto');
     if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
 
     const item = pedido.productos.id(itemId);
@@ -155,25 +157,28 @@ export const marcarItemListo = async (req, res) => {
     if (next === 'listo') {
       try {
         const productoImprimir = {
-          mesaNumero: pedido.mesa.numero,
-          comensales: pedido.comensales || 1,
+          mesaNumero: pedido.mesa?.numero || 'Sin mesa',
+          comensales: pedido.mesa?.comensales || 1, // ✅ toma comensales de la mesa
           productos: [
             {
-              nombre: item.producto?.nombre || 'Producto sin nombre',
-              cantidad: item.cantidad,
-              tipoPrecio: item.tipoPrecio,
+              nombre:
+                item.producto?.nombre ||
+                item.nombre ||
+                'Producto sin nombre', // ✅ doble respaldo
+              cantidad: item.cantidad || 1,
+              tipoPrecio: item.tipoPrecio || '',
               nombreComensal: item.nombreComensal || '',
               alergiasComensal: item.alergiasComensal || '',
               seccion: item.seccion || '',
               estacion: item.estacion || '',
             },
           ],
-          total: item.total || 0,
+          total: item.total || item.precioSeleccionado || 0, // ✅ fallback al precioSeleccionado
         };
 
         // 👇 Aquí mandamos el ticket al microservicio de impresión
         const axios = await import('axios');
-        await axios.default.post(`${process.env.IMPRESION_SERVER}/v1/imprimir`, productoImprimir, {
+        await axios.default.post(`${process.env.IMPRESION_SERVER}/imprimir`, productoImprimir, {
           timeout: 3000,
         });
       } catch (err) {

@@ -14,6 +14,92 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:51
+msgid "alergeno-gluten"
+msgstr "Gluten"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:52
+msgid "alergeno-lactosa"
+msgstr "Lactose"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:53
+msgid "alergeno-huevo"
+msgstr "Egg"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:54
+msgid "alergeno-crustaceos"
+msgstr "Crustaceans"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:55
+msgid "alergeno-pescado"
+msgstr "Fish"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:56
+msgid "alergeno-cacahuetes"
+msgstr "Peanuts"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:57
+msgid "alergeno-soja"
+msgstr "Soy"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:58
+msgid "alergeno-frutos_secos"
+msgstr "Tree nuts"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:59
+msgid "alergeno-apio"
+msgstr "Celery"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:60
+msgid "alergeno-mostaza"
+msgstr "Mustard"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:61
+msgid "alergeno-sesamo"
+msgstr "Sesame"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:62
+msgid "alergeno-sulfitos"
+msgstr "Sulphites"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:63
+msgid "alergeno-altramuces"
+msgstr "Lupins"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:64
+msgid "alergeno-moluscos"
+msgstr "Molluscs"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:357
+msgid "ver-alergenos"
+msgstr "View allergens"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:365
+msgid "informacion-alergenos"
+msgstr "Allergen information"
+
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:380
+msgid "cerrar"
+msgstr "close"
+
+#. js-lingui-explicit-id
 #: src/pages/Valoraciones.js:106
 msgid "valora-experiencia"
 msgstr "Rate your experience"
@@ -74,39 +160,39 @@ msgid "Continuar"
 msgstr "Continue"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:139
-#: src/components/Navbar/Navbar.js:238
+#: src/components/Navbar/Navbar.js:175
+#: src/components/Navbar/Navbar.js:274
 msgid "todas-categorias"
 msgstr "All categories"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:155
-#: src/components/Navbar/Navbar.js:254
+#: src/components/Navbar/Navbar.js:191
+#: src/components/Navbar/Navbar.js:290
 msgid "platos"
 msgstr "Dishes"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:165
-#: src/components/Navbar/Navbar.js:254
+#: src/components/Navbar/Navbar.js:201
+#: src/components/Navbar/Navbar.js:290
 msgid "bebidas"
 msgstr "Drinks"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:170
-#: src/components/Navbar/Navbar.js:249
-#: src/components/Navbar/Navbar.js:278
+#: src/components/Navbar/Navbar.js:206
+#: src/components/Navbar/Navbar.js:285
+#: src/components/Navbar/Navbar.js:314
 msgid "mi-pedido"
 msgstr "My order"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:176
-#: src/components/Navbar/Navbar.js:262
+#: src/components/Navbar/Navbar.js:212
+#: src/components/Navbar/Navbar.js:298
 msgid "cuenta"
 msgstr "Bill"
 
 #. js-lingui-explicit-id
-#: src/components/Carta/ProductoCard.js:114
-#: src/components/Carta/ProductoCard.js:139
+#: src/components/Carta/ProductoCard.js:144
+#: src/components/Carta/ProductoCard.js:178
 msgid "agregar-carrito"
 msgstr "Add to cart"
 
@@ -172,7 +258,7 @@ msgstr "Share"
 msgid "Copa"
 msgstr "Glass"
 
-#: src/components/Cart/CarritoModal.js:265
+#: src/components/Cart/CarritoModal.js:263
 msgid "Enviar Pedido"
 msgstr "Send order"
 
@@ -196,7 +282,7 @@ msgstr "Full portion"
 msgid "Selecciona un acompañante"
 msgstr "Select a side drink"
 
-#: src/components/Cart/CarritoOrganizableModal.jsx:79
+#: src/components/Cart/CarritoOrganizableModal.jsx:102
 msgid "Servir todo junto"
 msgstr "Serve all together"
 
@@ -212,6 +298,6 @@ msgstr "Mixed"
 msgid "Tapa"
 msgstr "Small plate"
 
-#: src/components/Cart/CarritoModal.js:262
+#: src/components/Cart/CarritoModal.js:260
 msgid "Total"
 msgstr "Total"

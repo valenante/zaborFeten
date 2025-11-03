@@ -10,12 +10,6 @@ const __dirname = path.dirname(__filename);
 // 🔥 Cargar el .env explícitamente
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-console.log("DEBUG ENV", {
-  enabled: process.env.VERIFACTU_SIGN_ENABLED,
-  jar: process.env.VERIFACTU_JAR_PATH,
-  p12: process.env.VERIFACTU_P12_PATH,
-  pass: process.env.VERIFACTU_P12_PASS,
-});
 import compression from 'compression';
 import logger from './utils/logger.js';
 import { createServer } from 'http';

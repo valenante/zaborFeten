@@ -175,7 +175,6 @@ const Cocina = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const any = (e, ...a) => console.log('📡', e, ...a);
     socket.onAny(any);
     return () => socket.offAny(any);
   }, [socket]);

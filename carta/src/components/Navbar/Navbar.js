@@ -23,10 +23,46 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
   const [pedidosListos, setPedidosListos] = useState(false);
   const [mostrarMiPedido, setMostrarMiPedido] = useState(false);
   const [pedidosMesa, setPedidosMesa] = useState([]);
-  
+  const [mostrarMapaAlergenos, setMostrarMapaAlergenos] = useState(false);
   const navigate = useNavigate();
   const { locale, cambiarIdioma } = useContext(LanguageContext); // 👈 Obtenemos idioma y función para cambiarlo
 
+  // Mapa de iconos de alérgenos
+  const ICONOS_ALERGENOS = {
+    gluten: "🌾",
+    lactosa: "🥛",
+    huevo: "🥚",
+    crustaceos: "🦐",
+    pescado: "🐟",
+    cacahuetes: "🥜",
+    soja: "🌱",
+    frutos_secos: "🌰",
+    apio: "🌿",
+    mostaza: "🌻",
+    sesamo: "⚪",
+    sulfitos: "🍷",
+    altramuces: "🌼",
+    moluscos: "🐚",
+  };
+
+  // 👇 Esto es solo para que Lingui extraiga los nombres de alérgenos
+  /* eslint-disable no-unused-expressions */
+  <>
+    <Trans id="alergeno-gluten">Gluten</Trans>
+    <Trans id="alergeno-lactosa">Lactosa</Trans>
+    <Trans id="alergeno-huevo">Huevo</Trans>
+    <Trans id="alergeno-crustaceos">Crustáceos</Trans>
+    <Trans id="alergeno-pescado">Pescado</Trans>
+    <Trans id="alergeno-cacahuetes">Cacahuetes</Trans>
+    <Trans id="alergeno-soja">Soja</Trans>
+    <Trans id="alergeno-frutos_secos">Frutos secos</Trans>
+    <Trans id="alergeno-apio">Apio</Trans>
+    <Trans id="alergeno-mostaza">Mostaza</Trans>
+    <Trans id="alergeno-sesamo">Sésamo</Trans>
+    <Trans id="alergeno-sulfitos">Sulfitos</Trans>
+    <Trans id="alergeno-altramuces">Altramuces</Trans>
+    <Trans id="alergeno-moluscos">Moluscos</Trans>
+  </>
 
   useEffect(() => {
     const handleResize = () => {
@@ -307,6 +343,41 @@ const Navbar = ({ setMostrarSoloBebidas, mostrarSoloBebidas }) => {
 
               <button className="btn-cerrar-modal" onClick={() => setMostrarMiPedido(false)}>
                 Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+        {/* 🧾 Mapa de alérgenos */}
+        {/* Botón para abrir el modal de alérgenos */}
+        <div className="contenedor-alergenos">
+          <button
+            className="boton-alergenos"
+            onClick={() => setMostrarMapaAlergenos(true)}
+          >
+            <Trans id="ver-alergenos">Ver alérgenos</Trans>
+          </button>
+        </div>
+
+        {/* Modal de alérgenos */}
+        {mostrarMapaAlergenos && (
+          <div className="overlay-alergenos">
+            <div className="modal-alergenos">
+              <h2><Trans id="informacion-alergenos">Información sobre alérgenos</Trans></h2>
+              <div className="iconos-alergenos-grid">
+                {Object.entries(ICONOS_ALERGENOS).map(([nombre, icono]) => (
+                  <div key={nombre} className="alergeno-item">
+                    <span className="icono">{icono}</span>
+                    <span className="nombre">
+                      <Trans id={`alergeno-${nombre}`}>{nombre}</Trans>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <button
+                className="btn-cerrar-modal"
+                onClick={() => setMostrarMapaAlergenos(false)}
+              >
+                <Trans id="cerrar">Cerrar</Trans>
               </button>
             </div>
           </div>

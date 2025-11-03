@@ -18,12 +18,6 @@ const RightBar = ({ mesaId }) => {
     mensajesSeccion, setMensajesSeccion,
   } = useRightBar(mesaId);
 
-  const eliminarBebidaDelCarrito = (indexAEliminar) => {
-    const nuevoCarrito = [...carritoBebidas];
-    nuevoCarrito.splice(indexAEliminar, 1);
-    setCarritoBebidas(nuevoCarrito);
-  };
-
   return (
     <div className="right-bar--rightbar">
       <div className="filtros-tipo--rightbar">
@@ -96,23 +90,27 @@ const RightBar = ({ mesaId }) => {
 
             {/* Platos */}
             <CarritoOrganizable
-              
+
               carrito={[
                 ...carrito.map(p => ({ ...p, tipo: p.tipo || "plato" })),
                 ...carritoBebidas.map(b => ({ ...b, tipo: "bebida", seccion: "bebidas" }))
               ]}
 
-              
-              setCarrito={(nuevoCarrito) => {
+              setCarrito={(update) => {
+                // Permitir tanto valores directos como funciones callback (prev => new)
+                const aplicarActualizacion = (prevCarrito, prevBebidas) => {
+                  const combinado = Array.isArray(update)
+                    ? update
+                    : update([...prevCarrito, ...prevBebidas]);
 
-                if (!Array.isArray(nuevoCarrito)) {
-                  console.warn("⚠️ setCarrito recibió un valor no array:", nuevoCarrito);
-                  return;
-                }
-                const soloPlatos = nuevoCarrito.filter(i => i.tipo === "plato" || i.tipo === undefined);
-                const soloBebidas = nuevoCarrito.filter(i => i.tipo === "bebida");
-                setCarrito(soloPlatos);
-                setCarritoBebidas(soloBebidas);
+                  const soloPlatos = combinado.filter(i => i.tipo === "plato" || i.tipo === undefined);
+                  const soloBebidas = combinado.filter(i => i.tipo === "bebida");
+
+                  setCarrito(soloPlatos);
+                  setCarritoBebidas(soloBebidas);
+                };
+
+                aplicarActualizacion(carrito, carritoBebidas);
               }}
               enviarPedido={enviarPedido}
               isLoading={isLoading}

@@ -52,6 +52,8 @@ const productoSchema = new Schema(
       },
     },
 
+  alergenos: { type: [String], default: [] }, // Lista de alérgenos presentes en el producto
+
     seccion: {
       type: String,
       enum: ["entrante", "medio", "final"],

@@ -14,7 +14,6 @@ const CarritoOrganizable = ({
   const [productoEditando, setProductoEditando] = useState(null);
   const [edicion, setEdicion] = useState({});
 
-  // ✅ Aseguramos que todos los items tengan una sección definida (por si acaso)
   const carritoNormalizado = useMemo(
     () =>
       carrito.map((item) => ({
@@ -24,44 +23,58 @@ const CarritoOrganizable = ({
     [carrito]
   );
 
-  // 🔄 Drag & Drop
+  // 🔍 Depuración Drag & Drop
   const onDragEnd = (result) => {
-    if (!result.destination) return;
-
     const { source, destination } = result;
+    if (!destination) {
+      console.warn("❌ No hay destino");
+      return;
+    }
+
+    // Si no cambia la posición ni la sección
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
-    )
+    ) {
       return;
+    }
 
     setCarrito((prev) => {
-      const items = Array.from(prev);
-      const sourceItems = items.filter(
-        (i) => (i.seccion || i.productId?.seccion || "medio") === source.droppableId
-      );
-      const destItems = items.filter(
-        (i) => (i.seccion || i.productId?.seccion || "medio") === destination.droppableId
-      );
-
-      const movedItem = sourceItems[source.index];
-      if (!movedItem) return prev;
-
-      const itemIndexGlobal = items.findIndex((i) => i.uid === movedItem.uid);
-      items.splice(itemIndexGlobal, 1);
-
-      // ✅ Clonamos el objeto y actualizamos su sección
-      const updatedItem = { ...movedItem, seccion: destination.droppableId };
-
-      const destItemUid = destItems[destination.index]?.uid;
-      if (destItemUid) {
-        const destGlobalIndex = items.findIndex((i) => i.uid === destItemUid);
-        items.splice(destGlobalIndex, 0, updatedItem);
-      } else {
-        items.push(updatedItem);
+      const updated = Array.from(prev);
+      const fromIndex = updated.findIndex((i) => i.uid === result.draggableId);
+      if (fromIndex === -1) {
+        console.error("⚠️ No se encontró el item en el carrito:", result.draggableId);
+        return prev;
       }
 
-      return items;
+      const [movedItem] = updated.splice(fromIndex, 1);
+
+      // Actualizamos su sección
+      movedItem.seccion = destination.droppableId;
+
+      // Calculamos el índice global de inserción
+      let insertAt = 0;
+      let countInSection = 0;
+
+      for (let i = 0; i < updated.length; i++) {
+        const section =
+          updated[i].seccion ||
+          updated[i].productId?.seccion ||
+          (updated[i].tipo === "bebida" ? "bebidas" : "medio");
+
+        if (section === destination.droppableId) {
+          if (countInSection === destination.index) {
+            insertAt = i;
+            break;
+          }
+          countInSection++;
+        }
+        insertAt = i + 1;
+      }
+
+      updated.splice(insertAt, 0, movedItem);
+
+      return updated;
     });
   };
 

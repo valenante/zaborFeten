@@ -12,6 +12,90 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:51
+msgid "alergeno-gluten"
+msgstr "Gluten"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:52
+msgid "alergeno-lactosa"
+msgstr "Lactose"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:53
+msgid "alergeno-huevo"
+msgstr "Œuf"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:54
+msgid "alergeno-crustaceos"
+msgstr "Crustacés"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:55
+msgid "alergeno-pescado"
+msgstr "Poisson"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:56
+msgid "alergeno-cacahuetes"
+msgstr "Arachides"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:57
+msgid "alergeno-soja"
+msgstr "Soja"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:58
+msgid "alergeno-frutos_secos"
+msgstr "Fruits à coque"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:59
+msgid "alergeno-apio"
+msgstr "Céleri"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:60
+msgid "alergeno-mostaza"
+msgstr "Moutarde"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:61
+msgid "alergeno-sesamo"
+msgstr "Sésame"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:62
+msgid "alergeno-sulfitos"
+msgstr "Sulfites"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:63
+msgid "alergeno-altramuces"
+msgstr "Lupins"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:64
+msgid "alergeno-moluscos"
+msgstr "Mollusques"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:357
+msgid "ver-alergenos"
+msgstr "Voir les allergènes"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:365
+msgid "informacion-alergenos"
+msgstr "Informations sur les allergènes"
+
+#. js-lingui-explicit-id
+#: src/components/Navbar/Navbar.js:380
+msgid "cerrar"
+msgstr "Fermer"
 
 #. js-lingui-explicit-id
 #: src/pages/Valoraciones.js:106
@@ -74,39 +158,39 @@ msgid "Continuar"
 msgstr "Continuer"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:139
-#: src/components/Navbar/Navbar.js:238
+#: src/components/Navbar/Navbar.js:175
+#: src/components/Navbar/Navbar.js:274
 msgid "todas-categorias"
 msgstr "Toutes les catégories"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:155
-#: src/components/Navbar/Navbar.js:254
+#: src/components/Navbar/Navbar.js:191
+#: src/components/Navbar/Navbar.js:290
 msgid "platos"
 msgstr "Plats"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:165
-#: src/components/Navbar/Navbar.js:254
+#: src/components/Navbar/Navbar.js:201
+#: src/components/Navbar/Navbar.js:290
 msgid "bebidas"
 msgstr "Boissons"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:170
-#: src/components/Navbar/Navbar.js:249
-#: src/components/Navbar/Navbar.js:278
+#: src/components/Navbar/Navbar.js:206
+#: src/components/Navbar/Navbar.js:285
+#: src/components/Navbar/Navbar.js:314
 msgid "mi-pedido"
 msgstr "Ma commande"
 
 #. js-lingui-explicit-id
-#: src/components/Navbar/Navbar.js:176
-#: src/components/Navbar/Navbar.js:262
+#: src/components/Navbar/Navbar.js:212
+#: src/components/Navbar/Navbar.js:298
 msgid "cuenta"
 msgstr "Addition"
 
 #. js-lingui-explicit-id
-#: src/components/Carta/ProductoCard.js:114
-#: src/components/Carta/ProductoCard.js:139
+#: src/components/Carta/ProductoCard.js:144
+#: src/components/Carta/ProductoCard.js:178
 msgid "agregar-carrito"
 msgstr "Ajouter au panier"
 
@@ -172,7 +256,7 @@ msgstr "Partager"
 msgid "Copa"
 msgstr "Verre"
 
-#: src/components/Cart/CarritoModal.js:265
+#: src/components/Cart/CarritoModal.js:263
 msgid "Enviar Pedido"
 msgstr "Envoyer la commande"
 
@@ -196,7 +280,7 @@ msgstr "Portion"
 msgid "Selecciona un acompañante"
 msgstr "Sélectionne un accompagnement"
 
-#: src/components/Cart/CarritoOrganizableModal.jsx:79
+#: src/components/Cart/CarritoOrganizableModal.jsx:102
 msgid "Servir todo junto"
 msgstr "Servir tout en même temps"
 
@@ -212,6 +296,6 @@ msgstr "Assortiment"
 msgid "Tapa"
 msgstr "Tapas"
 
-#: src/components/Cart/CarritoModal.js:262
+#: src/components/Cart/CarritoModal.js:260
 msgid "Total"
 msgstr "Total"

@@ -373,6 +373,25 @@ const EditProduct = ({ product, onSave, onCancel, onDelete }) => {
           )}
         </fieldset>
 
+        {/* Alérgenos */}
+        <label className="label--editar">
+          Alérgenos (separados por comas):
+          <input
+            type="text"
+            name="alergenos"
+            value={formData.alergenos?.join(", ") || ""}
+            onChange={(e) => {
+              const value = e.target.value
+                .split(",")
+                .map((a) => a.trim())
+                .filter(Boolean);
+              setFormData((prev) => ({ ...prev, alergenos: value }));
+            }}
+            className="input--editar"
+            placeholder="Ej: gluten, lactosa, frutos secos"
+          />
+        </label>
+
         {/* 🔹 Subida de Imágenes */}
         <label className="label--editar">
           Imagen:

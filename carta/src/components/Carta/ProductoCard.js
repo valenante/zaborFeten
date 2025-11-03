@@ -32,6 +32,24 @@ const ProductoCard = ({ producto, estrellas }) => {
   const descripcionTraducida = producto.traducciones?.[idiomaActual]?.descripcion || producto.descripcion;
   const esCroqueta = producto.nombre.toLowerCase().includes("croqueta") && !producto.nombre.toLowerCase().includes("mexicanas");
   const { permitePedidosComida, permitePedidosBebida } = useConfiguracion();
+  // arriba, justo después de los imports
+  const ICONOS_ALERGENOS = {
+    gluten: "🌾",
+    lactosa: "🥛",
+    huevo: "🥚",
+    crustaceos: "🦐",
+    pescado: "🐟",
+    cacahuetes: "🥜",
+    soja: "🌱",
+    frutos_secos: "🌰",
+    apio: "🌿",
+    mostaza: "🌻",
+    sesamo: "⚪",
+    sulfitos: "🍷",
+    altramuces: "🌼",
+    moluscos: "🐚",
+  };
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -96,6 +114,7 @@ const ProductoCard = ({ producto, estrellas }) => {
           <h3 className="producto-nombre">{nombreTraducido}</h3>
           <div className="producto-info-grid">
             <p className="producto-descripcion">{descripcionTraducida}</p>
+
             {producto.img && (
               <div className="producto-img-container">
                 <img
@@ -106,8 +125,19 @@ const ProductoCard = ({ producto, estrellas }) => {
               </div>
             )}
           </div>
+
           <div className="producto-precio-boton">
             {renderPrecio()}
+            {/* Mostrar iconos de alérgenos */}
+            {Array.isArray(producto.alergenos) && producto.alergenos.length > 0 && (
+              <div className="alergenos-container">
+                {producto.alergenos.map((a) => (
+                  <span key={a} className="alergeno-icon" title={a}>
+                    {ICONOS_ALERGENOS[a.toLowerCase()] || "⚠️"}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           {puedeAgregar() && (
             <button onClick={abrirModal} className="agregar-carrito-btn-prodCard">
@@ -132,6 +162,15 @@ const ProductoCard = ({ producto, estrellas }) => {
             <h3 className="producto-title">{nombreTraducido}</h3>
             <p className="producto-desc">{descripcionTraducida}</p>
 
+            {Array.isArray(producto.alergenos) && producto.alergenos.length > 0 && (
+              <div className="alergenos-container">
+                {producto.alergenos.map((a) => (
+                  <span key={a} className="alergeno-icon" title={a}>
+                    {ICONOS_ALERGENOS[a.toLowerCase()] || "⚠️"}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="producto-footer">
               {renderPrecio()}
               {puedeAgregar() && (

@@ -23,6 +23,7 @@ const CrearProducto = ({ onClose }) => {
     estado: "habilitado",
     precios: { precioBase: 0, tapa: null, racion: null, precioCopa: null, precioBotella: null },
     ingredientes: [],
+    alergenos: [],
     traducciones: {
       en: { nombre: "", descripcion: "" },
       fr: { nombre: "", descripcion: "" },
@@ -392,6 +393,25 @@ const CrearProducto = ({ onClose }) => {
           <label className="label--crear">
             Stock:
             <input type="number" name="stock" value={formData.stock} onChange={handleChange} className="input--crear" required />
+          </label>
+
+          {/* Alérgenos */}
+          <label className="label--editar">
+            Alérgenos (separados por comas):
+            <input
+              type="text"
+              name="alergenos"
+              value={formData.alergenos?.join(", ") || ""}
+              onChange={(e) => {
+                const value = e.target.value
+                  .split(",")
+                  .map((a) => a.trim().toLowerCase())
+                  .filter(Boolean);
+                setFormData((prev) => ({ ...prev, alergenos: value }));
+              }}
+              className="input--editar"
+              placeholder="Ej: gluten, lactosa, huevo"
+            />
           </label>
 
           {/* ✅ Área de subida de imágenes con Drag & Drop */}
