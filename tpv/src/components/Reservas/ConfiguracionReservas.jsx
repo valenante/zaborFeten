@@ -13,7 +13,7 @@ const ConfiguracionReservas = () => {
   ]);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [mensajeAlerta, setMensajeAlerta] = useState(null);
-  
+
 
   const [diasHabilitados, setDiasHabilitados] = useState({
     domingo: true,
@@ -170,14 +170,49 @@ const ConfiguracionReservas = () => {
         ))}
       </div>
 
+      <h3>Fechas especiales</h3>
+      <p>Permiten habilitar reservas en un día normalmente cerrado, o definir horarios únicos.</p>
+
+      <div className="fechas-especiales">
+        <DatePicker
+          selected={fechaSeleccionada}
+          onChange={setFechaSeleccionada}
+          dateFormat="yyyy-MM-dd"
+          minDate={new Date()}
+        />
+        <button
+          onClick={async () => {
+            try {
+              await api.post("/reservas/fechasEspeciales", {
+                fecha: fechaSeleccionada.toISOString().slice(0, 10),
+                habilitado: true,
+                franjas,
+              });
+              setMensajeAlerta({
+                tipo: "exito",
+                mensaje: `Fecha especial creada para ${fechaSeleccionada.toISOString().slice(0, 10)}`,
+              });
+            } catch (err) {
+              logger.error("Error al guardar fecha especial:", err);
+              setMensajeAlerta({
+                tipo: "error",
+                mensaje: "No se pudo guardar la fecha especial",
+              });
+            }
+          }}
+        >
+          🌟 Guardar como fecha especial
+        </button>
+      </div>
+
       <button onClick={guardarConfiguracion}>💾 Guardar configuración</button>
-       {mensajeAlerta && (
-              <AlertaMensaje
-                tipo={mensajeAlerta.tipo}
-                mensaje={mensajeAlerta.mensaje}
-                onClose={() => setMensajeAlerta(null)}
-              />
-            )}
+      {mensajeAlerta && (
+        <AlertaMensaje
+          tipo={mensajeAlerta.tipo}
+          mensaje={mensajeAlerta.mensaje}
+          onClose={() => setMensajeAlerta(null)}
+        />
+      )}
     </div>
   );
 };

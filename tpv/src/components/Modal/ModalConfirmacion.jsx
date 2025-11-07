@@ -1,18 +1,24 @@
 import React, { useState } from "react";
-import "./ModalConfirmacion.css"; // Asegúrate de tener este archivo CSS
+import "./ModalConfirmacion.css";
 
 export default function ModalConfirmacion({
   titulo = "Confirmar acción",
   mensaje = "¿Está seguro?",
   placeholder = "",
+  value, // 👈 valor externo opcional
+  onChange, // 👈 manejador externo opcional
   onConfirm,
   onClose
 }) {
-  const [valor, setValor] = useState("");
+  const [valorInterno, setValorInterno] = useState("");
+
+  const valor = value !== undefined ? value : valorInterno;
+  const handleChange = onChange || ((e) => setValorInterno(e.target.value));
 
   const manejarConfirmacion = () => {
-    onConfirm(valor.trim());
-  };
+  onConfirm(valor.trim());
+};
+
 
   return (
     <div className="modal-overlay">
@@ -22,7 +28,6 @@ export default function ModalConfirmacion({
         {placeholder && (
           <>
             {placeholder.toLowerCase().includes("comensales") ? (
-              // 🟢 Input numérico seguro solo para "Número de comensales"
               <input
                 type="number"
                 min="1"
@@ -32,27 +37,25 @@ export default function ModalConfirmacion({
                 pattern="[0-9]*"
                 placeholder={placeholder}
                 value={valor}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (/^\d*$/.test(value) && (value === "" || (Number(value) >= 1 && Number(value) <= 25))) {
-                    setValor(value);
-                  }
-                }}
+                onChange={handleChange}
               />
             ) : (
-              // ⚪ Input normal para cualquier otro caso
               <input
                 type="text"
                 placeholder={placeholder}
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                onChange={handleChange}
               />
             )}
           </>
         )}
         <div className="modal-botones">
-          <button onClick={onClose} className="boton-cancelar-modal-confirmacion">Cancelar</button>
-          <button onClick={manejarConfirmacion} className="boton-aceptar-modal-confirmacion">Aceptar</button>
+          <button onClick={onClose} className="boton-cancelar-modal-confirmacion">
+            Cancelar
+          </button>
+          <button onClick={manejarConfirmacion} className="boton-aceptar-modal-confirmacion">
+            Aceptar
+          </button>
         </div>
       </div>
     </div>

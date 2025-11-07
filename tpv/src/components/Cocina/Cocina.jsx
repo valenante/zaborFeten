@@ -235,8 +235,14 @@ const Cocina = () => {
 
     listaPedidos.forEach(pedido => {
       pedido.productos
-        .filter(p => p.estadoPreparacion !== 'listo' && ['plato', 'tapaRacion'].includes(p.tipo))
+        .filter(p =>
+          p.estadoPreparacion !== 'listo' &&
+          ['plato', 'tapaRacion'].includes(p.tipo)
+        )
         .forEach(p => {
+          // 🟣 Filtrar por estación, excepto si estamos en la central (frito)
+          if (estacion !== 'frito' && p.estacion !== estacion) return;
+
           const nombre = p.producto?.nombre || 'Producto';
           const tipo = p.tipoPrecio || 'base';
           const key = `${nombre} (${tipo})`;
@@ -245,7 +251,11 @@ const Cocina = () => {
         });
     });
 
-    const resumenArray = Object.entries(resumen).map(([nombre, cantidad]) => ({ nombre, cantidad }));
+    // Convertimos a array ordenado para renderizar
+    const resumenArray = Object.entries(resumen)
+      .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+
     setResumenProductos(resumenArray);
   };
 
@@ -894,13 +904,23 @@ const Cocina = () => {
       {mostrarResumen && (
         <div className="resumen-panel--cocina">
           <div className="resumen-header--cocina">
-            <h3>Resumen de Productos Pendientes</h3>
+            <h3>
+              {estacion === 'frito'
+                ? 'Resumen de Productos Pendientes (TODOS)'
+                : `Resumen de ${estacion.toUpperCase()}`}
+            </h3>
             <button onClick={() => setMostrarResumen(false)}>✕</button>
           </div>
           <ul>
-            {resumenProductos.map((item, i) => (
-              <li key={i}><strong>{item.cantidad}x</strong> {item.nombre}</li>
-            ))}
+            {resumenProductos.length > 0 ? (
+              resumenProductos.map((item, i) => (
+                <li key={i}>
+                  <strong>{item.cantidad}x</strong> {item.nombre}
+                </li>
+              ))
+            ) : (
+              <li>No hay productos pendientes.</li>
+            )}
           </ul>
         </div>
       )}

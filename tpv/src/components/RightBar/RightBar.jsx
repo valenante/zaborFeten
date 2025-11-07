@@ -85,7 +85,7 @@ const RightBar = ({ mesaId }) => {
               className="cerrar-modal"
               onClick={() => setMostrarResumen(false)}
             >
-              ✖
+              ↩
             </button>
 
             {/* Platos */}
@@ -103,7 +103,8 @@ const RightBar = ({ mesaId }) => {
                     ? update
                     : update([...prevCarrito, ...prevBebidas]);
 
-                  const soloPlatos = combinado.filter(i => i.tipo === "plato" || i.tipo === undefined);
+                  // ✅ Todo lo que NO sea bebida se considera plato
+                  const soloPlatos = combinado.filter(i => i.tipo !== "bebida");
                   const soloBebidas = combinado.filter(i => i.tipo === "bebida");
 
                   setCarrito(soloPlatos);

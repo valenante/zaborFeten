@@ -18,7 +18,10 @@ const CarritoOrganizable = ({
     () =>
       carrito.map((item) => ({
         ...item,
-        seccion: item.seccion || item.productId?.seccion || "medio",
+        seccion:
+          item.seccion && item.seccion.trim() !== ""
+            ? item.seccion
+            : item.productId?.seccion || "medio",
       })),
     [carrito]
   );
@@ -50,7 +53,7 @@ const CarritoOrganizable = ({
       const [movedItem] = updated.splice(fromIndex, 1);
 
       // Actualizamos su sección
-      movedItem.seccion = destination.droppableId;
+      movedItem.seccion = destination.droppableId.toLowerCase().trim();
 
       // Calculamos el índice global de inserción
       let insertAt = 0;
@@ -95,14 +98,24 @@ const CarritoOrganizable = ({
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="carrito-organizable-container">
         {SECCIONES.map((seccion) => {
-          const productosSeccion =
-            seccion === "bebidas"
-              ? carritoNormalizado.filter((item) => item.tipo === "bebida")
-              : carritoNormalizado.filter(
-                  (item) =>
-                    (item.seccion || item.productId?.seccion || "medio") === seccion &&
-                    item.tipo !== "bebida"
-                );
+          // ✅ Nueva versión más clara y estable
+          const productosSeccion = carritoNormalizado.filter((item) => {
+            const tipo = (item.tipo || "").toLowerCase().trim();
+            const seccionItem = (item.seccion || item.productId?.seccion || "medio")
+              .toLowerCase()
+              .trim();
+
+            // ✅ Todo lo que NO sea bebida se considera plato
+            const esBebida = tipo === "bebida";
+
+            if (seccion === "bebidas") {
+              return esBebida;
+            }
+
+            // 🧩 Todo lo que no sea bebida, va a las secciones de cocina (entrante, medio, final)
+            return !esBebida && (seccionItem === seccion || (!seccionItem && seccion === "medio"));
+          });
+
 
           return (
             <Droppable key={seccion} droppableId={seccion}>
@@ -110,9 +123,8 @@ const CarritoOrganizable = ({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`carrito-section ${
-                    snapshot.isDraggingOver ? "drag-over" : ""
-                  }`}
+                  className={`carrito-section ${snapshot.isDraggingOver ? "drag-over" : ""
+                    }`}
                 >
                   <h5 className="carrito-section-title">
                     {seccion === "bebidas"
@@ -138,9 +150,8 @@ const CarritoOrganizable = ({
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className={`carrito-item ${
-                            snapshot.isDragging ? "dragging" : ""
-                          }`}
+                          className={`carrito-item ${snapshot.isDragging ? "dragging" : ""
+                            }`}
                           onClick={() => abrirEdicion(item)}
                         >
                           <div className="carrito-item-nombre">

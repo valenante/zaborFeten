@@ -2,6 +2,7 @@ import Reserva from '../models/Reserva.js';
 import Mesa from '../models/Mesa.js';
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
 import ConfiguracionReserva from '../models/ConfiguracionReserva.js';
+import FechaEspecial from '../models/FechaEspecial.js';
 import { enviarEmail } from '../../utils/enviarEmail.js';
 
 const enviarConfirmacionEmail = async (reserva) => {
@@ -344,5 +345,34 @@ export const obtenerFechasConReservas = async (req, res) => {
   } catch (error) {
     logger.error('Error al obtener fechas con reservas:', error);
     res.status(500).json({ mensaje: 'Error al obtener las fechas.' });
+  }
+};
+
+export const guardarFechaEspecial = async (req, res) => {
+  try {
+    const { fecha, franjas, habilitado = true } = req.body;
+
+    if (!fecha) {
+      console.warn("⚠️ No se envió una fecha válida.");
+      return res.status(400).json({ error: "La fecha es obligatoria." });
+    }
+
+    // 🔍 Verificar si ya existe una entrada
+    const previa = await FechaEspecial.findOne({ fecha });
+
+    // Guarda o actualiza
+    const existente = await FechaEspecial.findOneAndUpdate(
+      { fecha },
+      { fecha, franjas, habilitado },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      mensaje: "✅ Fecha especial guardada correctamente.",
+      fecha: existente,
+    });
+  } catch (error) {
+    console.error("❌ Error al guardar fecha especial:", error);
+    res.status(500).json({ error: "Error al guardar la fecha especial." });
   }
 };

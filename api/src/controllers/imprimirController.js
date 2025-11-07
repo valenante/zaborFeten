@@ -1,12 +1,22 @@
 import axios from 'axios';
 import Mesa from '../models/Mesa.js';
 import logger from '../../utils/logger.js'; // Asegúrate de tener un logger configurado
+import dotenv from 'dotenv';
+dotenv.config();
 
 const IMPRESION_SERVER = process.env.IMPRESION_SERVER;
 
 // Función genérica para enviar a impresión
 const enviarAImpresion = async (endpoint, payload) => {
-  return await axios.post(`${IMPRESION_SERVER}/${endpoint}`, payload);
+  const PRINT_SECRET = process.env.PRINT_SECRET || "clave-secreta-demo";
+  const baseURL = process.env.IMPRESION_SERVER || "http://127.0.0.1:4000";
+
+  return await axios.post(`${baseURL}/${endpoint}`, payload, {
+    headers: {
+      "x-tpv-apikey": PRINT_SECRET,
+      "Content-Type": "application/json",
+    },
+  });
 };
 
 // Imprimir platos
@@ -114,46 +124,42 @@ export const imprimirFactura = async (req, res) => {
 // Imprimir cuenta
 export const imprimirCuenta = async (req, res) => {
   const { mesaId } = req.params;
-
   try {
     const mesa = await Mesa.findById(mesaId)
       .populate({
-        path: 'pedidos',
-        match: { estado: { $in: ['pendiente', 'listo'] } },
+        path: "pedidos",
+        match: { estado: { $in: ["pendiente", "listo"] } },
       })
       .lean();
 
-    if (!mesa) return res.status(404).json({ error: 'Mesa no encontrada' });
-
+    if (!mesa) {
+      console.warn("⚠️ [BACKEND] Mesa no encontrada");
+      return res.status(404).json({ error: "Mesa no encontrada" });
+    }
     const productos = mesa.pedidos.flatMap((pedido) =>
       pedido.productos.map((p) => ({
-        nombre: p.nombre || 'Producto sin nombre',
+        nombre: p.nombre,
         cantidad: p.cantidad,
         precio: p.precioSeleccionado || 0,
-        opcionesPersonalizables: p.opcionesPersonalizables || [],
-        alergiasComensal: p.alergiasComensal || '',
-        tipoPrecio: p.tipoPrecio || '',
       }))
     );
 
-    const total = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
-
-    const response = await enviarAImpresion('imprimir-cuenta', {
+    const response = await enviarAImpresion("imprimir-cuenta", {
       mesaNumero: mesa.numero,
       comensales: mesa.comensales || 0,
       productos,
-      total,
     });
 
     res.json({
-      message: 'Cuenta enviada a impresión correctamente',
+      message: "Cuenta enviada correctamente",
       data: response.data,
     });
   } catch (error) {
-    logger.error('Error al imprimir cuenta:', error.message);
-    res.status(500).json({ error: 'Error al imprimir cuenta' });
+    console.error("❌ [BACKEND] Error al imprimir cuenta:", error.message);
+    res.status(500).json({ error: "Error al imprimir cuenta" });
   }
 };
+
 
 // 👇 Añade este helper junto a tus otras funciones
 export const abrirCajon = async () => {

@@ -331,33 +331,37 @@
 
 /* === Productos marcados como listos === */
 .producto-item--cocina.listo {
-  opacity: 0.45;                /* reduce visibilidad sin ocultar */
-  text-decoration: line-through; /* tachado horizontal limpio */
-  text-decoration-thickness: 2px;
-  text-decoration-color: rgba(0, 0, 0, 0.4); /* color del tachado suave */
-  transition: all 0.3s ease;    /* animación sutil al marcar listo */
+    opacity: 0.45;
+    /* reduce visibilidad sin ocultar */
+    text-decoration: line-through;
+    /* tachado horizontal limpio */
+    text-decoration-thickness: 2px;
+    text-decoration-color: rgba(0, 0, 0, 0.4);
+    /* color del tachado suave */
+    transition: all 0.3s ease;
+    /* animación sutil al marcar listo */
 }
 
 /* Si quieres que además cambie ligeramente el fondo: */
 .producto-item--cocina.listo {
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
 }
 
 /* El texto interno (cantidad y nombre) se ajusta también */
 .producto-item--cocina.listo span {
-  color: #555;
+    color: #555;
 }
 
 .nota-seccion--cocina {
-  background-color: white;
-  border-left: 4px solid var(--color-secundario);
-  padding: 6px 10px;
-  margin: 6px 0 10px;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-style: italic;
-  color: #444;
+    background-color: white;
+    border-left: 4px solid var(--color-secundario);
+    padding: 6px 10px;
+    margin: 6px 0 10px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #444;
 }
 
 
@@ -440,37 +444,47 @@
 
 /* Destello cuando se solicita */
 .flash-solicitado {
-  animation: flashSolicitado 0.6s ease-in-out 0s 3 alternate;
-  border-left: 4px solid #1e90ff; /* acento azul */
-  background: rgba(30, 144, 255, 0.06);
+    animation: flashSolicitado 0.6s ease-in-out 0s 3 alternate;
+    border-left: 4px solid #1e90ff;
+    /* acento azul */
+    background: rgba(30, 144, 255, 0.06);
 }
 
 @keyframes flashSolicitado {
-  from { box-shadow: 0 0 0 rgba(30,144,255,0.0); }
-  to   { box-shadow: 0 0 12px rgba(30,144,255,0.45); }
+    from {
+        box-shadow: 0 0 0 rgba(30, 144, 255, 0.0);
+    }
+
+    to {
+        box-shadow: 0 0 12px rgba(30, 144, 255, 0.45);
+    }
 }
 
 /* Badge de estado */
 .badge-solicitado {
-  margin-left: 8px;
-  padding: 2px 6px;
-  font-size: 0.75rem;
-  border-radius: 6px;
-  background: #1e90ff;
-  color: #fff;
-  font-weight: 600;
+    margin-left: 8px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    background: #1e90ff;
+    color: #fff;
+    font-weight: 600;
 }
 
 /* Botón fantasma (ligero) para acciones de central */
 .btn--ghost {
-  background: transparent;
-  border: 1px dashed #1e90ff;
-  color: #1e90ff;
+    background: transparent;
+    margin: .8vh 0vh;
+    width: 10vh;
+    height: 2.5vh;
+    border: 1px dashed #1e90ff;
+    color: #1e90ff;
 }
+
 .btn--ghost:disabled {
-  opacity: .4;
-  border-color: #aaa;
-  color: #aaa;
+    opacity: .4;
+    border-color: #aaa;
+    color: #aaa;
 }
 
 @media (max-width: 520px) {

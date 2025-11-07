@@ -146,7 +146,20 @@ const Reserva = () => {
     e.preventDefault();
 
     const diaSemana = obtenerNombreDia(fechaSeleccionada);
-    if (!disponibilidad.includes(diaSemana)) {
+
+    // 🧠 1️⃣ Verificar si la fecha está en la lista de fechas especiales
+    let esFechaEspecial = false;
+    try {
+      const resEspecial = await api.get(`/reservas/fechasEspeciales/${fechaSeleccionada}`);
+      if (resEspecial.data?.habilitado) {
+        esFechaEspecial = true;
+      }
+    } catch {
+      esFechaEspecial = false;
+    }
+
+    // 🧱 2️⃣ Si el día no está habilitado y no es especial, bloquear
+    if (!disponibilidad.includes(diaSemana) && !esFechaEspecial) {
       setMensaje("No se permiten reservas para este día.");
       return;
     }

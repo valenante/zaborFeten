@@ -2,10 +2,10 @@ import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import SubNavbar from "../components/Subnavbar/Subnavbar";
 import ModalConfirmacion from "../components/Modal/ModalConfirmacion";
+import AlertaMensaje from "../components/AlertaMensaje/AlertaMensaje";
 import { SocketContext } from "../utils/socket";
 import TPVVoice from "../components/TPVVoiceAssistant/TPVVoice";
 import "../styles/Dashboard.css";
-
 import { fetchMesas, abrirMesaConModal } from "../utils/mesaHandlers";
 
 const Dashboard = () => {
@@ -14,6 +14,8 @@ const Dashboard = () => {
   const [mesaSeleccionada, setMesaSeleccionada] = useState(null);
   const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
   const [accionModal, setAccionModal] = useState(null);
+  const [valorInput, setValorInput] = useState("");
+  const [alerta, setAlerta] = useState(null); // 👈 Estado para mostrar el mensaje de error
 
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
@@ -34,14 +36,46 @@ const Dashboard = () => {
   }, [socket]);
 
   const handleMesaClick = (mesa) => {
-    mesa.estado === "cerrada"
-      ? abrirMesaConModal(mesa, setAccionModal, setMesaSeleccionada, setMostrarModalConfirmacion, () => fetchMesas(setMesas), navigate)
-      : navigate(`/mesas/${mesa._id}`);
+    if (mesa.estado === "cerrada") {
+      setValorInput("");
+      setAccionModal({
+        titulo: `Abrir mesa ${mesa.numero}`,
+        mensaje: "Introduce la cantidad de comensales antes de abrir la mesa.",
+        placeholder: "Cantidad de comensales",
+        onConfirm: (valor) => {
+          const comensales = parseInt(valor, 10);
+
+          if (isNaN(comensales) || comensales < 1 || comensales > 25) {
+            setAlerta({
+              tipo: "error",
+              mensaje: "Por favor, introduce un número válido de comensales (mínimo 1, máximo 25).",
+            });
+            return;
+          }
+
+          abrirMesaConModal(
+            { ...mesa, comensales },
+            setAccionModal,
+            setMesaSeleccionada,
+            setMostrarModalConfirmacion,
+            () => fetchMesas(setMesas),
+            navigate
+          );
+        },
+      });
+      setMostrarModalConfirmacion(true);
+    } else {
+      navigate(`/mesas/${mesa._id}`);
+    }
   };
+
+  const esValido = valorInput.trim() !== "" && !isNaN(valorInput) && parseInt(valorInput, 10) > 0;
 
   return (
     <>
-      <div className="subnavbar--dashboard"><SubNavbar /></div>
+      <div className="subnavbar--dashboard">
+        <SubNavbar />
+      </div>
 
       <div className="container--dashboard">
         <div className="dashboard--dashboard">
@@ -62,8 +96,20 @@ const Dashboard = () => {
           titulo={accionModal?.titulo}
           mensaje={accionModal?.mensaje}
           placeholder={accionModal?.placeholder}
-          onConfirm={(valor) => accionModal?.onConfirm(valor)}
+          value={valorInput}
+          onChange={(e) => setValorInput(e.target.value)}
+          onConfirm={() => accionModal?.onConfirm(valorInput)}
           onClose={() => setMostrarModalConfirmacion(false)}
+          disabledConfirm={!esValido}
+        />
+      )}
+
+      {/* 🔔 Alerta flotante si hay error */}
+      {alerta && (
+        <AlertaMensaje
+          tipo={alerta.tipo}
+          mensaje={alerta.mensaje}
+          onClose={() => setAlerta(null)}
         />
       )}
 

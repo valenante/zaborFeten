@@ -10,25 +10,25 @@ export const fetchMesas = async (setMesas) => {
   }
 };
 
-export const abrirMesaConModal = (mesa, setAccionModal, setMesaSeleccionada, setMostrarModalConfirmacion, fetchMesas, navigate) => {
-  setMesaSeleccionada(mesa);
-  setAccionModal({
-    titulo: "Abrir Mesa",
-    mensaje: `¿Cuántos comensales hay en la mesa ${mesa.numero}?`,
-    placeholder: "Número de comensales",
-    onConfirm: async (comensalesInput) => {
-      
-      try {
-        await api.put(`/mesas/mesas/${mesa._id}/abrir`, {
-          comensales: Number(comensalesInput),
-        });
-        await fetchMesas();
-        setMostrarModalConfirmacion(false);
-        navigate(`/mesas/${mesa._id}`);
-      } catch (error) {
-        logger.error("Error al abrir la mesa:", error);
-      }
-    },
-  });
-  setMostrarModalConfirmacion(true);
+
+export const abrirMesaConModal = async (
+  mesa,
+  setAccionModal,
+  setMesaSeleccionada,
+  setMostrarModalConfirmacion,
+  fetchMesas,
+  navigate
+) => {
+  try {
+    // ✅ No volver a abrir modal aquí
+    await api.put(`/mesas/mesas/${mesa._id}/abrir`, {
+      comensales: Number(mesa.comensales),
+    });
+
+    await fetchMesas(); // refresca mesas
+    setMostrarModalConfirmacion(false); // cierra modal actual
+    navigate(`/mesas/${mesa._id}`); // redirige a la mesa abierta
+  } catch (error) {
+    logger.error("❌ Error al abrir la mesa:", error);
+  }
 };

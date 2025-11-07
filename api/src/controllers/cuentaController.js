@@ -48,12 +48,21 @@ export const imprimirCuenta = async (req, res) => {
         }))
     );
 
-    await axios.post(`${process.env.IMPRESION_SERVER}/imprimir-cuenta`, {
-      mesaNumero: mesa.numero,
-      comensales: mesa.comensales,
-      productos,
-      total: mesa.total,
-    });
+    await axios.post(
+      `${process.env.IMPRESION_SERVER}/imprimir-cuenta`,
+      {
+        mesaNumero: mesa.numero,
+        comensales: mesa.comensales,
+        productos,
+        total: mesa.total,
+      },
+      {
+        headers: {
+          "x-tpv-apikey": process.env.PRINT_SECRET || "clave-secreta-demo",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     res.status(200).json({ message: 'Cuenta enviada a impresión.' });
   } catch (error) {

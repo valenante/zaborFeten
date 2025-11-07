@@ -1,4 +1,6 @@
 import Pedido from '../models/Pedido.js'; // Ajusta la ruta según tu proyecto
+import logger from '../../utils/logger.js';
+import axios from 'axios';
 // GET /api/v1/cocina/items?estacion=frio&estado=pendiente,solicitado,en_preparacion
 export const listarItemsCocina = async (req, res) => {
   const estacion = req.query.estacion || 'frito';
@@ -177,10 +179,17 @@ export const marcarItemListo = async (req, res) => {
         };
 
         // 👇 Aquí mandamos el ticket al microservicio de impresión
-        const axios = await import('axios');
-        await axios.default.post(`${process.env.IMPRESION_SERVER}/imprimir`, productoImprimir, {
-          timeout: 3000,
-        });
+        await axios.default.post(
+          `${process.env.IMPRESION_SERVER}/imprimir`,
+          productoImprimir,
+          {
+            timeout: 3000,
+            headers: {
+              "x-tpv-apikey": process.env.PRINT_SECRET || "clave-secreta-demo",
+              "Content-Type": "application/json",
+            },
+          }
+        );
       } catch (err) {
         console.error('🖨️ Error al imprimir producto listo:', err.message);
       }

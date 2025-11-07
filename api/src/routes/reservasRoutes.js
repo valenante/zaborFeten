@@ -13,9 +13,30 @@ import {
   confirmarReserva,
   obtenerFechasConReservas,
   obtenerReservasPorFecha,
+  guardarFechaEspecial,
 } from '../controllers/reservasController.js';
 
+import FechaEspecial from '../models/FechaEspecial.js';
+
 const router = express.Router();
+
+// GET /fechasEspeciales/:fecha
+router.get('/fechasEspeciales/:fecha', async (req, res) => {
+  const { fecha } = req.params;
+
+  try {
+    const fechaEspecial = await FechaEspecial.findOne({ fecha });
+
+    if (!fechaEspecial) {
+      console.warn(`⚠️ No se encontró configuración para ${fecha}`);
+      return res.status(404).json({ habilitado: false });
+    }
+    res.status(200).json(fechaEspecial);
+  } catch (error) {
+    console.error("❌ Error al obtener fecha especial:", error);
+    res.status(500).json({ error: "Error al obtener fecha especial." });
+  }
+});
 
 /**
  * @swagger
@@ -139,5 +160,8 @@ router.get('/fecha', obtenerReservasPorFecha);
  *         description: Lista de fechas con al menos una reserva
  */
 router.get('/fechasReserva', obtenerFechasConReservas);
+
+// POST /api/v1/reservas/fechasEspeciales
+router.post("/fechasEspeciales", guardarFechaEspecial);
 
 export default router;

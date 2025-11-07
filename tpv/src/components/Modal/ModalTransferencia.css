@@ -138,6 +138,7 @@ select:focus {
   .modal-transferir-content {
     padding: 16px;
     width: 95%;
+    max-height: 70vh;
   }
 
   .transferir-paneles {
