@@ -121,7 +121,7 @@ const ListaPedidos = ({
                               detalle?.nombre || "este producto"
                             } de la mesa?`,
                             onConfirm: () =>
-                              eliminarProducto(pedido._id, productoId),
+                              eliminarProducto(pedido._id, producto._id),
                           });
                           setMostrarModalConfirmacion(true);
                         }}

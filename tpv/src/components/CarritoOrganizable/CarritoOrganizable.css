@@ -4,6 +4,8 @@
   flex-direction: column;
   gap: 20px;
   padding: 10px;
+  background-color: white;
+  border-radius: 10px;
 }
 
 /* Cada sección del carrito */
@@ -249,7 +251,7 @@
     width: 80%;
   }
 
-  .modal-content label{
+  .modal-content label {
     margin-top: 1.5vh;
   }
 
@@ -263,7 +265,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .carrito-organizable-container {
-    gap: 15px;
+    height: 100%;
   }
 
   .carrito-section-title {

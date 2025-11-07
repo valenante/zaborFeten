@@ -396,7 +396,7 @@ export const agregarProductoBebida = async (req, res) => {
 
     await mesa.save();
 
-     // Registrar cada producto como venta
+    // Registrar cada producto como venta
     for (const producto of productos) {
       const venta = new Venta({
         producto: producto.producto,
@@ -448,11 +448,20 @@ export const agregarProductoBebida = async (req, res) => {
     };
 
     try {
-      await axios.post(`${IMPRESION_SERVER}/imprimir-bebidas`, datosRespuesta);
-    } catch (error) {
-      logger.error('Error al enviar pedido de bebidas a la impresora:', error.message);
-    }
+      const PRINT_SECRET = process.env.PRINT_SECRET || "clave-secreta-demo";
+      const baseURL = process.env.IMPRESION_SERVER || "http://127.0.0.1:4000";
 
+      await axios.post(`${baseURL}/imprimir-bebidas`, datosRespuesta, {
+        headers: {
+          "x-tpv-apikey": PRINT_SECRET,
+          "Content-Type": "application/json",
+        },
+      });
+
+      logger.info(`🖨️ Pedido de bebidas enviado correctamente a la impresora (${baseURL})`);
+    } catch (error) {
+      logger.error("❌ Error al enviar pedido de bebidas a la impresora:", error.message);
+    }
     res.json(datosRespuesta);
   } catch (error) {
     logger.error('Error al agregar bebida:', error);

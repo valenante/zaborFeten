@@ -57,7 +57,6 @@ const productoSchema = new Schema(
     seccion: {
       type: String,
       enum: ["entrante", "medio", "final"],
-      required: true,
     },
 
     // Precios y stock

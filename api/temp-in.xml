@@ -17,7 +17,7 @@
         <sum1:IDVersion>1.0</sum1:IDVersion>
         <sum1:IDFactura>
           <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>2025-0221</sum1:NumSerieFactura>
+          <sum1:NumSerieFactura>2025-0225</sum1:NumSerieFactura>
           <sum1:FechaExpedicionFactura>07-11-2025</sum1:FechaExpedicionFactura>
         </sum1:IDFactura>
         <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
@@ -34,18 +34,18 @@
         <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
         <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
         <sum1:TipoImpositivo>10</sum1:TipoImpositivo>
-        <sum1:BaseImponibleOimporteNoSujeto>19.55</sum1:BaseImponibleOimporteNoSujeto>
-        <sum1:CuotaRepercutida>1.95</sum1:CuotaRepercutida>
+        <sum1:BaseImponibleOimporteNoSujeto>44.65</sum1:BaseImponibleOimporteNoSujeto>
+        <sum1:CuotaRepercutida>4.45</sum1:CuotaRepercutida>
       </sum1:DetalleDesglose></sum1:Desglose>
-        <sum1:CuotaTotal>2.15</sum1:CuotaTotal>
-        <sum1:ImporteTotal>21.50</sum1:ImporteTotal>
+        <sum1:CuotaTotal>4.91</sum1:CuotaTotal>
+        <sum1:ImporteTotal>62.60</sum1:ImporteTotal>
         
   <sum1:Encadenamiento>
     <sum1:RegistroAnterior>
       <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-      <sum1:NumSerieFactura>2025-0220</sum1:NumSerieFactura>
+      <sum1:NumSerieFactura>2025-0224</sum1:NumSerieFactura>
       <sum1:FechaExpedicionFactura>07-11-2025</sum1:FechaExpedicionFactura>
-      <sum1:Huella>9542237D13AFDC13FC4470C06E38F60847F4EC4C9C495EE8AF566A8FC546F65F</sum1:Huella>
+      <sum1:Huella>7BDE5BCE0613CECDA96A4AE986555E9A7059C50915F26AF324B91C13F2E33271</sum1:Huella>
     </sum1:RegistroAnterior>
   </sum1:Encadenamiento>
         
@@ -60,9 +60,9 @@
       <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
       <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
     </sum1:SistemaInformatico>
-        <sum1:FechaHoraHusoGenRegistro>2025-11-07T02:51:38+01:00</sum1:FechaHoraHusoGenRegistro>
+        <sum1:FechaHoraHusoGenRegistro>2025-11-07T12:01:59+01:00</sum1:FechaHoraHusoGenRegistro>
         <sum1:TipoHuella>01</sum1:TipoHuella>
-        <sum1:Huella>AEA5AE770537AEA57C3FB663AE8C2B06008A4D0E46E5AC6155E78F1F640BDA97</sum1:Huella>
+        <sum1:Huella>B7E45D3397F0FD17EB96A67F1D21F898F03EC325B04678952AC330FD104449F0</sum1:Huella>
       </sum1:RegistroAlta>
     </sum:RegistroFactura>
     </sum:RegFactuSistemaFacturacion>

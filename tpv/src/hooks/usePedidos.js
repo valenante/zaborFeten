@@ -60,30 +60,28 @@ const usePedidosMesa = (mesa, setMesa) => {
     }
   };
 
-  const eliminarProducto = (pedidoId, productoId) => {
-    return async () => {
-      try {
-        const response = await api.post(`/productos/${pedidoId}/${productoId}`);
-        setMesa((prevMesa) => ({
-          ...prevMesa,
-          pedidos: response.data.pedidos,
-        }));
+  const eliminarProducto = async (pedidoId, productoId) => {
+  try {
+    const response = await api.post(`/productos/${pedidoId}/${productoId}`);
 
-        setMensajeAlerta({
-          tipo: "exito",
-          mensaje: "Producto eliminado con éxito.",
-        });
+    setMesa((prevMesa) => ({
+      ...prevMesa,
+      pedidos: response.data.pedidos,
+    }));
 
-        window.location.reload();
-      } catch (error) {
-        logger.error("Error al eliminar el producto:", error);
-        setMensajeAlerta({
-          tipo: "error",
-          mensaje: "Hubo un problema al eliminar el producto.",
-        });
-      }
-    };
-  };
+    setMensajeAlerta({
+      tipo: "exito",
+      mensaje: "Producto eliminado con éxito.",
+    });
+  } catch (error) {
+    logger.error("Error al eliminar el producto:", error);
+    setMensajeAlerta({
+      tipo: "error",
+      mensaje: "Hubo un problema al eliminar el producto.",
+    });
+  }
+};
+
 
   return {
     agregarProducto,

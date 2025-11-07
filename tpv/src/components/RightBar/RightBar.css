@@ -189,7 +189,8 @@
 
 /* Panel del carrito (ocupa toda la pantalla en modal) */
 .resumen-pedido-panel {
-  background-color: #fff;
+  /*fondo oscuro transparente*/
+  background: rgba(0, 0, 0, 0.5);
   border-radius: 10px;
   padding: 20px;
   width: 90%;
@@ -287,7 +288,7 @@
   width: 28px;            /* ancho fijo */
   height: 28px;           /* alto fijo */
   border-radius: 6px;     /* esquinas suaves */
-  margin-left: auto;      /* lo empuja a la esquina derecha */
+  margin: 1vh 1vh 1vh auto;      /* lo empuja a la esquina derecha */
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -311,6 +312,12 @@
     flex-direction: column;
   }
 
+.resumen-pedido-panel {
+    width: 100%;
+    max-height: 70vh;
+    max-width: none;
+    border-radius: 0;
+  }
 
   .boton-tipo--rightbar {
     padding: 12px 18px;
