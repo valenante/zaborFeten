@@ -7,6 +7,7 @@ import { SocketContext } from "../utils/socket";
 import TPVVoice from "../components/TPVVoiceAssistant/TPVVoice";
 import "../styles/Dashboard.css";
 import { fetchMesas, abrirMesaConModal } from "../utils/mesaHandlers";
+import api from "../utils/api";
 
 const Dashboard = () => {
   const [mesas, setMesas] = useState([]);
@@ -15,11 +16,11 @@ const Dashboard = () => {
   const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
   const [accionModal, setAccionModal] = useState(null);
   const [valorInput, setValorInput] = useState("");
-  const [alerta, setAlerta] = useState(null); // 👈 Estado para mostrar el mensaje de error
-
+  const [alerta, setAlerta] = useState(null);
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
 
+  // Detectar tamaño
   useEffect(() => {
     fetchMesas(setMesas);
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -27,14 +28,15 @@ const Dashboard = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Socket
   useEffect(() => {
     if (!socket) return;
     const actualizarMesas = () => fetchMesas(setMesas);
     socket.on("mesaAbierta", actualizarMesas);
-
     return () => socket.off("mesaAbierta", actualizarMesas);
   }, [socket]);
 
+  // 👉 Función para manejar toque corto (abrir)
   const handleMesaClick = (mesa) => {
     if (mesa.estado === "cerrada") {
       setValorInput("");
@@ -44,11 +46,11 @@ const Dashboard = () => {
         placeholder: "Cantidad de comensales",
         onConfirm: (valor) => {
           const comensales = parseInt(valor, 10);
-
           if (isNaN(comensales) || comensales < 1 || comensales > 25) {
             setAlerta({
               tipo: "error",
-              mensaje: "Por favor, introduce un número válido de comensales (mínimo 1, máximo 25).",
+              mensaje:
+                "Por favor, introduce un número válido de comensales (mínimo 1, máximo 25).",
             });
             return;
           }
@@ -69,7 +71,54 @@ const Dashboard = () => {
     }
   };
 
-  const esValido = valorInput.trim() !== "" && !isNaN(valorInput) && parseInt(valorInput, 10) > 0;
+  // 👉 Función para manejar long press (editar comensales)
+  const handleLongPress = (mesa) => {
+    setValorInput(mesa.comensales || "");
+    setAccionModal({
+      titulo: `Modificar comensales (Mesa ${mesa.numero})`,
+      mensaje: "Introduce la nueva cantidad de comensales.",
+      placeholder: "Cantidad de comensales",
+      onConfirm: async (valor) => {
+        const comensales = parseInt(valor, 10);
+        if (isNaN(comensales) || comensales < 1 || comensales > 25) {
+          setAlerta({
+            tipo: "error",
+            mensaje:
+              "Por favor, introduce un número válido de comensales (mínimo 1, máximo 25).",
+          });
+          return;
+        }
+        try {
+          await api.put(`/mesas/${mesa._id}/comensales`, { comensales });
+          setAlerta({
+            tipo: "exito",
+            mensaje: `Mesa ${mesa.numero} actualizada a ${comensales} comensales.`,
+          });
+          fetchMesas(setMesas);
+        } catch (err) {
+          setAlerta({
+            tipo: "error",
+            mensaje: "Error al actualizar comensales.",
+          });
+        } finally {
+          setMostrarModalConfirmacion(false);
+        }
+      },
+    });
+    setMostrarModalConfirmacion(true);
+  };
+
+  // Control de long press manual (200ms a 600ms)
+  let pressTimer;
+  const handlePressStart = (mesa) => {
+    pressTimer = setTimeout(() => handleLongPress(mesa), 600);
+  };
+  const handlePressEnd = () => clearTimeout(pressTimer);
+
+  const esValido =
+    String(valorInput).trim() !== "" &&
+    !isNaN(valorInput) &&
+    parseInt(valorInput, 10) > 0;
 
   return (
     <>
@@ -84,6 +133,10 @@ const Dashboard = () => {
               key={mesa._id}
               className={`mesa--dashboard ${mesa.estado}--dashboard`}
               onClick={() => handleMesaClick(mesa)}
+              onTouchStart={() => handlePressStart(mesa)}
+              onTouchEnd={handlePressEnd}
+              onMouseDown={() => handlePressStart(mesa)}
+              onMouseUp={handlePressEnd}
             >
               <p className="mesa-number--dashboard">{mesa.numero}</p>
             </div>
@@ -104,7 +157,6 @@ const Dashboard = () => {
         />
       )}
 
-      {/* 🔔 Alerta flotante si hay error */}
       {alerta && (
         <AlertaMensaje
           tipo={alerta.tipo}

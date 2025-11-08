@@ -61,27 +61,65 @@ const usePedidosMesa = (mesa, setMesa) => {
   };
 
   const eliminarProducto = async (pedidoId, productoId) => {
-  try {
-    const response = await api.post(`/productos/${pedidoId}/${productoId}`);
+    try {
+      // 🧠 Eliminación optimista
+      setMesa((prevMesa) => ({
+        ...prevMesa,
+        pedidos: prevMesa.pedidos.map((pedido) =>
+          pedido._id === pedidoId
+            ? {
+              ...pedido,
+              productos: pedido.productos.filter(
+                (prod) => prod._id !== productoId
+              ),
+            }
+            : pedido
+        ),
+        pedidosBebidas: prevMesa.pedidosBebidas.map((pedido) =>
+          pedido._id === pedidoId
+            ? {
+              ...pedido,
+              productos: pedido.productos.filter(
+                (prod) => prod._id !== productoId
+              ),
+            }
+            : pedido
+        ),
+      }));
 
-    setMesa((prevMesa) => ({
-      ...prevMesa,
-      pedidos: response.data.pedidos,
-    }));
+      // 🚀 Solicitud al backend
+      const { data } = await api.post(`/productos/${pedidoId}/${productoId}`);
 
-    setMensajeAlerta({
-      tipo: "exito",
-      mensaje: "Producto eliminado con éxito.",
-    });
-  } catch (error) {
-    logger.error("Error al eliminar el producto:", error);
-    setMensajeAlerta({
-      tipo: "error",
-      mensaje: "Hubo un problema al eliminar el producto.",
-    });
-  }
-};
+      // ✅ Actualizar totales y pedidos vacíos
+      setMesa((prevMesa) => ({
+        ...prevMesa,
+        total: data.mesa?.total ?? prevMesa.total,
+        pedidos: prevMesa.pedidos
+          .map((pedido) =>
+            pedido._id === pedidoId && data.pedido
+              ? { ...pedido, ...data.pedido }
+              : pedido
+          )
+          .filter((p) => p.productos?.length > 0),
+        pedidosBebidas: prevMesa.pedidosBebidas.filter(
+          (p) => p.productos?.length > 0
+        ),
+      }));
 
+      setMensajeAlerta({
+        tipo: "exito",
+        mensaje: data.message || "Producto eliminado con éxito.",
+      });
+    } catch (error) {
+      logger.error("Error al eliminar el producto:", error);
+      setMensajeAlerta({
+        tipo: "error",
+        mensaje: "Hubo un problema al eliminar el producto.",
+      });
+      // 🔄 Revertir cambios o recargar
+      await refrescarMesa();
+    }
+  };
 
   return {
     agregarProducto,

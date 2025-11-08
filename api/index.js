@@ -30,6 +30,7 @@ import {
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import {attachUser} from './src/middlewares/attachUser.js'; // Importar middleware para adjuntar usuario
+import { roomEstacion } from './src/helpers/socketRooms.js';
 import mesaRoutes from './src/routes/mesaRoutes.js';
 import productoRoutes from './src/routes/productosRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
@@ -206,11 +207,34 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // Configurar eventos de Socket.IO
-io.on('connection', (socket) => {
-  console.log(`Cliente conectado: ${socket.id}`);
+io.on("connection", (socket) => {
+  console.log(`🧑‍🍳 Cliente conectado: ${socket.id}`);
 
-  socket.on('disconnect', (reason) => {
-    console.log(`Cliente desconectado: ${socket.id}, motivo: ${reason}`);
+  // 👉 Unirse a una sala específica (p. ej. cocina:frio)
+  socket.on("joinRoom", (room) => {
+    socket.join(room);
+    const count = io.sockets.adapter.rooms.get(room)?.size || 0;
+    console.log(`📥 ${socket.id} se unió a ${room} | 👥 ${count} en sala`);
+  });
+
+  // 👉 Salir de una sala
+  socket.on("leaveRoom", (room) => {
+    socket.leave(room);
+    const count = io.sockets.adapter.rooms.get(room)?.size || 0;
+    console.log(`📤 ${socket.id} salió de ${room} | 👥 ${count} restantes`);
+  });
+
+  // 👉 Listar salas activas (puede llamarse desde el cliente para diagnóstico)
+  socket.on("listarRooms", () => {
+    const rooms = [...io.sockets.adapter.rooms.entries()]
+      .filter(([k]) => k.startsWith("cocina:"))
+      .map(([room, clients]) => ({ room, count: clients.size }));
+    console.log("📋 Rooms activas:", rooms);
+    socket.emit("roomsInfo", rooms);
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.log(`❌ Cliente desconectado: ${socket.id} | Motivo: ${reason}`);
   });
 });
 

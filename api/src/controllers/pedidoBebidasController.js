@@ -9,6 +9,34 @@ import Producto from '../models/Producto.js';
 import SesionMesa from '../models/SesionMesa.js';
 
 const IMPRESION_SERVER = process.env.IMPRESION_SERVER
+
+// 🔁 Función para recalcular el total real de una mesa (platos + bebidas)
+export const recalcularTotalMesa = async (mesaId) => {
+  const mesa = await Mesa.findById(mesaId);
+  if (!mesa) throw new Error("Mesa no encontrada");
+
+  const [pedidos, pedidosBebidas] = await Promise.all([
+    Pedido.find({
+      mesa: mesaId,
+      sesionId: mesa.sesionActiva,
+      estado: { $in: ["pendiente", "listo"] },
+    }),
+    PedidoBebida.find({
+      mesa: mesaId,
+      sesionId: mesa.sesionActiva,
+      estado: { $in: ["pendiente", "listo"] },
+    }),
+  ]);
+
+  const totalPedidos = pedidos.reduce((acc, p) => acc + (p.total || 0), 0);
+  const totalBebidas = pedidosBebidas.reduce((acc, p) => acc + (p.total || 0), 0);
+
+  mesa.total = Number((totalPedidos + totalBebidas).toFixed(2));
+  await mesa.save();
+
+  return mesa.total;
+};
+
 export const crearPedido = async (req, res) => {
   try {
     const {
@@ -77,8 +105,7 @@ export const crearPedido = async (req, res) => {
 
     // 🧩 Actualizar mesa
     mesaExistente.pedidosBebidas.push(nuevoPedido._id);
-    mesaExistente.total = parseFloat((mesaExistente.total + totalPedido).toFixed(2));
-    await mesaExistente.save();
+    await recalcularTotalMesa(mesaExistente._id);
 
     // 💾 Registrar ventas individuales
     for (const item of productosCongelados) {
@@ -366,11 +393,10 @@ export const agregarProductoBebida = async (req, res) => {
 
     let pedidoModificado;
     const pedidoExistente = mesa.pedidosBebidas.find((p) => p.estado === 'pendiente');
-
     if (pedidoExistente) {
       productosCompletos.forEach((p) => {
         pedidoExistente.productos.push({ ...p });
-        pedidoExistente.total += p.total;
+        pedidoExistente.total = Number((pedidoExistente.total + p.total).toFixed(2));
       });
       pedidoModificado = await pedidoExistente.save();
     } else {
@@ -383,18 +409,16 @@ export const agregarProductoBebida = async (req, res) => {
       });
       pedidoModificado = await nuevoPedidoBebida.save();
       mesa.pedidosBebidas.push(pedidoModificado._id);
+      await mesa.save();
     }
 
-    // 💥 Recalcular total completo (evita pisado de valores)
-    const pedidos = await Pedido.find({ mesa: mesa._id });
-    const pedidosBebidas = await PedidoBebida.find({ mesa: mesa._id });
+    // ✅ Agregar este bloque inmediatamente después
+    if (!mesa.pedidosBebidas.includes(pedidoModificado._id)) {
+      mesa.pedidosBebidas.push(pedidoModificado._id);
+      await mesa.save();
+    }
 
-    const totalPedidos = pedidos.reduce((sum, p) => sum + p.total, 0);
-    const totalBebidas = pedidosBebidas.reduce((sum, p) => sum + p.total, 0);
-
-    mesa.total = totalPedidos + totalBebidas;
-
-    await mesa.save();
+    await recalcularTotalMesa(mesa._id);
 
     // Registrar cada producto como venta
     for (const producto of productos) {

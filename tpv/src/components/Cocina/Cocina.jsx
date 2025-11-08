@@ -127,7 +127,7 @@ const Cocina = () => {
   const [pedidos, setPedidos] = useState([]);
   const [mostrarFinalizados, setMostrarFinalizados] = useState(false);
   const [productoSeleccionado] = useState(null);
-  const { socket } = useContext(SocketContext);
+  const { socket, joinRoom, leaveRoom } = useContext(SocketContext);
   const [mesas, setMesas] = useState([]);
   const { logout } = useAuth();
   const [resumenProductos, setResumenProductos] = useState([]);
@@ -152,6 +152,12 @@ const Cocina = () => {
     setEstacion(val);
     localStorage.setItem('cocina_estacion', val);
   };
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.emit('joinRoom', `cocina:${estacion}`); // 👈 une esta pantalla a su canal
+    return () => socket.emit('leaveRoom', `cocina:${estacion}`);
+  }, [socket, estacion]);
 
   useEffect(() => {
     if (!socket) return;
@@ -180,6 +186,13 @@ const Cocina = () => {
     return () => socket.offAny(any);
   }, [socket]);
 
+  useEffect(() => {
+    if (!socket) return;
+    const room = `cocina:${estacion}`;
+    joinRoom(room);
+
+    return () => leaveRoom(room);
+  }, [socket, estacion, joinRoom, leaveRoom]);
 
   const cargarMesas = async () => {
     try {
@@ -283,7 +296,11 @@ const Cocina = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const manejarNuevoPedido = () => cargarPedidos();
+    const manejarNuevoPedido = (nuevoPedido) => {
+      // Refrescamos pedidos y recalculamos resumen
+      cargarPedidos();
+      calcularResumenProductos([...pedidos, nuevoPedido?.pedido || {}]);
+    };
 
     const patchItem = (pedidoId, item) => {
       setPedidos(prev => prev.map(p =>
@@ -299,40 +316,35 @@ const Cocina = () => {
     };
 
     const handleKitchenUpdate = (ev) => {
-      if (!ev || !ev.type) return;
+      console.groupCollapsed("📡 [Socket] kitchen:update");
+      console.log("Evento recibido:", ev);
+      console.groupEnd();
 
-      if (ev.type === 'itemEstadoCambiado' && ev.pedidoId && ev.item?._id) {
-        patchItem(ev.pedidoId, ev.item);
+      if (!ev || !ev.type) {
+        console.warn("⚠️ Evento inválido recibido:", ev);
         return;
       }
 
-      if (ev.type === 'itemSolicitado' && ev.pedidoId && ev.item?._id) {
-        patchItem(ev.pedidoId, { ...ev.item, workflow: { ...(ev.item.workflow || {}), estado: 'solicitado' } });
-        pushHighlight(`${ev.pedidoId}:${ev.item._id}`);
-        return;
-      }
-
-      if (ev.type === 'itemListo' && ev.pedidoId && ev.item?._id) {
-        patchItem(ev.pedidoId, { ...ev.item, workflow: { ...(ev.item.workflow || {}), estado: 'listo' } });
-        return;
-      }
-
-      // 🚀 NUEVO: cerrar estación
-      if (ev.type === 'estacionCerrada' && ev.pedidoId && ev.estacion) {
-        setPedidos(prev =>
-          prev.map(p =>
-            p._id !== ev.pedidoId
-              ? p
-              : {
+      if (["itemEstadoCambiado", "itemSolicitado", "itemListo"].includes(ev.type)) {
+        setPedidos((prevPedidos) => {
+          const actualizados = prevPedidos.map((p) =>
+            p._id === ev.pedidoId
+              ? {
                 ...p,
-                cerradoPorEstacion: {
-                  ...(p.cerradoPorEstacion || {}),
-                  [ev.estacion]: true,
-                },
+                productos: p.productos.map((prod) =>
+                  prod._id === ev.item._id
+                    ? {
+                      ...prod,
+                      workflow: { ...(prod.workflow || {}), ...(ev.item.workflow || {}) },
+                      estadoPreparacion: ev.item.estadoPreparacion ?? prod.estadoPreparacion,
+                    }
+                    : prod
+                ),
               }
-          )
-        );
-        return;
+              : p
+          );
+          return actualizados;
+        });
       }
     };
 
@@ -451,6 +463,12 @@ const Cocina = () => {
 
     return () => detenerContinua();
   }, [soportado, iniciarContinua, detenerContinua, onResultado, onFin, onError, pedidos, encolarLectura]);
+
+  useEffect(() => {
+    if (pedidos.length > 0) {
+      calcularResumenProductos(pedidos);
+    }
+  }, [estacion, pedidos]);
 
   // === NUEVO: deriva si esta pantalla es la central (frito)
   const isCentral = (estacion || '').toLowerCase().startsWith('frito');

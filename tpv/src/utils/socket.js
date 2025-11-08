@@ -5,33 +5,69 @@ export const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const [cuentaSolicitada, setCuentaSolicitada] = useState(null); // Almacenar la solicitud de cuenta
+  const [cuentaSolicitada, setCuentaSolicitada] = useState(null);
 
   useEffect(() => {
-    if (!socket) {
-      // Solo crear una conexión si no existe
-      const socketInstance = io(process.env.REACT_APP_SOCKET_URL, {
-        transports: ["websocket"],
-        reconnectionAttempts: 5, // Limita los intentos de reconexión
-        reconnectionDelay: 1000, // Tiempo entre intentos
-      });
-      
-      setSocket(socketInstance);
+    const socketInstance = io(process.env.REACT_APP_SOCKET_URL, {
+      transports: ["websocket"],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
-      // Escuchar eventos
-      socketInstance.on("cuentaSolicitada", (data) => {
-        setCuentaSolicitada(data); // Actualizar el estado con la solicitud
-      });
+    setSocket(socketInstance);
 
-      // Desconectar al desmontar
-      return () => {
-        socketInstance.disconnect();
-      };
-    }
+    // === Conexión y reconexión ===
+    socketInstance.on("connect", () => {
+      console.log("✅ [Socket] Conectado:", socketInstance.id);
+    });
+
+    socketInstance.on("disconnect", (reason) => {
+      console.warn("⚠️ [Socket] Desconectado:", reason);
+    });
+
+    socketInstance.on("connect_error", (err) => {
+      console.error("❌ [Socket] Error de conexión:", err.message);
+    });
+
+    socketInstance.io.on("reconnect_attempt", (attempt) => {
+      console.log(`🔁 [Socket] Intento de reconexión ${attempt}/5`);
+    });
+
+    socketInstance.onAny((event, data) => {
+      console.log("📡 [Socket] Evento recibido:", event, data);
+    });
+
+    // === Evento global para solicitud de cuenta ===
+    socketInstance.on("cuentaSolicitada", (data) => {
+      console.log("💰 [Socket] Cuenta solicitada:", data);
+      setCuentaSolicitada(data);
+    });
+
+    // Limpieza al desmontar
+    return () => {
+      console.log("🚪 [SocketProvider] Cerrando conexión...");
+      socketInstance.disconnect();
+    };
   }, []);
 
+  /**
+   * Permite que un componente se una a una sala específica.
+   * Ejemplo: joinRoom(`cocina:${estacion}`)
+   */
+  const joinRoom = (room) => {
+    if (!socket) return;
+    console.log(`📥 [Socket] Uniéndose a la sala: ${room}`);
+    socket.emit("joinRoom", room);
+  };
+
+  const leaveRoom = (room) => {
+    if (!socket) return;
+    console.log(`📤 [Socket] Saliendo de la sala: ${room}`);
+    socket.emit("leaveRoom", room);
+  };
+
   return (
-    <SocketContext.Provider value={{ socket, cuentaSolicitada, setCuentaSolicitada }}>
+    <SocketContext.Provider value={{ socket, joinRoom, leaveRoom, cuentaSolicitada, setCuentaSolicitada }}>
       {children}
     </SocketContext.Provider>
   );

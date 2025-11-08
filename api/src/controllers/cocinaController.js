@@ -1,6 +1,7 @@
 import Pedido from '../models/Pedido.js'; // Ajusta la ruta según tu proyecto
 import logger from '../../utils/logger.js';
 import axios from 'axios';
+import { roomEstacion } from '../helpers/socketRooms.js';
 // GET /api/v1/cocina/items?estacion=frio&estado=pendiente,solicitado,en_preparacion
 export const listarItemsCocina = async (req, res) => {
   const estacion = req.query.estacion || 'frito';
@@ -118,100 +119,118 @@ export const marcarItemListo = async (req, res) => {
     const { pedidoId, itemId } = req.params;
     const { role, estacion } = req.user || {};
 
+    console.log("🧩 [marcarItemListo] Inicio:", { pedidoId, itemId, role, estacion });
+
     const pedido = await Pedido.findById(pedidoId)
-      .populate('mesa')
-      .populate('productos.producto');
-    if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+      .populate("mesa")
+      .populate("productos.producto");
 
-    const item = pedido.productos.id(itemId);
-    if (!item) return res.status(404).json({ error: 'Item no encontrado' });
-
-    // Permisos: central/admin pueden todo
-    const isCentral = role === 'admin' || role === 'supervisor' || estacion === 'frito';
-    if (item.estacion && item.estacion !== estacion && !isCentral) {
-      return res.status(403).json({ error: 'No autorizado para esta estación' });
+    if (!pedido) {
+      console.warn("⚠️ Pedido no encontrado:", pedidoId);
+      return res.status(404).json({ error: "Pedido no encontrado" });
     }
 
-    // Asegura workflow
-    item.workflow = item.workflow || { estado: 'pendiente', tPendiente: Date.now() };
+    const item = pedido.productos.id(itemId);
+    if (!item) {
+      console.warn("⚠️ Item no encontrado:", itemId);
+      return res.status(404).json({ error: "Item no encontrado" });
+    }
+
+    // 🧠 Permisos: central/admin pueden todo
+    const isCentral =
+      role === "admin" || role === "supervisor" || estacion === "frito";
+
+    if (item.estacion && item.estacion !== estacion && !isCentral) {
+      console.warn(
+        "🚫 No autorizado para esta estación:",
+        estacion,
+        "→ Item pertenece a",
+        item.estacion
+      );
+      return res.status(403).json({ error: "No autorizado para esta estación" });
+    }
 
     const ahora = Date.now();
     const next =
-      req.body?.estado === 'pendiente' || req.body?.estado === 'listo'
+      req.body?.estado === "pendiente" || req.body?.estado === "listo"
         ? req.body.estado
-        : 'listo'; // por defecto marcar a listo
+        : "listo";
 
-    // ⬇️ SINCRONIZA AMBOS CAMPOS SIEMPRE
-    if (next === 'listo') {
-      item.workflow.estado = 'listo';
+    // 🔄 Sincroniza workflow y estadoPreparacion
+    item.workflow = item.workflow || { estado: "pendiente", tPendiente: ahora };
+
+    if (next === "listo") {
+      item.workflow.estado = "listo";
       item.workflow.tInicio = item.workflow.tInicio || ahora;
       item.workflow.tListo = ahora;
-      item.estadoPreparacion = 'listo';
+      item.estadoPreparacion = "listo";
     } else {
-      item.workflow.estado = 'pendiente';
-      item.estadoPreparacion = 'pendiente';
+      item.workflow.estado = "pendiente";
+      item.estadoPreparacion = "pendiente";
     }
 
-    pedido.markModified('productos');
+    pedido.markModified("productos");
     await pedido.save();
 
-    // 🧾 IMPRIMIR AUTOMÁTICAMENTE SI EL ITEM PASA A LISTO
-    if (next === 'listo') {
+    console.log(`✅ Producto ${item.producto?.nombre || item.nombre} marcado como ${next}`);
+
+    // 🖨️ IMPRIMIR AUTOMÁTICAMENTE SI EL ITEM PASA A LISTO
+    if (next === "listo") {
       try {
         const productoImprimir = {
-          mesaNumero: pedido.mesa?.numero || 'Sin mesa',
-          comensales: pedido.mesa?.comensales || 1, // ✅ toma comensales de la mesa
+          mesaNumero: pedido.mesa?.numero || "Sin mesa",
+          comensales: pedido.mesa?.comensales || 1,
           productos: [
             {
               nombre:
                 item.producto?.nombre ||
                 item.nombre ||
-                'Producto sin nombre', // ✅ doble respaldo
+                "Producto sin nombre",
               cantidad: item.cantidad || 1,
-              tipoPrecio: item.tipoPrecio || '',
-              nombreComensal: item.nombreComensal || '',
-              alergiasComensal: item.alergiasComensal || '',
-              seccion: item.seccion || '',
-              estacion: item.estacion || '',
+              tipoPrecio: item.tipoPrecio || "",
+              nombreComensal: item.nombreComensal || "",
+              alergiasComensal: item.alergiasComensal || "",
+              seccion: item.seccion || "",
+              estacion: item.estacion || "",
             },
           ],
-          total: item.total || item.precioSeleccionado || 0, // ✅ fallback al precioSeleccionado
+          total: item.total || item.precioSeleccionado || 0,
         };
 
-        // 👇 Aquí mandamos el ticket al microservicio de impresión
-        await axios.default.post(
-          `${process.env.IMPRESION_SERVER}/imprimir`,
-          productoImprimir,
-          {
-            timeout: 3000,
-            headers: {
-              "x-tpv-apikey": process.env.PRINT_SECRET || "clave-secreta-demo",
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        console.log("🖨️ Enviando a imprimir:", JSON.stringify(productoImprimir, null, 2));
+
+        await axios.post(`${process.env.IMPRESION_SERVER}/imprimir`, productoImprimir, {
+          timeout: 4000,
+          headers: {
+            "x-tpv-apikey": process.env.PRINT_SECRET || "clave-secreta-demo",
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log("✅ Impresión enviada correctamente al microservicio.");
       } catch (err) {
-        console.error('🖨️ Error al imprimir producto listo:', err.message);
+        console.error("🖨️ Error al imprimir producto listo:", err.message);
       }
     }
 
-    // 🔄 Emitir actualización por Socket.IO
-    req.io.to('cocina:frito').emit('kitchen:update', {
-      type: 'itemEstadoCambiado',
+    // 🔊 Emitir actualización por Socket.IO (central + estación específica)
+    const payload = {
+      type: "itemEstadoCambiado",
       pedidoId,
       item: item.toObject(),
-    });
+    };
 
-    req.io.to(`cocina:${item.estacion}`).emit('kitchen:update', {
-      type: 'itemEstadoCambiado',
-      pedidoId,
-      item: item.toObject(),
-    });
+    const rooms = [roomEstacion("frito"), roomEstacion(item.estacion)];
+    for (const r of rooms) {
+      req.io.to(r).emit("kitchen:update", payload);
+      const count = req.io.sockets.adapter.rooms.get(r)?.size || 0;
+      console.log(`📡 Evento 'kitchen:update' emitido a ${r} (${count} sockets)`);
+    }
 
     return res.json({ ok: true, item });
   } catch (err) {
-    console.error('[marcarItemListo] error', err);
-    return res.status(500).json({ error: 'Error interno' });
+    console.error("💥 [marcarItemListo] Error general:", err);
+    return res.status(500).json({ error: "Error interno" });
   }
 };
 

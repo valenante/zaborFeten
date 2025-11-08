@@ -4,6 +4,7 @@ import Pedido from '../models/Pedido.js';
 import PedidoBebidas from '../models/PedidoBebidas.js';
 import Eliminacion from '../models/Eliminacion.js';
 import Mesa from '../models/Mesa.js';
+import mongoose from 'mongoose';
 
 // Obtener todos los productos
 export const obtenerProductos = async (req, res) => {
@@ -118,46 +119,46 @@ export const eliminarProducto = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar el producto' });
   }
 };
-
 export const eliminarProductoPedido = async (req, res) => {
   const { pedidoId, id: productoId } = req.params;
-  const user = req.session?.user?.id;
+  const user = req.user?.id || req.user?._id;
 
   try {
     // Verificar que se envió el usuario
     if (!user) {
-      return res.status(401).json({ error: 'Usuario no autenticado.' });
+      return res.status(401).json({ error: "Usuario no autenticado." });
     }
 
     // Buscar el pedido en pedidos de productos
     let pedido = await Pedido.findById(pedidoId);
-    let pedidoTipo = 'producto';
+    let pedidoTipo = "producto";
 
-    // Si no se encuentra en pedidos normales, buscar en pedidos de bebidas
     if (!pedido) {
       pedido = await PedidoBebidas.findById(pedidoId);
-      pedidoTipo = 'bebida';
+      pedidoTipo = "bebida";
     }
 
     if (!pedido) {
-      return res.status(404).json({ error: 'Pedido no encontrado.' });
+      return res.status(404).json({ error: "Pedido no encontrado." });
     }
 
     // Buscar el producto en el pedido
     const productoEliminado = pedido.productos.find(
-      (producto) => producto.producto.toString() === productoId
+      (producto) =>
+        producto._id.toString() === productoId ||
+        producto.producto.toString() === productoId
     );
 
     if (!productoEliminado) {
-      return res
-        .status(404)
-        .json({ error: 'Producto no encontrado en el pedido.' });
+      return res.status(404).json({ error: "Producto no encontrado en el pedido." });
     }
 
     // Filtrar el producto del pedido y recalcular el total
+    const antes = pedido.productos.length;
     pedido.productos = pedido.productos.filter(
-      (producto) => producto.producto.toString() !== productoId
+      (producto) => producto._id.toString() !== productoEliminado._id.toString()
     );
+    const despues = pedido.productos.length;
 
     pedido.total = pedido.productos.reduce(
       (total, producto) => total + (producto.total || 0),
@@ -166,38 +167,28 @@ export const eliminarProductoPedido = async (req, res) => {
 
     // Si el pedido no tiene productos después de la eliminación, eliminar el pedido
     if (pedido.productos.length === 0) {
-      // Eliminar el pedido según su tipo
-      if (pedidoTipo === 'producto') {
+      if (pedidoTipo === "producto") {
         await Pedido.findByIdAndDelete(pedidoId);
       } else {
         await PedidoBebidas.findByIdAndDelete(pedidoId);
       }
 
-      // Actualizar el total de la mesa
-      const mesa = await Mesa.findById(pedido.mesa).populate(
-        'pedidos pedidosBebidas'
-      );
+      const mesa = await Mesa.findById(pedido.mesa).populate("pedidos pedidosBebidas");
       if (!mesa) {
-        return res.status(404).json({ error: 'Mesa no encontrada.' });
+        return res.status(404).json({ error: "Mesa no encontrada." });
       }
 
       // Eliminar el pedido correspondiente
-      if (pedidoTipo === 'producto') {
-        mesa.pedidos = mesa.pedidos.filter(
-          (p) => p._id.toString() !== pedidoId
-        );
+      if (pedidoTipo === "producto") {
+        mesa.pedidos = mesa.pedidos.filter((p) => p._id.toString() !== pedidoId);
       } else {
-        mesa.pedidosBebidas = mesa.pedidosBebidas.filter(
-          (p) => p._id.toString() !== pedidoId
-        );
+        mesa.pedidosBebidas = mesa.pedidosBebidas.filter((p) => p._id.toString() !== pedidoId);
       }
 
-      // Recalcular el total de la mesa
       mesa.total = [...mesa.pedidos, ...mesa.pedidosBebidas].reduce(
         (totalMesa, pedido) => totalMesa + (pedido.total || 0),
         0
       );
-
       await mesa.save();
 
       // Registrar la eliminación en la colección `Eliminaciones`
@@ -205,7 +196,9 @@ export const eliminarProductoPedido = async (req, res) => {
         producto: productoEliminado.producto,
         pedido: pedidoId,
         cantidad: productoEliminado.cantidad || 1,
-        user: user,
+        user: mongoose.Types.ObjectId.isValid(user)
+          ? user
+          : new mongoose.Types.ObjectId("000000000000000000000000"),
         mesa: pedido.mesa,
         tipo: pedidoTipo,
       });
@@ -213,7 +206,7 @@ export const eliminarProductoPedido = async (req, res) => {
       await eliminacion.save();
 
       return res.json({
-        message: `${pedidoTipo === 'bebida' ? 'Bebida' : 'Producto'} eliminado y pedido eliminado con éxito.`,
+        message: `${pedidoTipo === "bebida" ? "Bebida" : "Producto"} eliminado y pedido eliminado con éxito.`,
         mesa: {
           id: mesa._id,
           total: mesa.total,
@@ -226,19 +219,16 @@ export const eliminarProductoPedido = async (req, res) => {
     await pedido.save();
 
     // Actualizar el total de la mesa
-    const mesa = await Mesa.findById(pedido.mesa).populate(
-      'pedidos pedidosBebidas'
-    );
+    const mesa = await Mesa.findById(pedido.mesa).populate("pedidos pedidosBebidas");
     if (!mesa) {
-      return res.status(404).json({ error: 'Mesa no encontrada.' });
+      return res.status(404).json({ error: "Mesa no encontrada." });
     }
 
-    // Recalcular el total sumando los pedidos de productos y bebidas
+    const totalAnteriorMesa = mesa.total;
     mesa.total = [...mesa.pedidos, ...mesa.pedidosBebidas].reduce(
       (totalMesa, pedido) => totalMesa + (pedido.total || 0),
       0
     );
-
     await mesa.save();
 
     // Registrar la eliminación en la colección `Eliminaciones`
@@ -246,15 +236,16 @@ export const eliminarProductoPedido = async (req, res) => {
       producto: productoEliminado.producto,
       pedido: pedidoId,
       cantidad: productoEliminado.cantidad || 1,
-      user: user,
+      user: mongoose.Types.ObjectId.isValid(user)
+        ? user
+        : new mongoose.Types.ObjectId("000000000000000000000000"),
       mesa: pedido.mesa,
       tipo: pedidoTipo,
     });
-
     await eliminacion.save();
 
     res.json({
-      message: `${pedidoTipo === 'bebida' ? 'Bebida' : 'Producto'} eliminado y registrado con éxito.`,
+      message: `${pedidoTipo === "bebida" ? "Bebida" : "Producto"} eliminado y registrado con éxito.`,
       mesa: {
         id: mesa._id,
         total: mesa.total,
@@ -266,8 +257,8 @@ export const eliminarProductoPedido = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error al eliminar producto/bebida:', error);
-    res.status(500).json({ error: 'Error al eliminar producto/bebida.' });
+    logger.error("Error al eliminar producto/bebida:", error);
+    res.status(500).json({ error: "Error al eliminar producto/bebida." });
   }
 };
 

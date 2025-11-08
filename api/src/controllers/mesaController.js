@@ -113,14 +113,38 @@ export const crearTokenLider = async (req, res) => {
   }
 };
 
-// Obtener todas las mesas activas
+// Obtener todas las mesas ordenadas correctamente
 export const obtenerMesas = async (req, res) => {
   try {
-    const mesas = await Mesa.find().populate('pedidos');
-    res.status(200).json(mesas);
+    const mesas = await Mesa.find().populate("pedidos");
+
+    const mesasOrdenadas = mesas.sort((a, b) => {
+      const numA = a.numero;
+      const numB = b.numero;
+
+      // Si ambos son submesas (ej. 2401, 2402)
+      const baseA = numA >= 100 ? Math.floor(numA / 100) : numA;
+      const baseB = numB >= 100 ? Math.floor(numB / 100) : numB;
+
+      // Si pertenecen al mismo grupo base → ordenar normalmente
+      if (baseA === baseB) return numA - numB;
+
+      // Si A es submesa de B
+      if (baseA === numB) return 1; // A después de B
+      if (baseB === numA) return -1; // B después de A
+
+      // Si A es una submesa (2001) y su base está entre A y B
+      if (baseA === Math.floor(numB / 100)) return -1;
+      if (baseB === Math.floor(numA / 100)) return 1;
+
+      // Orden normal
+      return baseA - baseB;
+    });
+
+    res.status(200).json(mesasOrdenadas);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Error al obtener las mesas activas' });
+    res.status(500).json({ error: "Error al obtener las mesas activas" });
   }
 };
 
@@ -848,5 +872,53 @@ export const transferirProducto = async (req, res) => {
     return res
       .status(500)
       .json({ error: 'Error interno al transferir el producto.' });
+  }
+};
+
+// PUT /mesas/:id/comensales
+export const actualizarComensales = async (req, res) => {
+  const { id } = req.params;
+  const { comensales } = req.body;
+
+  try {
+    if (!comensales || isNaN(comensales) || comensales < 1 || comensales > 25) {
+      return res
+        .status(400)
+        .json({ error: "Número de comensales inválido (debe estar entre 1 y 25)." });
+    }
+
+    const mesa = await Mesa.findById(id);
+    if (!mesa) {
+      return res.status(404).json({ error: "Mesa no encontrada." });
+    }
+
+    const comensalesPrevios = mesa.comensales || 0;
+    mesa.comensales = comensales;
+    await mesa.save();
+
+    // Emitir actualización en tiempo real
+    if (req.io) {
+      req.io.emit("mesaActualizada", {
+        id: mesa._id,
+        numero: mesa.numero,
+        comensales,
+      });
+    }
+
+    logger.info(
+      `👥 Comensales actualizados en mesa ${mesa.numero}: ${comensalesPrevios} → ${comensales}`
+    );
+
+    return res.status(200).json({
+      message: `Comensales actualizados correctamente (${comensales}).`,
+      mesa: {
+        id: mesa._id,
+        numero: mesa.numero,
+        comensales: mesa.comensales,
+      },
+    });
+  } catch (error) {
+    logger.error("❌ Error al actualizar comensales:", error);
+    res.status(500).json({ error: "Error al actualizar comensales." });
   }
 };

@@ -24,6 +24,7 @@ import {
   registrarComensal,
   abrirMesaCamarero,
   transferirProducto,
+  actualizarComensales,
 } from '../controllers/mesaController.js';
 
 /**
@@ -183,5 +184,7 @@ router.delete('/eliminar-mesa', eliminarMesa);
  *     tags: [Mesas]
  */
 router.post('/mesas/transferir-producto', transferirProducto);
+
+router.put('/:id/comensales', actualizarComensales);
 
 export default router;

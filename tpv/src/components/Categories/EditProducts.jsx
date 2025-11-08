@@ -300,6 +300,24 @@ const EditProduct = ({ product, onSave, onCancel, onDelete }) => {
           </>
         )}
 
+        {/* Estación */}
+        <label className="label--editar">
+          Estación:
+          <select
+            name="estacion"
+            value={formData.estacion || ""}
+            onChange={handleChange}
+            className="input--editar"
+            required
+          >
+            <option value="">Selecciona una estación</option>
+            <option value="frio">Frío</option>
+            <option value="plancha">Plancha</option>
+            <option value="frito">Frito</option>
+          </select>
+        </label>
+        {errors.estacion && <p className="error--editar">{errors.estacion}</p>}
+
         {/* Precios */}
         <fieldset className="fieldset--editar">
           <legend className="legend--editar">Precios</legend>

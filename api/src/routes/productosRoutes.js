@@ -249,6 +249,10 @@ router.delete('/:id', eliminarProducto);
  *       200:
  *         description: Producto eliminado del pedido correctamente
  */
-router.post('/:pedidoId/:id', eliminarProductoPedido);
+router.post(
+  '/:pedidoId/:id',
+  authMiddleware,            // ✅ valida el token y rellena req.user
+  eliminarProductoPedido
+);
 
 export default router;
