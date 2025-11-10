@@ -379,106 +379,192 @@ const Cocina = () => {
     };
   }, [socket, encolarLectura]);
 
+  // 🎙️ Reconocimiento de voz — optimizado (no se queda abierto permanentemente)
   useEffect(() => {
     if (!soportado) return;
 
+    // 🔹 Inicia el reconocimiento continuo solo una vez al montar
     iniciarContinua();
 
+    // 🔹 Manejador principal de resultados
     onResultado(async ({ text, raw, hadHotword, inHotWindow }) => {
       if (!hadHotword && !inHotWindow) return;
 
       const texto = (text || "").trim();
       const intent = parseCocinaCommand(texto);
 
-      if (intent.type === 'NONE') {
+      if (intent.type === "NONE") {
         encolarLectura({
-          area: 'cocina', mesa: '', itemsTexto: [], notas: 'No te he entendido.', lecturaKey: `na-${Date.now()}`
+          area: "cocina",
+          mesa: "",
+          itemsTexto: [],
+          notas: "No te he entendido.",
+          lecturaKey: `na-${Date.now()}`,
         });
         return;
       }
 
-      if (intent.type === 'RESUMEN_PENDIENTES') {
+      // 🧩 Intent: resumen general
+      if (intent.type === "RESUMEN_PENDIENTES") {
         const t = resumenPendientesTexto(pedidos);
-        encolarLectura({ area: 'cocina', mesa: '', itemsTexto: [t], notas: '', lecturaKey: `resumen-${Date.now()}` });
+        encolarLectura({
+          area: "cocina",
+          mesa: "",
+          itemsTexto: [t],
+          notas: "",
+          lecturaKey: `resumen-${Date.now()}`,
+        });
         return;
       }
 
-      if (intent.type === 'CONSULTAR_MESA') {
+      // 🧩 Intent: consultar mesa
+      if (intent.type === "CONSULTAR_MESA") {
         const mesaNumero = intent.mesa;
-        const pedidosMesa = pedidos.filter(p => p.mesa?.numero === mesaNumero);
-        const productos = pedidosMesa.flatMap(p =>
-          p.productos.filter(pr => ['plato', 'tapaRacion'].includes(pr.tipo) && pr.estadoPreparacion !== 'listo')
+        const pedidosMesa = pedidos.filter((p) => p.mesa?.numero === mesaNumero);
+        const productos = pedidosMesa.flatMap((p) =>
+          p.productos.filter(
+            (pr) =>
+              ["plato", "tapaRacion"].includes(pr.tipo) &&
+              pr.estadoPreparacion !== "listo"
+          )
         );
+
         if (productos.length === 0) {
-          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `La mesa ${mesaNumero} no tiene productos pendientes.`, lecturaKey: `consulta-empty-${mesaNumero}-${Date.now()}` });
+          encolarLectura({
+            area: "cocina",
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `La mesa ${mesaNumero} no tiene productos pendientes.`,
+            lecturaKey: `consulta-empty-${mesaNumero}-${Date.now()}`,
+          });
           return;
         }
+
         const frases = productos.map(formatearProductoCliente);
-        encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: frases, notas: '', lecturaKey: `consulta-${mesaNumero}-${Date.now()}` });
+        encolarLectura({
+          area: "cocina",
+          mesa: mesaNumero,
+          itemsTexto: frases,
+          notas: "",
+          lecturaKey: `consulta-${mesaNumero}-${Date.now()}`,
+        });
         return;
       }
 
-      if (intent.type === 'MARCAR_PEDIDO_LISTO') {
+      // 🧩 Intent: marcar pedido como listo
+      if (intent.type === "MARCAR_PEDIDO_LISTO") {
         const mesaNumero = intent.mesa;
         const pedido = findPedidoPendienteByMesa(pedidos, mesaNumero);
         if (!pedido) {
-          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No encontré pedido pendiente en la mesa ${mesaNumero}.`, lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}` });
+          encolarLectura({
+            area: "cocina",
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No encontré pedido pendiente en la mesa ${mesaNumero}.`,
+            lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}`,
+          });
           return;
         }
         try {
           await marcarPedidoComoListo(pedido._id);
-          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [`Pedido de la mesa ${mesaNumero} marcado listo.`], notas: '', lecturaKey: `ok-pedido-${mesaNumero}-${Date.now()}` });
+          encolarLectura({
+            area: "cocina",
+            mesa: mesaNumero,
+            itemsTexto: [`Pedido de la mesa ${mesaNumero} marcado listo.`],
+            notas: "",
+            lecturaKey: `ok-pedido-${mesaNumero}-${Date.now()}`,
+          });
         } catch (e) {
-          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No pude marcar listo el pedido de la mesa ${mesaNumero}.`, lecturaKey: `err-pedido-${mesaNumero}-${Date.now()}` });
+          encolarLectura({
+            area: "cocina",
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No pude marcar listo el pedido de la mesa ${mesaNumero}.`,
+            lecturaKey: `err-pedido-${mesaNumero}-${Date.now()}`,
+          });
         }
         return;
       }
 
-      if (intent.type === 'MARCAR_PRODUCTO_LISTO') {
+      // 🧩 Intent: marcar producto como listo
+      if (intent.type === "MARCAR_PRODUCTO_LISTO") {
         const mesaNumero = intent.mesa;
         const pedido = findPedidoPendienteByMesa(pedidos, mesaNumero);
         if (!pedido) {
-          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`, lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}` });
+          encolarLectura({
+            area: "cocina",
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`,
+            lecturaKey: `no-pedido-${mesaNumero}-${Date.now()}`,
+          });
           return;
         }
-        const pr = findProductoPendienteEnPedido(pedido, { idx: intent.idx, nombre: intent.nombre });
+
+        const pr = findProductoPendienteEnPedido(pedido, {
+          idx: intent.idx,
+          nombre: intent.nombre,
+        });
+
         if (!pr) {
-          encolarLectura({ area: 'cocina', mesa: mesaNumero, itemsTexto: [], notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`, lecturaKey: `no-prod-${mesaNumero}-${Date.now()}` });
+          encolarLectura({
+            area: "cocina",
+            mesa: mesaNumero,
+            itemsTexto: [],
+            notas: `No encontré ese plato pendiente en la mesa ${mesaNumero}.`,
+            lecturaKey: `no-prod-${mesaNumero}-${Date.now()}`,
+          });
           return;
         }
+
         try {
-          // usa el endpoint unificado que sincroniza workflow.estado + estadoPreparacion y emite el socket
-          await api.post(`/cocina/${pedido._id}/items/${pr._id}/estado`, { estado: 'listo' });
+          await api.post(`/cocina/${pedido._id}/items/${pr._id}/estado`, {
+            estado: "listo",
+          });
 
           const frase = formatearProductoCliente(pr);
           encolarLectura({
-            area: 'cocina',
+            area: "cocina",
             mesa: mesaNumero,
             itemsTexto: [`Marcado listo: ${frase}`],
-            notas: '',
-            lecturaKey: `ok-prod-${mesaNumero}-${Date.now()}`
+            notas: "",
+            lecturaKey: `ok-prod-${mesaNumero}-${Date.now()}`,
           });
         } catch (e) {
           encolarLectura({
-            area: 'cocina',
+            area: "cocina",
             mesa: mesaNumero,
             itemsTexto: [],
             notas: `No pude marcar el plato como listo en la mesa ${mesaNumero}.`,
-            lecturaKey: `err-prod-${mesaNumero}-${Date.now()}`
+            lecturaKey: `err-prod-${mesaNumero}-${Date.now()}`,
           });
         }
         return;
       }
     });
 
-    onFin(() => { });
-    onError((e) => {
-      console.error("❌ Error en reconocimiento de voz:", e);
-      encolarLectura({ area: "cocina", mesa: "", items: [], notas: "Ha ocurrido un error con el micrófono.", lecturaKey: `error-mic-${Date.now()}` });
+    // 🔄 Solo reinicia si el usuario no lo detuvo manualmente
+    onFin(() => {
+      if (activo) iniciarContinua();
     });
 
+    // ⚠️ Manejo de errores de reconocimiento
+    onError((e) => {
+      console.error("❌ Error en reconocimiento de voz:", e);
+      encolarLectura({
+        area: "cocina",
+        mesa: "",
+        itemsTexto: [],
+        notas: "Ha ocurrido un error con el micrófono.",
+        lecturaKey: `error-mic-${Date.now()}`,
+      });
+    });
+
+    // 🧹 Limpieza: detener reconocimiento al desmontar
     return () => detenerContinua();
-  }, [soportado, iniciarContinua, detenerContinua, onResultado, onFin, onError, pedidos, encolarLectura]);
+
+    // 👇 Importante: dependencias mínimas para evitar loops
+  }, [soportado]);
 
   useEffect(() => {
     if (pedidos.length > 0) {
@@ -521,7 +607,7 @@ const Cocina = () => {
     }, 3000); // 3s de flash
   };
 
-  // Evitar eco: si el TTS está hablando, pausamos el micro; al terminar, lo reanudamos
+  // 🎧 Control del eco TTS → pausa el micro mientras el sistema habla
   useEffect(() => {
     if (!soportado) return;
 
@@ -530,29 +616,31 @@ const Cocina = () => {
 
     const tick = () => {
       const speaking = typeof window !== "undefined" && window.speechSynthesis?.speaking;
-      // Al empezar a hablar → detener micro
+
+      // 🔇 Pausar micrófono mientras se habla
       if (speaking && !wasSpeaking) {
         wasSpeaking = true;
         try { detenerContinua(); } catch { }
-        // (opcional) también puedes limpiar ventana caliente si quieres:
-        // limpiarVentanaCaliente(); // si implementaste algo así en tu hook
       }
-      // Al dejar de hablar → reanudar micro con un pequeño delay para no cortarnos
+
+      // 🔊 Reanudar solo si el micrófono sigue en modo activo
       if (!speaking && wasSpeaking) {
         wasSpeaking = false;
         clearTimeout(reanudarTimer);
         reanudarTimer = setTimeout(() => {
-          try { iniciarContinua(); } catch { }
-        }, 250); // 250–400ms suele ir bien
+          if (activo) {
+            try { iniciarContinua(); } catch { }
+          }
+        }, 300);
       }
     };
 
-    const id = setInterval(tick, 200); // polling suave
+    const id = setInterval(tick, 200);
     return () => {
       clearInterval(id);
       clearTimeout(reanudarTimer);
     };
-  }, [soportado, iniciarContinua, detenerContinua]);
+  }, [soportado, activo, iniciarContinua, detenerContinua]);
 
   // Devuelve solo los productos de la estación elegida.
   // La central (frito) ve todo sin filtrar.
