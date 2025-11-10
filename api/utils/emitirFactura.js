@@ -78,25 +78,35 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
     const fechaExpedicionStr = formatFechaDDMMYYYY(fechaExpedicionDate);
     const fechaHoraRegistro = getFechaHoraRegistro();
 
-    // 6) Calcular cuota total
-    const cuotaTotal =
-      tipo === "alta"
-        ? datos.productos.reduce((acc, p) => {
-            const iva = p.iva ?? 10;
-            const base = (p.precio || 0) * (p.cantidad || 1);
-            return acc + (base * iva) / 100;
-          }, 0)
-        : 0;
+    // 6) Usar totales recibidos si existen, o calcularlos si faltan
+    let baseTotal = Number(datos.baseTotal) || 0;
+    let cuotaTotal = Number(datos.cuotaTotal) || 0;
+
+    // ⚙️ Solo recalcular si no vienen en datos
+    if ((!baseTotal || !cuotaTotal) && Array.isArray(datos.productos)) {
+      for (const p of datos.productos) {
+        const iva = Number(p.iva ?? 10);
+        const cantidad = Number(p.cantidad ?? 1);
+        const pvpUnit = Number(p.precio ?? 0); // PVP (IVA incluido)
+        const importeLinea = +(pvpUnit * cantidad).toFixed(2);
+        const base = +(importeLinea / (1 + iva / 100)).toFixed(2);
+        const cuota = +(importeLinea - base).toFixed(2);
+        baseTotal += base;
+        cuotaTotal += cuota;
+      }
+      baseTotal = +baseTotal.toFixed(2);
+      cuotaTotal = +cuotaTotal.toFixed(2);
+    }
 
     // 7) Generar huella/hash
     const hashFactura = generarHashFactura({
       tipo,
       idEmisor: nifEmisor,
       numeroFactura: datos.numeroFactura,
-      fechaExpedicion: fechaExpedicionStr, // string para AEAT
+      fechaExpedicion: fechaExpedicionStr,
       tipoFactura: tipoFacturaFinal,
       cuotaTotal,
-      importeTotal: datos.importeTotal,
+      importeTotal: datos.importeTotal || baseTotal + cuotaTotal,
       huellaAnterior,
       fechaHoraRegistro,
       anulacion: datos.anulacion,
@@ -120,13 +130,16 @@ export async function emitirRegistroVerifactu({ tipo = "alta", datos }) {
     });
 
     // 9) Generar XML
+    // 9) Generar XML
     const xml = buildVerifactuXML({
       tipo,
       ...datos,
-      fechaExpedicion: fechaExpedicionStr, // string para AEAT
+      fechaExpedicion: fechaExpedicionStr,
       nombreEmisor,
       nifEmisor,
-      cuotaTotal,
+      baseTotal,            // ✅ valores corregidos
+      cuotaTotal,           // ✅ valores corregidos
+      importeTotal: +(datos.importeTotal || baseTotal + cuotaTotal).toFixed(2),
       huellaAnterior,
       numFacturaAnterior,
       fechaFacturaAnterior,

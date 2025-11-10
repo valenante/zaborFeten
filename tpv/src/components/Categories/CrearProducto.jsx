@@ -20,6 +20,8 @@ const CrearProducto = ({ onClose }) => {
     stock: 0,
     seccion: "",
     img: "",
+    estacion : "",
+    aliases: [],
     estado: "habilitado",
     precios: { precioBase: 0, tapa: null, racion: null, precioCopa: null, precioBotella: null },
     ingredientes: [],
@@ -305,6 +307,24 @@ const CrearProducto = ({ onClose }) => {
               <option value="final">Final</option>
             </select>
           </label>
+
+             {/* ✅ Estación */}
+          <label className="label--crear">
+            Estación:
+            <select
+              name="estacion"
+              value={formData.estacion}
+              onChange={handleChange}
+              className="input--crear"
+              required
+            >
+              <option value="">Seleccionar estación</option>
+              <option value="frio">Frío</option>
+              <option value="plancha">Plancha</option>
+              <option value="frito">Frito</option>
+            </select>
+          </label>
+
 
           {/* Mostrar campos específicos según el tipo de producto */}
           {formData.tipo === "plato" && (

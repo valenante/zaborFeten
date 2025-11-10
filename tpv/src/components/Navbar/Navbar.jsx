@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api from '../../utils/api';
 import * as logger from '../../utils/logger';
 import "./Navbar.css";
-import logo from "../../images/LovePizzaLogo.png";
+import logo from "../../images/logoZF.avif";
 import CerrarCajaModal from "../Caja/CerrarCajaModal"; // 👈 IMPORTANTE
 import PasswordModal from "../Password/PasswordModal"; // 👈 importa tu modal
 

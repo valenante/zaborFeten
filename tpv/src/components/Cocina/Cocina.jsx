@@ -141,7 +141,24 @@ const Cocina = () => {
   const cerrarSeccion = async (pedidoId) => {
     try {
       await api.put(`/pedidos/${pedidoId}/cerrar-estacion`, { estacion });
-      // ya no manejamos local state, esperamos al socket o refetch
+
+      // ✅ Reflejarlo instantáneamente en la UI local
+      setPedidos((prev) =>
+        prev.map((p) =>
+          p._id === pedidoId
+            ? {
+              ...p,
+              cerradoPorEstacion: {
+                ...(p.cerradoPorEstacion || {}),
+                [estacion]: true,
+              },
+            }
+            : p
+        )
+      );
+
+      // ✅ Emitir manualmente el refresh para las otras estaciones (opcional)
+      socket?.emit("cocina:refresh");
     } catch (err) {
       console.error("Error cerrando estación:", err);
     }
@@ -317,7 +334,6 @@ const Cocina = () => {
 
     const handleKitchenUpdate = (ev) => {
       console.groupCollapsed("📡 [Socket] kitchen:update");
-      console.log("Evento recibido:", ev);
       console.groupEnd();
 
       if (!ev || !ev.type) {

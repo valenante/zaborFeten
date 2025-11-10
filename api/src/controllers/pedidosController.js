@@ -761,32 +761,48 @@ export const verificarPedidosMesa = async (req, res) => {
 export const cerrarEstacion = async (req, res) => {
   try {
     const { pedidoId } = req.params;
-    const { estacion } = req.body; // "frio", "plancha"
+    const { estacion } = req.body;
 
-    if (!['frio', 'plancha', 'frito'].includes(estacion)) {
+    // ✅ Validar estación
+    const estacionesValidas = ['frio', 'plancha', 'frito'];
+    if (!estacionesValidas.includes(estacion)) {
       return res.status(400).json({ error: 'Estación inválida' });
     }
 
+    // ✅ Actualizar el pedido directamente
     const pedido = await Pedido.findByIdAndUpdate(
       pedidoId,
       { $set: { [`cerradoPorEstacion.${estacion}`]: true } },
       { new: true }
-    );
+    )
+      .populate('mesa', 'numero')
+      .select('mesa cerradoPorEstacion estado productos');
 
     if (!pedido) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
 
-    // emitir socket para que otros vean el cambio
-    req.io?.emit("kitchen:update", {
-      type: "estacionCerrada",
-      pedidoId,
+    // === ⚡ Emitir evento de socket ===
+    // Se emite a todas las estaciones para que se sincronicen visualmente
+    req.io?.emit('kitchen:update', {
+      type: 'estacionCerrada',
+      pedidoId: pedido._id,
       estacion,
+      mesa: pedido.mesa?.numero,
+      cerradoPorEstacion: pedido.cerradoPorEstacion,
     });
 
-    res.json(pedido);
+    // === 🔁 Emitir también al canal específico de cocina (por seguridad) ===
+    req.io?.to(`cocina:${estacion}`).emit('cocina:refresh');
+
+    // === ✅ Responder al cliente ===
+    return res.status(200).json({
+      message: `Estación ${estacion} cerrada correctamente.`,
+      pedido,
+    });
+
   } catch (err) {
-    console.error("Error al cerrar estación:", err);
-    res.status(500).json({ error: "Error al cerrar estación" });
+    console.error('❌ Error al cerrar estación:', err);
+    return res.status(500).json({ error: 'Error al cerrar estación' });
   }
 };
