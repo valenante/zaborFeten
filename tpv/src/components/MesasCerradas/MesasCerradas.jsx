@@ -58,28 +58,63 @@ const MesasCerradas = () => {
   const crearMesa = () => {
     setAccionModal({
       titulo: "Crear Mesa",
-      mensaje: "Introduce el número de la mesa que deseas crear (solo números):",
+      mensaje: "Introduce el número de la mesa que deseas crear:",
       placeholder: "Número de mesa",
       onConfirm: async (numeroMesaInput) => {
-        if (!numeroMesaInput || isNaN(numeroMesaInput) || parseInt(numeroMesaInput, 10) <= 0) {
+        const numero = parseInt(numeroMesaInput, 10);
+        if (!numero || isNaN(numero) || numero <= 0) {
           setMensajeAlerta({ tipo: "error", mensaje: "Por favor, introduce un número válido." });
           return;
         }
-        try {
-          setIsLoading(true);
-          await api.post("/mesas/crear-mesa/crear-mesa", { numero: parseInt(numeroMesaInput, 10) });
-          setMensajeAlerta({ tipo: "exito", mensaje: "Mesa creada exitosamente." });
-          await fetchMesas();
-        } catch (error) {
-          logger.error("Error al crear la mesa:", error);
-          setMensajeAlerta({ tipo: "error", mensaje: error.response?.data?.error || "Error al crear la mesa." });
-        } finally {
-          setIsLoading(false);
-        }
+
+        // Segundo paso: elegir zona
+        setMostrarModalConfirmacion(false); // 👈 Cierra el primer modal antes de abrir el segundo
+
+        setTimeout(() => { // 👈 Espera un ciclo para reabrirlo limpio
+          setAccionModal({
+            titulo: "Seleccionar zona",
+            mensaje: "Selecciona la zona de la mesa:",
+            opciones: ["interior", "exterior", "auxiliar"],
+            onConfirm: async (zonaElegida) => {
+              if (!["interior", "exterior", "auxiliar"].includes(zonaElegida.toLowerCase())) {
+                setMensajeAlerta({
+                  tipo: "error",
+                  mensaje: "Zona inválida (usa interior, exterior o auxiliar)."
+                });
+                return;
+              }
+
+              try {
+                setIsLoading(true);
+                await api.post("/mesas/crear-mesa/crear-mesa", {
+                  numero,
+                  zona: zonaElegida.toLowerCase(),
+                });
+                setMensajeAlerta({
+                  tipo: "exito",
+                  mensaje: `Mesa ${numero} creada correctamente en zona ${zonaElegida}.`,
+                });
+                await fetchMesas();
+              } catch (error) {
+                logger.error("Error al crear la mesa:", error);
+                setMensajeAlerta({
+                  tipo: "error",
+                  mensaje: error.response?.data?.error || "Error al crear la mesa.",
+                });
+              } finally {
+                setIsLoading(false);
+              }
+            },
+          });
+
+          setMostrarModalConfirmacion(true); // 👈 vuelve a abrirlo limpio
+        }, 150); // un breve retardo para que React actualice correctamente
       },
     });
+
     setMostrarModalConfirmacion(true);
   };
+
 
   // ====== Eliminar mesa ======
   const eliminarMesa = () => {
@@ -219,9 +254,11 @@ const MesasCerradas = () => {
 
       {mostrarModalConfirmacion && (
         <ModalConfirmacion
+          key={accionModal?.titulo}
           titulo={accionModal?.titulo}
           mensaje={accionModal?.mensaje}
           placeholder={accionModal?.placeholder}
+          opciones={accionModal?.opciones}
           onConfirm={(valor) => {
             accionModal?.onConfirm(valor);
             setMostrarModalConfirmacion(false);

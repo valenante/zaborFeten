@@ -690,35 +690,42 @@ export const recuperarMesa = async (req, res) => {
 
 export const crearMesa = async (req, res) => {
   try {
-    const { numero } = req.body;
+    const { numero, zona = "interior" } = req.body;
 
-    // Verificar si el número de la mesa ya existe
+    // Verificar duplicados
     const mesaExistente = await Mesa.findOne({ numero });
     if (mesaExistente) {
-      return res
-        .status(400)
-        .json({ error: `La mesa número ${numero} ya existe.` });
+      return res.status(400).json({ error: `La mesa número ${numero} ya existe.` });
     }
 
-    // Crear la nueva mesa
+    // Asignar posición por defecto (segura)
+    // Para hacerlo más ordenado, movemos las mesas nuevas en diagonal incremental
+    const totalMesas = await Mesa.countDocuments({});
+    const offset = (totalMesas % 10) * 8; // cada nueva mesa se desplaza un poco más
+    const posicion = {
+      x: 10 + offset, // entre 10% y 90%
+      y: 10 + offset, // igual
+    };
+
     const nuevaMesa = new Mesa({
       numero,
-      inicio: new Date(),
-      cierre: null,
-      estado: 'cerrada',
+      estado: "cerrada",
+      zona,
+      posicion,
       total: 0,
-      metodoPago: { efectivo: 0, tarjeta: 0 }, // Inicializa método de pago vacío
-      pedidos: [], // Inicializa con pedidos vacíos
+      pedidos: [],
+      pedidosBebidas: [],
+      inicio: new Date(),
     });
 
-    await nuevaMesa.save(); // Guarda la mesa en la base de datos
-
-    res
-      .status(201)
-      .json({ message: 'Mesa creada exitosamente', mesa: nuevaMesa });
+    await nuevaMesa.save();
+    res.status(201).json({
+      message: `Mesa ${numero} creada exitosamente en zona ${zona}`,
+      mesa: nuevaMesa,
+    });
   } catch (error) {
-    logger.error('Error al crear la mesa:', error);
-    res.status(500).json({ error: 'Hubo un problema al crear la mesa.' });
+    logger.error("Error al crear la mesa:", error);
+    res.status(500).json({ error: "Hubo un problema al crear la mesa." });
   }
 };
 

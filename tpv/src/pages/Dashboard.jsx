@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [alerta, setAlerta] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [zona, setZona] = useState("exterior"); // 🟣 nueva: selector de zona
+  const [valorModal, setValorModal] = useState(""); // 🔹 valor del input del modal activo
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -50,36 +51,6 @@ const Dashboard = () => {
       socket.off("cuentaImpresa");
     };
   }, [socket]);
-
-  // === Guardar posición al soltar ===
-  const handleDragStop = async (e, data, mesa) => {
-    if (!modoEdicion) return;
-    try {
-      const container = e.target.closest(".mapa-restaurante");
-      const containerWidth = container.offsetWidth;
-      const containerHeight = container.offsetHeight;
-
-      // Calcular posición relativa (%)
-      const xPorcentaje = (data.x / containerWidth) * 100;
-      const yPorcentaje = (data.y / containerHeight) * 100;
-
-      await api.put(`/mesas/${mesa._id}/posicion`, { x: xPorcentaje, y: yPorcentaje });
-
-      setMesas((prev) =>
-        prev.map((m) =>
-          m._id === mesa._id
-            ? { ...m, posicion: { x: xPorcentaje, y: yPorcentaje } }
-            : m
-        )
-      );
-    } catch (err) {
-      console.error("❌ Error al guardar posición:", err);
-      setAlerta({
-        tipo: "error",
-        mensaje: "No se pudo guardar la nueva posición de la mesa.",
-      });
-    }
-  };
 
   // === Abrir o navegar según estado ===
   const manejarEntradaMesa = async () => {
@@ -173,8 +144,9 @@ const Dashboard = () => {
   let holdTimeout;
 
   const handleMouseDown = (mesa) => {
-    if (modoEdicion) return; // si está en modo edición, no abrir modal
+    if (modoEdicion) return;
     holdTimeout = setTimeout(() => {
+      setValorModal(""); // 🔹 reiniciar input
       setAccionModal({
         titulo: `Editar comensales - Mesa ${mesa.numero}`,
         mensaje: "Introduce el nuevo número de comensales:",
@@ -196,9 +168,8 @@ const Dashboard = () => {
               mensaje: `Mesa ${mesa.numero}: ${comensales} comensales.`,
             });
 
-            // Refrescar sin pedir toda la lista
-            setMesas(prev =>
-              prev.map(m =>
+            setMesas((prev) =>
+              prev.map((m) =>
                 m._id === mesa._id ? { ...m, comensales } : m
               )
             );
@@ -211,7 +182,7 @@ const Dashboard = () => {
         },
       });
       setMostrarModalConfirmacion(true);
-    }, 700); // Mantener presionado 0.7 segundos
+    }, 700);
   };
 
   const handleMouseUp = () => clearTimeout(holdTimeout);
@@ -282,27 +253,27 @@ const Dashboard = () => {
               </div>
 
               {mesasFiltradas.map((mesa) => (
-                <Draggable
+                <div
                   key={mesa._id}
-                  disabled={!modoEdicion}
-                  position={{
-                    x: (mesa.posicion?.x / 100) * containerWidth,
-                    y: (mesa.posicion?.y / 100) * containerHeight,
+                  className={`mesa--dashboard ${mesa.estado}--dashboard ${mesa.cuentaImpresa ? "cuenta-impresa" : ""
+                    }`}
+                  style={{
+                    position: "absolute",
+                    left: `${mesa.posicion?.x || 0}%`,
+                    top: `${mesa.posicion?.y || 0}%`,
+                    cursor: modoEdicion ? "default" : "pointer",
+                    transform: "translate(-50%, -50%)",
                   }}
-                  onStop={(e, data) => handleDragStop(e, data, mesa)}
+                  onClick={() => handleMesaClick(mesa)}
+                  onMouseDown={() => handleMouseDown(mesa)}
+                  onMouseUp={handleMouseUp}
                 >
-                  <div
-                    className={`mesa--dashboard ${mesa.estado}--dashboard ${mesa.cuentaImpresa ? "cuenta-impresa" : ""}`}
-                    style={{ position: "absolute", cursor: modoEdicion ? "move" : "pointer" }}
-                    onClick={() => handleMesaClick(mesa)}
-                    onMouseDown={() => handleMouseDown(mesa)}  // 👈 nuevo
-                    onMouseUp={handleMouseUp}                  // 👈 nuevo
-                  >
-                    <p className="mesa-number--dashboard">{mesa.numero}</p>
-                  </div>
-                </Draggable>
+                  <p className="mesa-number--dashboard">{mesa.numero}</p>
+                </div>
               ))}
             </div>
+
+            {/* Sidebar de mesas auxiliares */}
             <div className="sidebar-editor">
               <h3>Mesas Auxiliares</h3>
               <div className="sidebar-mesas-list">
@@ -313,13 +284,15 @@ const Dashboard = () => {
                       key={mesa._id}
                       className="mesa-sidebar"
                       onClick={() => handleMesaClick(mesa)}
-                      style={{ cursor: modoEdicion ? "default" : "pointer" }}
+                      onMouseDown={() => handleMouseDown(mesa)}
+                      onMouseUp={handleMouseUp}
                     >
                       {mesa.numero}
                     </div>
                   ))}
               </div>
-            </div></>
+            </div>
+          </>
         )}
       </div>
 
@@ -329,11 +302,13 @@ const Dashboard = () => {
           titulo={accionModal?.titulo}
           mensaje={accionModal?.mensaje}
           placeholder={accionModal?.placeholder}
-          value={valorInput}
-          onChange={(e) => setValorInput(e.target.value)}
-          onConfirm={() => accionModal?.onConfirm(valorInput)}
+          value={valorModal}
+          onChange={(e) => setValorModal(e.target.value)}  // 🔹 ahora usamos valorModal
+          onConfirm={() => accionModal?.onConfirm(valorModal)} // 🔹 y aquí también
           onClose={() => setMostrarModalConfirmacion(false)}
-          disabledConfirm={!esValido}
+          disabledConfirm={
+            valorModal.trim() === "" || isNaN(valorModal) || parseInt(valorModal, 10) < 1
+          }
         />
       )}
 

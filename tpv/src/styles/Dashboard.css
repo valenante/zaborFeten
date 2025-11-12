@@ -84,6 +84,7 @@
   transition: all 0.25s ease;
   border: 2px solid transparent;
   box-shadow: var(--sombra-suave);
+  gap: 4px;
   text-align: center;
 }
 
