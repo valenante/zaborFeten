@@ -24,6 +24,7 @@ import VerificarFacturaPage from "./components/Facturas/VerificarFacturas";
 import { AuthProvider } from "./context/AuthContext";
 import { ImagesProvider } from "./context/ImagesContext";
 import ReservasPage from "./pages/Reservas";
+import MapaEditor from "./pages/MapaEditor";
 
 const AppContent = () => {
   const location = useLocation();
@@ -124,6 +125,14 @@ const AppContent = () => {
           element={
             <RutaProtegida rolesPermitidos={["admin"]}>
               <EstadisticasPage />
+            </RutaProtegida>
+          }
+        />
+         <Route
+          path="/mapa"
+          element={
+            <RutaProtegida rolesPermitidos={["admin"]}>
+              <MapaEditor />
             </RutaProtegida>
           }
         />

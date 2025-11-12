@@ -37,7 +37,7 @@
 }
 
 .producto-listo {
-  color: green;
+  color: var(--color-principal);
   font-weight: bold;
 }
 

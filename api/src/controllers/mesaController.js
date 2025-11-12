@@ -215,6 +215,68 @@ export const cerrarMesa = async (req, res) => {
 
     if (!mesa) return res.status(404).json({ error: "Mesa no encontrada" });
 
+    // === 🔸 Cierre sin consumo (sin productos/pedidos) ===
+    const sinPedidos =
+      (!mesa.pedidos || mesa.pedidos.length === 0) &&
+      (!mesa.pedidosBebidas || mesa.pedidosBebidas.length === 0);
+
+    if (sinPedidos) {
+      const mesaCerrada = await MesaCerrada.create({
+        numero: mesa.numero,
+        pedidos: [],
+        pedidoBebidas: [],
+        total: 0,
+        inicio: mesa.inicio,
+        cierre: new Date(),
+        comensales: mesa.comensales || 0,
+        metodoPago: { tipo: "sinConsumo", efectivo: 0, tarjeta: 0, propina: 0, cambio: 0 },
+        sesionActiva: mesa.sesionActiva,
+        camarero: camarero || "",
+        cierreSinConsumo: true, // ✅ indicador claro
+        motivoCierre: "sin consumo",
+      });
+
+      await SesionMesa.updateOne(
+        { mesa: mesa._id, estado: "activa" },
+        { $set: { estado: "cerrada", cierre: new Date() } }
+      );
+
+      await Mesa.updateOne(
+        { _id: id },
+        {
+          estado: "cerrada",
+          total: 0,
+          pedidos: [],
+          pedidosBebidas: [],
+          comensales: null,
+          tokenLider: null,
+          sesionActiva: null,
+          cuentaImpresa: false,
+        }
+      );
+
+      try {
+        await EventoFactura.create({
+          tipoEvento: "cierre_sin_consumo",
+          numeroFactura: null,
+          clienteNombre: "N/A",
+          clienteNIF: "N/A",
+          motivo: "Mesa cerrada sin consumo",
+          importeTotal: 0,
+          hashFactura: null,
+        });
+      } catch (err) {
+        logger.warn("⚠️ No se pudo registrar evento de cierre sin consumo:", err.message || err);
+      }
+
+      return res.status(200).json({
+        message: "Mesa cerrada sin consumo (sin pedidos ni productos)",
+        mesaCerrada,
+        facturaEmitida: false,
+        tipoCierre: "sinConsumo",
+      });
+    }
+
     // === 2️⃣ Totales y validaciones ===
     const { efectivo = 0, tarjeta = 0, propina = 0 } = metodoPago || {};
     const totalMesa = Number((mesa.total || 0).toFixed(2));
@@ -272,6 +334,8 @@ export const cerrarMesa = async (req, res) => {
       metodoPago: { efectivo, tarjeta, propina: propinaCalc, cambio },
       sesionActiva: mesa.sesionActiva,
       camarero: camarero || "",
+      cierreSinConsumo: false,
+      motivoCierre: "consumo realizado",
     });
 
     // === 5️⃣ Intentar abrir cajón (no detener flujo si falla) ===
@@ -380,6 +444,7 @@ export const cerrarMesa = async (req, res) => {
         comensales: null,
         tokenLider: null,
         sesionActiva: null,
+        cuentaImpresa: false,
       }
     );
 
@@ -413,7 +478,6 @@ export const cerrarMesa = async (req, res) => {
     res.status(500).json({ error: "Error al cerrar la mesa" });
   }
 };
-
 
 // Obtener historial de mesas cerradas
 export const getHistorialMesas = async (req, res) => {
@@ -898,5 +962,51 @@ export const actualizarComensales = async (req, res) => {
   } catch (error) {
     logger.error("❌ Error al actualizar comensales:", error);
     res.status(500).json({ error: "Error al actualizar comensales." });
+  }
+};
+
+// PUT /mesas/:id/posicion
+export const actualizarPosicionMesa = async (req, res) => {
+  try {
+    const { x, y } = req.body;
+    const mesa = await Mesa.findByIdAndUpdate(
+      req.params.id,
+      { posicion: { x, y } },
+      { new: true }
+    );
+    if (!mesa) return res.status(404).json({ error: "Mesa no encontrada" });
+    res.json(mesa);
+  } catch (error) {
+    console.error("❌ Error al actualizar posición de mesa:", error);
+    res.status(500).json({ error: "Error al actualizar posición" });
+  }
+};
+
+// ✅ Actualizar una mesa (número, zona, capacidad, etc.)
+export const actualizarMesa = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { numero, zona, capacidad, posicion } = req.body;
+
+    const mesa = await Mesa.findById(id);
+    if (!mesa) {
+      return res.status(404).json({ error: "Mesa no encontrada" });
+    }
+
+    // 🔹 Actualizamos solo los campos enviados (sin sobreescribir todo)
+    if (numero !== undefined) mesa.numero = numero;
+    if (zona !== undefined) mesa.zona = zona;
+    if (capacidad !== undefined) mesa.capacidad = capacidad;
+    if (posicion !== undefined) mesa.posicion = posicion;
+
+    await mesa.save();
+
+    res.status(200).json({
+      message: "✅ Mesa actualizada correctamente",
+      mesa,
+    });
+  } catch (error) {
+    console.error("❌ [actualizarMesa] Error:", error);
+    res.status(500).json({ error: "Error al actualizar la mesa" });
   }
 };

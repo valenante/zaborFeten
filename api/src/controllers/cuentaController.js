@@ -26,27 +26,47 @@ export const imprimirCuenta = async (req, res) => {
   try {
     const mesa = await Mesa.findById(req.params.id)
       .populate({
-        path: 'pedidos',
-        populate: { path: 'productos.producto' },
+        path: "pedidos",
+        populate: { path: "productos.producto" },
       })
       .populate({
-        path: 'pedidosBebidas',
-        populate: { path: 'productos.producto' },
+        path: "pedidosBebidas",
+        populate: { path: "productos.producto" },
       });
 
-    if (!mesa) return res.status(404).json({ error: 'Mesa no encontrada.' });
+    if (!mesa) return res.status(404).json({ error: "Mesa no encontrada." });
 
-    const productos = [...mesa.pedidos, ...mesa.pedidosBebidas].flatMap(
-      (pedido) =>
-        pedido.productos.map((p) => ({
-          nombre: p.producto?.nombre || 'Producto sin nombre',
-          cantidad: p.cantidad,
-          opcionesPersonalizables: p.opcionesPersonalizables || [],
-          alergiasComensal: p.alergiasComensal || '',
-          tipoPrecio: p.tipoPrecio || '',
-          precio: p.precioSeleccionado || 0,
-        }))
+    // ✅ Evita duplicar productos de bebidas
+    const productosPlatos = mesa.pedidos.flatMap((pedido) =>
+      pedido.productos.map((p) => ({
+        nombre: p.producto?.nombre || "Producto sin nombre",
+        cantidad: Number(p.cantidad) || 0,
+        precio: Number(p.precioSeleccionado) || 0,
+      }))
     );
+
+    const productosBebidas = mesa.pedidosBebidas.flatMap((pedido) =>
+      pedido.productos.map((p) => ({
+        nombre: p.producto?.nombre || "Producto sin nombre",
+        cantidad: Number(p.cantidad) || 0,
+        precio: Number(p.precioSeleccionado) || 0,
+      }))
+    );
+
+    // 🧠 Agrupa bebidas por nombre + precio
+    const agrupados = {};
+    [...productosPlatos, ...productosBebidas].forEach((p) => {
+      const key = `${p.nombre}-${p.precio}`;
+      if (!agrupados[key]) agrupados[key] = { ...p };
+      else agrupados[key].cantidad += p.cantidad;
+    });
+
+    const productos = Object.values(agrupados);
+
+    // ✅ Calcula total real con IVA incluido
+    const totalConIVA = productos
+      .reduce((acc, p) => acc + p.precio * p.cantidad, 0)
+      .toFixed(2);
 
     await axios.post(
       `${process.env.IMPRESION_SERVER}/imprimir-cuenta`,
@@ -54,7 +74,7 @@ export const imprimirCuenta = async (req, res) => {
         mesaNumero: mesa.numero,
         comensales: mesa.comensales,
         productos,
-        total: mesa.total,
+        total: totalConIVA,
       },
       {
         headers: {
@@ -64,9 +84,13 @@ export const imprimirCuenta = async (req, res) => {
       }
     );
 
-    res.status(200).json({ message: 'Cuenta enviada a impresión.' });
+    mesa.cuentaImpresa = true;
+    await mesa.save();
+    req.io.emit("cuentaImpresa", { mesaId: mesa._id, numero: mesa.numero });
+
+    res.status(200).json({ message: "Cuenta enviada a impresión." });
   } catch (error) {
-    logger.error('❌ Error al imprimir la cuenta:', error);
-    res.status(500).json({ error: 'Error al imprimir la cuenta.' });
+    console.error("❌ Error al imprimir la cuenta:", error);
+    res.status(500).json({ error: "Error al imprimir la cuenta." });
   }
 };

@@ -106,6 +106,7 @@ const Navbar = () => {
             <option value="/tpv/products">Productos</option>
             <option value="/tpv/reservas">Reservas</option>
             <option value="/tpv/facturas">Facturas</option>
+            <option value="/tpv/mapa">Mapa</option>
           </select>
         </li>
 

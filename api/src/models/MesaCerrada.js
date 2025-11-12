@@ -24,6 +24,8 @@ const mesaCerradaSchema = new Schema({
     default: null,
   }, // ✅ Consistente
   camarero: { type: String, default: '' }, // Nombre del camarero que cierra la mesa
+  cierreSinConsumo: { type: Boolean, default: false }, // Indicador de cierre sin consumo
+  motivoCierre: { type: String, default: '' }, // Motivo del cierre de la mesa
 });
 
 export default model('MesaCerrada', mesaCerradaSchema);

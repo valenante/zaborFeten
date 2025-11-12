@@ -97,15 +97,18 @@ export const useRightBar = (mesaId) => {
 
       await Promise.all([
         payloadPlatos.length > 0
-          ? api.post(`/pedidos/${mesaId}/agregar-producto`, { productos: payloadPlatos, mensajesSeccion,})
+          ? api.post(`/pedidos/${mesaId}/agregar-producto`, { productos: payloadPlatos, mensajesSeccion })
           : null,
         payloadBebidas.length > 0
-          ? api.post(`/pedidosBebidas/${mesaId}/agregar-producto`, { productos: payloadBebidas, mensajesSeccion, })
+          ? api.post(`/pedidosBebidas/${mesaId}/agregar-producto`, { productos: payloadBebidas, mensajesSeccion })
           : null
       ]);
 
+      // ✅ Limpiar y cerrar resumen
       setCarrito([]);
       setCarritoBebidas([]);
+      setMostrarResumen(false); // 🔥 Cierra automáticamente el resumen
+
       setMensajeAlerta({ tipo: "exito", mensaje: "Pedido enviado correctamente." });
     } catch (error) {
       logger.error("Error al enviar el pedido:", error);

@@ -61,11 +61,6 @@
   border-bottom: 1px solid var(--gris-claro);
 }
 
-.producto-listo {
-  color: var(--verde-ok);
-  font-weight: bold;
-}
-
 .boton-eliminar--mesadetalles,
 .boton-cerrar--mesadetalles,
 .boton-imprimir--mesadetalles,

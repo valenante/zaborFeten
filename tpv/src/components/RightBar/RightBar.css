@@ -187,18 +187,46 @@
   z-index: 1000;
 }
 
-/* Panel del carrito (ocupa toda la pantalla en modal) */
 .resumen-pedido-panel {
-  /*fondo oscuro transparente*/
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 10px;
-  padding: 20px;
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
   width: 90%;
   max-width: 800px;
-  /* ancho máximo centrado */
   max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* evita que el contenido desborde */
+}
+
+
+/* === CABECERA FIJA === */
+.resumen-header {
+  display: flex;
+  justify-content: flex-end;
+  background: var(--color-principal);
+  color: white;
+  padding: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* === CONTENIDO SCROLLEABLE === */
+.resumen-contenido {
+  flex: 1;
   overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 15px;
+}
+
+/* === PIE FIJO (Botón Enviar) === */
+.resumen-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 12px 15px;
+  border-top: 1px solid #eee;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .resumen-pedido-panel h4 {
@@ -314,7 +342,7 @@
 
 .resumen-pedido-panel {
     width: 100%;
-    max-height: 70vh;
+    max-height: 80vh;
     max-width: none;
     border-radius: 0;
   }

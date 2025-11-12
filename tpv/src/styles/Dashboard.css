@@ -1,99 +1,223 @@
 /* === DASHBOARD TPV === */
-
 .container--dashboard {
-  padding: 2rem;
-  background-color: var(--color-principal);
-  width: 100%;
   display: flex;
-  justify-content: center;
-  border-right: 2px solid var(--gris-claro);
-  min-height: 50vh;
-}
-
-.subnavbar--dashboard {
-  margin-bottom: 2rem;
-}
-
-.dashboard--dashboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 1.5rem;
-  max-width: 150vh;
+  flex-direction: row;
   width: 100%;
+  height: calc(100vh - 70px);
+  background: var(--color-principal);
+  color: var(--blanco);
+  overflow: hidden;
+  border-right: 2px solid var(--gris-claro);
 }
 
+/* === MODO MAPA === */
+.mapa-restaurante {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  background: var(--color-principal);
+  border-radius: 8px 0 0 8px;
+  overflow: auto;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.05);
+}
+
+/* === TOOLBAR MAPA === */
+.mapa-toolbar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  display: flex;
+  gap: 10px;
+  z-index: 5;
+}
+
+.selector-zona {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: var(--blanco);
+  color: var(--gris-oscuro);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selector-zona:hover {
+  border-color: var(--color-secundario);
+  
+}
+
+.btn-editar {
+  background: var(--color-secundario);
+  color: var(--blanco);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: var(--sombra-suave);
+  transition: all 0.25s ease;
+}
+
+.btn-editar:hover {
+  background: var(--color-secundario-hover);
+  transform: translateY(-1px);
+}
+
+.btn-editar.activo {
+  background: var(--color-principal-hover);
+}
+
+/* === MESAS === */
 .mesa--dashboard {
-  background-color: var(--gris-claro);
-  border-radius: var(--borde-redondeado);
-  width: 6vw;
-  height: 6vw;
-  max-width: 100px;
-  max-height: 100px;
+  width: 10vh;
+  height: 10vh;
+  border-radius: 20%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8vw;
-  font-weight: bold;
+  font-size: 1rem;
+  font-weight: 600;
+  user-select: none;
   cursor: pointer;
-  text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: var(--sombra-suave);
+  position: absolute;
+  transition: all 0.25s ease;
   border: 2px solid transparent;
+  box-shadow: var(--sombra-suave);
+  text-align: center;
 }
 
-.mesa--dashboard:hover {
-  transform: translateY(-3%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.mesa-number--dashboard {
-  font-size: 1.5rem;
-  color: var(--gris-oscuro);
-}
-
-.mesa--dashboard.abierta--dashboard {
-  background-color: var(--color-secundario);
-  color: var(--blanco);
-  border-color: var(--color-secundario);
-}
-
+/* CERRADA */
 .mesa--dashboard.cerrada--dashboard {
   background-color: var(--gris-claro);
   color: var(--gris-oscuro);
   border-color: var(--gris-claro);
 }
 
-.search-container--dashboard {
+/* ABIERTA */
+.mesa--dashboard.abierta--dashboard {
+  background-color: var(--color-secundario);
+  color: var(--blanco);
+  border: 2px solid var(--color-secundario-hover);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+/* CUENTA IMPRESA */
+.mesa--dashboard.cuenta-impresa {
+  background: var(--color-principal);
+  border: 2px solid var(--blanco);
+  color: var(--blanco);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+/* NÚMERO DE MESA */
+.mesa-number--dashboard {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+/* Hover general */
+.mesa--dashboard:hover {
+  transform: scale(1.08);
+}
+.sidebar-editor h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-principal);
+  margin-bottom: 1.2rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-mesas-list {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.mesa-sidebar {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: var(--color-secundario);
+  color: var(--blanco);
+  font-weight: 700;
+  display: flex;
   align-items: center;
-  height: 60vh;
-  width: 43vh;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.25s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.mesa-sidebar:hover {
+  background: var(--color-secundario-hover);
+  transform: scale(1.05);
+}
+
+/* === SCROLL PERSONALIZADO === */
+.sidebar-editor::-webkit-scrollbar,
+.mapa-restaurante::-webkit-scrollbar {
+  width: 8px;
+}
+.sidebar-editor::-webkit-scrollbar-thumb,
+.mapa-restaurante::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 8px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1024px) {
+  .container--dashboard {
+    flex-direction: column;
+  }
+
+  .mapa-restaurante {
+    height: 70vh;
+    border-radius: 0;
+  }
+
+  .sidebar-editor {
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 2px solid #eaeaea;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .sidebar-editor h3 {
+    width: 100%;
+    text-align: center;
+  }
+
+  .sidebar-mesas-list {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 600px) {
-  .dashboard--dashboard {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    justify-items: center;
-    width: 100%;
+  .btn-editar,
+  .selector-zona {
+    font-size: 0.9rem;
+    padding: 6px 10px;
   }
 
   .mesa--dashboard {
-    width: 100%;
-    max-width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     font-size: 0.9rem;
-    box-sizing: border-box;
   }
 
-  .container--dashboard {
-    padding: 0rem;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    overflow-x: hidden;
+  .mesa-sidebar {
+    width: 55px;
+    height: 55px;
+  }
+
+  .sidebar-editor {
+    padding: 1rem;
   }
 }

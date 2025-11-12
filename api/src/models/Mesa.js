@@ -20,13 +20,25 @@ const mesaSchema = new Schema({
   comensales: {
     type: Number,
     default: 1, // ✅ Por defecto 1 si no se especifica
-    min: 1, // ✅ No puede ser menor que 1
   },
   sesionActiva: {
     type: Schema.Types.ObjectId,
     ref: 'SesionMesa',
     default: null,
   }, // ✅ Consistente
+  cuentaImpresa: {
+    type: Boolean,
+    default: false,
+  },
+  posicion: {
+    x: { type: Number, default: 0 },
+    y: { type: Number, default: 0 },
+  },
+  zona: {
+  type: String,
+  enum: ["interior", "exterior", "auxiliar"],
+  default: "interior"
+},
 });
 
 export default model('Mesa', mesaSchema);

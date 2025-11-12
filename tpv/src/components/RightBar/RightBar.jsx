@@ -81,54 +81,54 @@ const RightBar = ({ mesaId }) => {
       {mostrarResumen && (
         <div className="resumen-overlay">
           <div className="resumen-pedido-panel">
-            <button
-              className="cerrar-modal"
-              onClick={() => setMostrarResumen(false)}
-            >
-              ↩
-            </button>
 
-            {/* Platos */}
-            <CarritoOrganizable
+            {/* Cabecera */}
+            <div className="resumen-header">
+              <button className="cerrar-modal" onClick={() => setMostrarResumen(false)}>
+                ↩
+              </button>
+            </div>
 
-              carrito={[
-                ...carrito.map(p => ({ ...p, tipo: p.tipo || "plato" })),
-                ...carritoBebidas.map(b => ({ ...b, tipo: "bebida", seccion: "bebidas" }))
-              ]}
+            {/* Contenido scrolleable */}
+            <div className="resumen-contenido">
+              <CarritoOrganizable
+                carrito={[
+                  ...carrito.map(p => ({ ...p, tipo: p.tipo || "plato" })),
+                  ...carritoBebidas.map(b => ({ ...b, tipo: "bebida", seccion: "bebidas" }))
+                ]}
+                setCarrito={(update) => {
+                  const aplicarActualizacion = (prevCarrito, prevBebidas) => {
+                    const combinado = Array.isArray(update)
+                      ? update
+                      : update([...prevCarrito, ...prevBebidas]);
+                    const soloPlatos = combinado.filter(i => i.tipo !== "bebida");
+                    const soloBebidas = combinado.filter(i => i.tipo === "bebida");
+                    setCarrito(soloPlatos);
+                    setCarritoBebidas(soloBebidas);
+                  };
+                  aplicarActualizacion(carrito, carritoBebidas);
+                }}
+                enviarPedido={enviarPedido}
+                isLoading={isLoading}
+                mensajesSeccion={mensajesSeccion}
+                setMensajesSeccion={setMensajesSeccion}
+              />
+            </div>
 
-              setCarrito={(update) => {
-                // Permitir tanto valores directos como funciones callback (prev => new)
-                const aplicarActualizacion = (prevCarrito, prevBebidas) => {
-                  const combinado = Array.isArray(update)
-                    ? update
-                    : update([...prevCarrito, ...prevBebidas]);
-
-                  // ✅ Todo lo que NO sea bebida se considera plato
-                  const soloPlatos = combinado.filter(i => i.tipo !== "bebida");
-                  const soloBebidas = combinado.filter(i => i.tipo === "bebida");
-
-                  setCarrito(soloPlatos);
-                  setCarritoBebidas(soloBebidas);
-                };
-
-                aplicarActualizacion(carrito, carritoBebidas);
-              }}
-              enviarPedido={enviarPedido}
-              isLoading={isLoading}
-              mensajesSeccion={mensajesSeccion}
-              setMensajesSeccion={setMensajesSeccion}
-            />
-
-            {/* Botón al final */}
-            <div className="carrito-enviar-container">
+            {/* Footer fijo */}
+            <div className="resumen-footer">
               <button
-                onClick={enviarPedido}
+                onClick={async () => {
+                  const exito = await enviarPedido();
+                  if (exito) setMostrarResumen(false); 
+                }}
                 disabled={isLoading}
                 className="carrito-enviar-button"
               >
                 {isLoading ? "Enviando..." : "Enviar Pedido"}
               </button>
             </div>
+
           </div>
         </div>
       )}

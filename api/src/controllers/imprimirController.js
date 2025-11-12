@@ -136,13 +136,41 @@ export const imprimirCuenta = async (req, res) => {
       console.warn("⚠️ [BACKEND] Mesa no encontrada");
       return res.status(404).json({ error: "Mesa no encontrada" });
     }
+    // 📦 Recopilar productos
     const productos = mesa.pedidos.flatMap((pedido) =>
       pedido.productos.map((p) => ({
         nombre: p.nombre,
         cantidad: p.cantidad,
-        precio: p.precioSeleccionado || 0,
+        precio: Number(p.precioSeleccionado) || 0,
+        iva: p.iva ?? 10, // si tu modelo guarda IVA explícito
       }))
     );
+
+    // 🧾 Calcular totales previos
+    const totalMesa = productos.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
+
+    // 👉 Simular el mismo desglose que usa la impresora
+    const porTipo = new Map();
+    for (const p of productos) {
+      const iva = Number(p.iva ?? 10);
+      const totalLinea = Number((p.precio * p.cantidad).toFixed(2));
+      const base = Number((totalLinea / (1 + iva / 100)).toFixed(2));
+      const cuota = Number((totalLinea - base).toFixed(2));
+      const item = porTipo.get(iva) || { base: 0, cuota: 0, total: 0 };
+      item.base += base;
+      item.cuota += cuota;
+      item.total += totalLinea;
+      porTipo.set(iva, item);
+    }
+
+    let totalBase = 0;
+    let totalCuota = 0;
+    let totalConIVA = 0;
+    for (const [iva, { base, cuota, total }] of porTipo.entries()) {
+      totalBase += base;
+      totalCuota += cuota;
+      totalConIVA += total;
+    }
 
     const response = await enviarAImpresion("imprimir-cuenta", {
       mesaNumero: mesa.numero,
@@ -155,10 +183,11 @@ export const imprimirCuenta = async (req, res) => {
       data: response.data,
     });
   } catch (error) {
-    console.error("❌ [BACKEND] Error al imprimir cuenta:", error.message);
-    res.status(500).json({ error: "Error al imprimir cuenta" });
+    console.error("❌ [BACKEND] Error al imprimir cuenta:", error);
+    res.status(500).json({ error: "Error al imprimir cuenta", detalle: error.message });
   }
 };
+
 
 
 // 👇 Añade este helper junto a tus otras funciones

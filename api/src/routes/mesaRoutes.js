@@ -25,6 +25,8 @@ import {
   abrirMesaCamarero,
   transferirProducto,
   actualizarComensales,
+  actualizarPosicionMesa,
+  actualizarMesa,
 } from '../controllers/mesaController.js';
 
 /**
@@ -186,5 +188,10 @@ router.delete('/eliminar-mesa', eliminarMesa);
 router.post('/mesas/transferir-producto', transferirProducto);
 
 router.put('/:id/comensales', actualizarComensales);
+
+router.put("/:id/posicion", actualizarPosicionMesa);
+
+router.put("/:id", actualizarMesa);
+
 
 export default router;

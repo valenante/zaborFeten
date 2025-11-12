@@ -206,13 +206,26 @@ const DetalleMesa = () => {
         {mesa.estado === "abierta" && (
           <>
             <button
-              onClick={() => setShowModal("cierre")}
+              onClick={() => {
+                if ((mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)) {
+                  // 🟣 Mostrar modal personalizado en lugar de window.confirm
+                  setAccionModal({
+                    titulo: "Cerrar mesa sin consumo",
+                    mensaje: "Esta mesa no tiene pedidos ni bebidas. ¿Deseas cerrarla igualmente?",
+                    onConfirm: () => {
+                      cerrarMesa({ tipo: "sinConsumo" }, "simplificada", {}, user?.name || "");
+                      setMostrarModalConfirmacion(false);
+                    },
+                  });
+                  setMostrarModalConfirmacion(true);
+                } else {
+                  setShowModal("cierre");
+                }
+              }}
               className="boton-cerrar--mesadetalles"
-              disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
             >
               Cerrar Mesa
             </button>
-
             <div className="contenedor-botones--mesadetalles">
               <button
                 onClick={imprimirCuenta}
