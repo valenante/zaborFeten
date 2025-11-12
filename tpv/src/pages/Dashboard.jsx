@@ -170,6 +170,52 @@ const Dashboard = () => {
     }
   };
 
+  let holdTimeout;
+
+  const handleMouseDown = (mesa) => {
+    if (modoEdicion) return; // si está en modo edición, no abrir modal
+    holdTimeout = setTimeout(() => {
+      setAccionModal({
+        titulo: `Editar comensales - Mesa ${mesa.numero}`,
+        mensaje: "Introduce el nuevo número de comensales:",
+        placeholder: "Cantidad de comensales",
+        onConfirm: async (valor) => {
+          const comensales = parseInt(valor, 10);
+          if (isNaN(comensales) || comensales < 1 || comensales > 25) {
+            setAlerta({
+              tipo: "error",
+              mensaje: "Número de comensales inválido (1–25).",
+            });
+            return;
+          }
+
+          try {
+            await api.put(`/mesas/${mesa._id}/comensales`, { comensales });
+            setAlerta({
+              tipo: "exito",
+              mensaje: `Mesa ${mesa.numero}: ${comensales} comensales.`,
+            });
+
+            // Refrescar sin pedir toda la lista
+            setMesas(prev =>
+              prev.map(m =>
+                m._id === mesa._id ? { ...m, comensales } : m
+              )
+            );
+          } catch (err) {
+            setAlerta({
+              tipo: "error",
+              mensaje: "Error al actualizar comensales.",
+            });
+          }
+        },
+      });
+      setMostrarModalConfirmacion(true);
+    }, 700); // Mantener presionado 0.7 segundos
+  };
+
+  const handleMouseUp = () => clearTimeout(holdTimeout);
+
   // === Filtrar mesas visibles por zona ===
   const mesasFiltradas = mesas.filter((m) => m.zona === zona);
 
@@ -246,13 +292,11 @@ const Dashboard = () => {
                   onStop={(e, data) => handleDragStop(e, data, mesa)}
                 >
                   <div
-                    className={`mesa--dashboard ${mesa.estado}--dashboard ${mesa.cuentaImpresa ? "cuenta-impresa" : ""
-                      }`}
-                    style={{
-                      position: "absolute",
-                      cursor: modoEdicion ? "move" : "pointer",
-                    }}
+                    className={`mesa--dashboard ${mesa.estado}--dashboard ${mesa.cuentaImpresa ? "cuenta-impresa" : ""}`}
+                    style={{ position: "absolute", cursor: modoEdicion ? "move" : "pointer" }}
                     onClick={() => handleMesaClick(mesa)}
+                    onMouseDown={() => handleMouseDown(mesa)}  // 👈 nuevo
+                    onMouseUp={handleMouseUp}                  // 👈 nuevo
                   >
                     <p className="mesa-number--dashboard">{mesa.numero}</p>
                   </div>
