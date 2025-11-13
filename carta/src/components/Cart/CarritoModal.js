@@ -229,14 +229,7 @@ const CarritoModal = ({ cerrarModal }) => {
   const calcularTotal = () => {
     return carrito.items
       ?.reduce((total, item) => {
-        const precioBase =
-          item.precioSeleccionado || item.productId.precios.precioBase;
-        const totalAdicionales = (item.adicionales || []).reduce(
-          (acc, adicional) => acc + (adicional.precio || 0),
-          0
-        );
-        const precioFinalUnitario = precioBase + totalAdicionales;
-        return total + precioFinalUnitario * item.cantidad;
+        return total + item.precioSeleccionado * item.cantidad;
       }, 0)
       .toFixed(2);
   };

@@ -244,7 +244,7 @@ export const crearPedido = async (req, res) => {
     logger.error('Error al procesar el pedido:', error);
     res.status(400).json({ error: error.message });
   }
-};export const agregarProductoAlPedido = async (req, res) => {
+}; export const agregarProductoAlPedido = async (req, res) => {
   const { mesaId } = req.params;
   const { productos, mensajesSeccion = {}, servirTodoJunto } = req.body;
 
@@ -271,9 +271,11 @@ export const crearPedido = async (req, res) => {
     if (!mesa) return res.status(404).json({ error: "Mesa no encontrada" });
 
     // === Validar sesión activa ===
-    const sesionActiva = await SesionMesa.findOne({ mesa: mesa._id, estado: "activa" });
-    if (!sesionActiva)
+    const sesionActiva = await SesionMesa.findById(mesa.sesionActiva);
+
+    if (!sesionActiva) {
       return res.status(400).json({ error: "La mesa no tiene una sesión activa." });
+    }
 
     if (!mesa.sesionActiva || mesa.sesionActiva.toString() !== sesionActiva._id.toString()) {
       mesa.sesionActiva = sesionActiva._id;

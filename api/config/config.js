@@ -1,13 +1,12 @@
 // config/config.js
 import { Server } from 'socket.io';
-import { config } from 'dotenv';
 import { connect } from 'mongoose';
 import logger from '../utils/logger.js';
 import MongoStore from 'connect-mongo';
 import dotenv from "dotenv";
 
-dotenv.config();
-
+// 🔥 Cargar .env ANTES DE USAR process.env
+dotenv.config({ path: new URL("../.env", import.meta.url).pathname });
 // Configuración de CORS
 export const corsOptions = {
   origin: [

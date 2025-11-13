@@ -61,57 +61,73 @@ export const verificarTokenLiderPorNumero = async (req, res) => {
     res.status(500).json({ error: 'Error al procesar la solicitud' });
   }
 };
-
 export const crearTokenLider = async (req, res) => {
-  const { mesa } = req.body;
-
-  if (!mesa) {
-    return res
-      .status(400)
-      .json({ error: 'El número de la mesa es obligatorio' });
-  }
-
   try {
-    const mesaDoc = await Mesa.findOne({ numero: mesa });
+    const { mesa, comensales = 1 } = req.body;
 
+    if (!mesa) {
+      return res.status(400).json({ error: "El número de mesa es obligatorio." });
+    }
+
+    // Buscar mesa REAL
+    const mesaDoc = await Mesa.findOne({ numero: Number(mesa) });
     if (!mesaDoc) {
-      return res.status(404).json({ error: 'Mesa no encontrada' });
+      return res.status(404).json({ error: "Mesa no encontrada." });
     }
 
-    if (mesaDoc.tokenLider) {
-      return res
-        .status(400)
-        .json({ error: 'El tokenLider ya existe para esta mesa' });
+    // Si mesa ya está abierta Y sesión es válida → devolverla sin romper nada
+    if (mesaDoc.estado === "abierta" && mesaDoc.sesionActiva) {
+      const sesionOK = await SesionMesa.findById(mesaDoc.sesionActiva);
+      if (sesionOK) {
+        return res.status(200).json({
+          tokenLider: mesaDoc.tokenLider,
+          sesionActiva: mesaDoc.sesionActiva,
+          estado: mesaDoc.estado,
+        });
+      }
     }
 
-    // 🟡 Generar token y abrir mesa
-    mesaDoc.tokenLider = uuidv4();
-    mesaDoc.estado = 'abierta';
+    // Crear token líder si no existe
+    if (!mesaDoc.tokenLider) {
+      mesaDoc.tokenLider = uuidv4();
+    }
 
-    // 🟢 Crear nueva sesión de mesa
-    const nuevaSesion = new SesionMesa({
+    // Crear sesión nueva válida
+    const nuevaSesion = await SesionMesa.create({
       mesa: mesaDoc._id,
-      estado: 'activa',
+      estado: "activa",
+      inicio: new Date(),
     });
-    await nuevaSesion.save();
 
+    // Actualizar estado de mesa
     mesaDoc.sesionActiva = nuevaSesion._id;
+    mesaDoc.estado = "abierta";
+    mesaDoc.comensales = comensales;
+    mesaDoc.total = 0;
 
     await mesaDoc.save();
 
-    // 🔁 Emitir evento en tiempo real
-    req.io.emit('mesaAbierta', mesaDoc);
+    // Emitir al TPV
+    req.io.emit("mesaAbierta", {
+      _id: mesaDoc._id,
+      numero: mesaDoc.numero,
+      sesionActiva: mesaDoc.sesionActiva,
+      comensales,
+      estado: "abierta",
+    });
 
     res.status(201).json({
       tokenLider: mesaDoc.tokenLider,
+      sesionActiva: mesaDoc.sesionActiva,
       estado: mesaDoc.estado,
-      sesionActiva: nuevaSesion._id,
     });
+
   } catch (error) {
-    logger.error('Error al crear el tokenLider:', error);
-    res.status(500).json({ error: 'Error al procesar la solicitud' });
+    logger.error("Error al crear tokenLider:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
 
 // Obtener todas las mesas ordenadas correctamente
 export const obtenerMesas = async (req, res) => {
@@ -202,10 +218,18 @@ export const cerrarMesa = async (req, res) => {
   const { id } = req.params;
   const { metodoPago, clienteNombre, clienteNIF, camarero } = req.body;
 
+  logger.info("===== 🟣 INICIO cerrarMesa =====");
+  logger.info(`📥 Mesa ID: ${id}`);
+  logger.info(`📥 MetodoPago recibido: ${JSON.stringify(metodoPago)}`);
+  logger.info(`📥 Cliente: ${clienteNombre} | NIF: ${clienteNIF}`);
+  logger.info(`📥 Camarero: ${camarero}`);
+
   try {
     const ahora = moment().tz("Europe/Madrid").toDate();
+    logger.info(`🕒 Fecha actual: ${ahora}`);
 
-    // === 1️⃣ Cargar mesa con pedidos y productos ===
+    // === 1️⃣ Cargar mesa con pedidos ===
+    logger.info("🔍 Buscando mesa con pedidos y bebidas...");
     const mesa = await Mesa.findById(id)
       .populate({
         path: "pedidos pedidosBebidas",
@@ -213,14 +237,24 @@ export const cerrarMesa = async (req, res) => {
       })
       .lean();
 
-    if (!mesa) return res.status(404).json({ error: "Mesa no encontrada" });
+    logger.info(`📌 Mesa encontrada: ${mesa ? "Sí" : "No"}`);
+    if (!mesa) {
+      logger.error("❌ Mesa no encontrada");
+      return res.status(404).json({ error: "Mesa no encontrada" });
+    }
 
-    // === 🔸 Cierre sin consumo (sin productos/pedidos) ===
+    logger.info(`➡️ Mesa ${mesa.numero}, Estado: ${mesa.estado}, Total: ${mesa.total}`);
+
+    // === 🔸 Cierre sin consumo ===
     const sinPedidos =
       (!mesa.pedidos || mesa.pedidos.length === 0) &&
       (!mesa.pedidosBebidas || mesa.pedidosBebidas.length === 0);
 
+    logger.info(`🟡 ¿Sin pedidos? ${sinPedidos}`);
+
     if (sinPedidos) {
+      logger.info("🟡 Iniciando cierre SIN consumo...");
+
       const mesaCerrada = await MesaCerrada.create({
         numero: mesa.numero,
         pedidos: [],
@@ -232,14 +266,18 @@ export const cerrarMesa = async (req, res) => {
         metodoPago: { tipo: "sinConsumo", efectivo: 0, tarjeta: 0, propina: 0, cambio: 0 },
         sesionActiva: mesa.sesionActiva,
         camarero: camarero || "",
-        cierreSinConsumo: true, // ✅ indicador claro
+        cierreSinConsumo: true,
         motivoCierre: "sin consumo",
       });
+
+      logger.info("🟡 Mesa sin consumo registrada en MesaCerrada");
 
       await SesionMesa.updateOne(
         { mesa: mesa._id, estado: "activa" },
         { $set: { estado: "cerrada", cierre: new Date() } }
       );
+
+      logger.info("🟡 Sesión activa marcada como cerrada");
 
       await Mesa.updateOne(
         { _id: id },
@@ -255,19 +293,7 @@ export const cerrarMesa = async (req, res) => {
         }
       );
 
-      try {
-        await EventoFactura.create({
-          tipoEvento: "cierre_sin_consumo",
-          numeroFactura: null,
-          clienteNombre: "N/A",
-          clienteNIF: "N/A",
-          motivo: "Mesa cerrada sin consumo",
-          importeTotal: 0,
-          hashFactura: null,
-        });
-      } catch (err) {
-        logger.warn("⚠️ No se pudo registrar evento de cierre sin consumo:", err.message || err);
-      }
+      logger.info("🟡 Mesa actualizada como cerrada ");
 
       return res.status(200).json({
         message: "Mesa cerrada sin consumo (sin pedidos ni productos)",
@@ -278,10 +304,18 @@ export const cerrarMesa = async (req, res) => {
     }
 
     // === 2️⃣ Totales y validaciones ===
+    logger.info("🧮 Validando totales...");
+
     const { efectivo = 0, tarjeta = 0, propina = 0 } = metodoPago || {};
     const totalMesa = Number((mesa.total || 0).toFixed(2));
     const totalPagado = Number((efectivo + tarjeta).toFixed(2));
+
+    logger.info(`💶 Total mesa: ${totalMesa}`);
+    logger.info(`💶 Total pagado: ${totalPagado}`);
+    logger.info(`💶 Efectivo: ${efectivo}, Tarjeta: ${tarjeta}, Propina: ${propina}`);
+
     if (totalPagado < totalMesa) {
+      logger.warn("⚠️ Pago insuficiente");
       return res.status(400).json({
         error: `El monto ingresado (${totalPagado} €) es menor que el total de la mesa (${totalMesa} €).`,
       });
@@ -289,8 +323,11 @@ export const cerrarMesa = async (req, res) => {
 
     const cambio = Number((totalPagado - totalMesa).toFixed(2));
     const propinaCalc = Number(propina.toFixed(2));
+    logger.info(`💶 Cambio a devolver: ${cambio}`);
 
     // === 3️⃣ Caja del día ===
+    logger.info("🧾 Buscando caja del día…");
+
     const inicioDia = new Date(ahora); inicioDia.setHours(0, 0, 0, 0);
     const finDia = new Date(ahora); finDia.setHours(23, 59, 59, 999);
 
@@ -299,6 +336,8 @@ export const cerrarMesa = async (req, res) => {
       estado: "abierta",
     });
 
+    logger.info(`📌 Caja encontrada: ${caja ? "Sí" : "No"}`);
+
     const opCaja = {
       tipo: "cierre",
       monto: totalMesa,
@@ -306,15 +345,19 @@ export const cerrarMesa = async (req, res) => {
     };
 
     if (caja) {
+      logger.info("✏️ Actualizando caja actual...");
       const efectivoReal = Math.min(efectivo, totalMesa);
       const tarjetaReal = Math.min(tarjeta, Math.max(totalMesa - efectivoReal, 0));
+
       caja.detallesMetodoPago.efectivo += efectivoReal;
       caja.detallesMetodoPago.tarjeta += tarjetaReal;
       caja.detallesMetodoPago.propina += propinaCalc;
       caja.total += totalMesa;
       caja.operaciones.push(opCaja);
+
       await caja.save();
     } else {
+      logger.info("📦 Creando nueva caja del día");
       caja = await Caja.create({
         total: totalMesa,
         detallesMetodoPago: { efectivo, tarjeta, propina: propinaCalc },
@@ -323,6 +366,8 @@ export const cerrarMesa = async (req, res) => {
     }
 
     // === 4️⃣ Registrar mesa cerrada ===
+    logger.info("📦 Registrando mesa cerrada...");
+
     const mesaCerrada = await MesaCerrada.create({
       numero: mesa.numero,
       pedidos: mesa.pedidos.map(p => p._id),
@@ -338,17 +383,25 @@ export const cerrarMesa = async (req, res) => {
       motivoCierre: "consumo realizado",
     });
 
-    // === 5️⃣ Intentar abrir cajón (no detener flujo si falla) ===
+    logger.info("🟢 MesaCerrada creada correctamente.");
+
+    // === 5️⃣ Intentar abrir cajón ===
+    logger.info("🟪 Intentando abrir cajón...");
     try {
       await abrirCajon();
+      logger.info("🟢 Cajón intentado (no bloquea)");
     } catch (err) {
-      logger.warn("⚠️ No se pudo abrir el cajón:", err.message || err);
+      logger.warn(`⚠️ No se pudo abrir cajón: ${err?.message}`);
     }
 
-    // === 6️⃣ Obtener número de factura (crítico pero rápido) ===
+    // === 6️⃣ Obtener número de factura ===
+    logger.info("🧾 Obteniendo número de factura...");
     const numeroFactura = await obtenerNumeroFactura();
+    logger.info(`📄 Número de factura: ${numeroFactura}`);
 
-    // === 7️⃣ Generar lista de productos ===
+    // === 7️⃣ Productos ===
+    logger.info("📦 Generando lista de productos para factura...");
+
     const productos = [
       ...mesa.pedidos.flatMap(p => p.productos),
       ...mesa.pedidosBebidas.flatMap(p => p.productos),
@@ -359,36 +412,13 @@ export const cerrarMesa = async (req, res) => {
       iva: Number(producto?.iva ?? 10),
     }));
 
+    logger.info(`📌 Total productos: ${productos.length}`);
+
     const to2 = n => Number(n.toFixed(2));
 
-    // Desglose base / cuota
-    const productosVF = productos.map(p => {
-      const importe = to2(p.precio * p.cantidad);
-      const base = to2(importe / (1 + p.iva / 100));
-      const cuota = to2(importe - base);
-      return { ...p, base, cuota, importe };
-    });
+    // === 8️⃣ VeriFactu
+    logger.info("📡 Enviando a VeriFactu...");
 
-    let baseTotal = to2(productosVF.reduce((a, p) => a + p.base, 0));
-    let cuotaTotal = to2(productosVF.reduce((a, p) => a + p.cuota, 0));
-    let importeTotal = to2(baseTotal + cuotaTotal);
-
-    if (Math.abs(importeTotal - totalMesa) >= 0.01) {
-      const factor = totalMesa / Math.max(importeTotal, 0.01);
-      baseTotal = to2(baseTotal * factor);
-      cuotaTotal = to2(totalMesa - baseTotal);
-      importeTotal = totalMesa;
-    }
-
-    // === 8️⃣ Tipo de factura ===
-    const tipoFactura =
-      !clienteNombre?.trim() ||
-      clienteNombre.trim().toLowerCase() === "consumidor final" ||
-      !clienteNIF?.trim()
-        ? "F2"
-        : "F1";
-
-    // === 9️⃣ Emitir factura Veri*Factu (sin detener flujo si falla) ===
     let facturaDoc = {};
     try {
       facturaDoc = await emitirRegistroVerifactu({
@@ -398,42 +428,28 @@ export const cerrarMesa = async (req, res) => {
           fechaExpedicion: new Date().toISOString().split("T")[0],
           clienteNombre: clienteNombre || "Consumidor Final",
           clienteNIF,
-          productos: productosVF,
-          baseTotal,
-          cuotaTotal,
-          importeTotal: to2(baseTotal + cuotaTotal),
+          productos,
           mesaNumero: mesa.numero,
           camarero: camarero || "",
-          tipoFactura,
         },
       });
+
+      logger.info(`🟢 VeriFactu OK: ${facturaDoc.hashFactura || facturaDoc.huellaTCR}`);
     } catch (err) {
-      logger.warn("⚠️ No se pudo emitir factura VeriFactu:", err.message || err);
+      logger.warn("⚠️ VeriFactu falló, flujo continúa:", err.message);
       facturaDoc = { estado: "error", hashFactura: null };
     }
 
-    // === 🔟 Registrar evento interno ===
-    try {
-      await EventoFactura.create({
-        tipoEvento: "creacion",
-        numeroFactura,
-        clienteNombre: clienteNombre || "Consumidor Final",
-        clienteNIF: clienteNIF || "N/A",
-        motivo: "Generación de la factura al cierre de la mesa",
-        importeTotal,
-        hashFactura: facturaDoc.hashFactura || facturaDoc.huellaTCR || null,
-      });
-    } catch (err) {
-      logger.warn("⚠️ No se pudo registrar el evento de factura:", err.message || err);
-    }
-
-    // === 11️⃣ Cerrar sesión activa ===
+    // === 11️⃣ Cerrar sesión activa
+    logger.info("🔒 Cerrando sesión activa…");
     await SesionMesa.updateOne(
       { mesa: mesa._id, estado: "activa" },
       { $set: { estado: "cerrada", cierre: new Date() } }
     );
+    logger.info("🟢 Sesión cerrada");
 
-    // === 12️⃣ Limpiar mesa ===
+    // === 12️⃣ Limpiar mesa
+    logger.info("🧹 Limpiando mesa…");
     await Mesa.updateOne(
       { _id: id },
       {
@@ -447,9 +463,12 @@ export const cerrarMesa = async (req, res) => {
         cuentaImpresa: false,
       }
     );
+    logger.info("🟢 Mesa limpiada y cerrada");
 
-    // === ✅ 13️⃣ Respuesta final ===
-    res.status(200).json({
+    // === 13️⃣ Respuesta final ===
+    logger.info("===== 🟢 FIN cerrarMesa - ÉXITO =====");
+
+    return res.status(200).json({
       message: "Mesa cerrada con éxito",
       mesaCerrada,
       propina: propinaCalc,
@@ -467,14 +486,14 @@ export const cerrarMesa = async (req, res) => {
         numeroFactura,
         fechaExpedicion: new Date().toISOString(),
         productos,
-        total: importeTotal,
+        total: totalMesa,
         hash: facturaDoc.hashFactura || facturaDoc.huellaTCR || null,
         camarero: camarero || "",
       },
     });
 
   } catch (error) {
-    logger.error("❌ Error al cerrar la mesa:", error);
+    logger.error("❌ ERROR FATAL en cerrarMesa:", error);
     res.status(500).json({ error: "Error al cerrar la mesa" });
   }
 };

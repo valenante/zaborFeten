@@ -200,6 +200,78 @@
   }
 }
 
+/* === MÓVIL (< 768px) === */
+@media (max-width: 768px) {
+
+  /* Contenedor principal */
+  .container--dashboard {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: calc(100vh - 70px);
+    background: var(--color-principal);
+    overflow-y: auto;
+  }
+
+  /* Barra de búsqueda */
+  .search-container--dashboard {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10vh;
+    padding: 0 10px;
+  }
+
+  .input-mesa--dashboard {
+    flex: 1;
+    max-width: 250px;
+    height: 42px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    padding: 0 14px;
+    font-size: 1rem;
+    background: var(--blanco);
+    color: var(--gris-oscuro);
+  }
+
+  .boton-ok--dashboard {
+    width: 90px;
+    height: 42px;
+    border-radius: 10px;
+    border: none;
+    background: var(--color-secundario);
+    color: var(--blanco);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+
+  .boton-ok--dashboard:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Evitar que el mapa y sidebar se rendericen en móvil */
+  .mapa-restaurante,
+  .sidebar-editor {
+    display: none !important;
+  }
+
+  /* Ajuste general de TPVVoice en móvil */
+  .tpv-voice-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+  }
+}
+
+
 @media (max-width: 600px) {
   .btn-editar,
   .selector-zona {

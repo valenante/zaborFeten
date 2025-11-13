@@ -54,14 +54,20 @@ export const crearPedido = async (req, res) => {
       return res.status(404).json({ error: 'Mesa no encontrada' });
     }
 
+    console.log('Mesa existente:', mesaExistente);
+
     // 🔒 Buscar sesión activa
-    const sesionActiva = await SesionMesa.findOne({
-      mesa: mesaExistente._id,
-      estado: 'activa',
-    });
+
+    // DEBUG COMPLETO
+    const todasLasSesiones = await SesionMesa.find({});
+    console.log("📌 TODAS LAS SESIONES EN BD (SesionMesa):\n", JSON.stringify(todasLasSesiones, null, 2));
+
+    const sesionActiva = await SesionMesa.findById(mesaExistente.sesionActiva);
+
+    console.log("📌 Sesión activa encontrada:", sesionActiva);
 
     if (!sesionActiva) {
-      return res.status(400).json({ error: 'La mesa no tiene una sesión activa.' });
+      return res.status(400).json({ error: "La mesa no tiene una sesión activa." });
     }
 
     // 🧾 Congelar precios producto por producto
@@ -97,7 +103,7 @@ export const crearPedido = async (req, res) => {
       comensales,
       alergias,
       mesa: mesaExistente._id,
-      sesionId: sesionActiva._id,
+      sesionId: mesaExistente.sesionActiva,
       estado: 'pendiente',
     });
 
@@ -105,7 +111,13 @@ export const crearPedido = async (req, res) => {
 
     // 🧩 Actualizar mesa
     mesaExistente.pedidosBebidas.push(nuevoPedido._id);
+
+    // 🔥 Guardar la mesa ANTES del recálculo
+    await mesaExistente.save();
+
+    // Recalcular total
     await recalcularTotalMesa(mesaExistente._id);
+
 
     // 💾 Registrar ventas individuales
     for (const item of productosCongelados) {
@@ -348,147 +360,162 @@ export const agregarProductoBebida = async (req, res) => {
   const { mesaId } = req.params;
   const { productos } = req.body;
 
-  if (!Array.isArray(productos) || productos.length === 0) {
-    return res.status(400).json({ error: 'Debes enviar al menos una bebida válida.' });
-  }
-
-  const errores = productos.filter(
-    (p) => !p.producto || !p.cantidad || !p.total || !p.precioSeleccionado
-  );
-  if (errores.length > 0) {
-    return res.status(400).json({
-      error: 'Cada bebida debe tener: producto, cantidad, total y precioSeleccionado.',
-    });
-  }
-
   try {
-    const mesa = /^[0-9a-fA-F]{24}$/.test(mesaId)
-      ? await Mesa.findById(mesaId).populate('pedidosBebidas')
-      : await Mesa.findOne({ numero: parseInt(mesaId, 10) }).populate('pedidosBebidas');
-
-    if (!mesa) return res.status(404).json({ error: 'Mesa no encontrada' });
-
-    const sesionActiva = await SesionMesa.findOne({
-      mesa: mesa._id,
-      estado: 'activa',
-    });
-    if (!sesionActiva) {
-      return res.status(400).json({ error: 'No se encontró una sesión activa para esta mesa.' });
+    // Validación inicial
+    if (!Array.isArray(productos) || productos.length === 0) {
+      return res.status(400).json({ error: "Debes enviar al menos una bebida válida." });
     }
 
+    const errores = productos.filter(
+      (p) => !p.producto || !p.cantidad || p.total == null || p.precioSeleccionado == null
+    );
+    if (errores.length > 0) {
+      return res.status(400).json({
+        error: "Cada bebida debe tener producto, cantidad, total y precioSeleccionado.",
+      });
+    }
+
+    // Buscar mesa SIN populate
+    const mesa = /^[0-9a-fA-F]{24}$/.test(mesaId)
+      ? await Mesa.findById(mesaId)
+      : await Mesa.findOne({ numero: parseInt(mesaId, 10) });
+
+    if (!mesa) return res.status(404).json({ error: "Mesa no encontrada" });
+
+    // Validar sesión activa
+    if (!mesa.sesionActiva) {
+      return res.status(400).json({ error: "La mesa no tiene una sesión activa." });
+    }
+
+    const sesionActiva = await SesionMesa.findById(mesa.sesionActiva);
+    if (!sesionActiva) {
+      return res.status(400).json({ error: "La mesa no tiene una sesión activa válida." });
+    }
+
+    // Obtener datos de los productos desde DB
     const idsProductos = productos.map((p) => p.producto);
     const productosDB = await Producto.find({ _id: { $in: idsProductos } });
 
+    // Construir estructura final
     const productosCompletos = productos.map((p) => {
-      const productoInfo = productosDB.find(
-        (prod) => prod._id.toString() === p.producto.toString()
-      );
+      const info = productosDB.find((x) => x._id.toString() === p.producto.toString());
+
       return {
         ...p,
-        tipoPrecio: p.tipoPrecio || productoInfo?.tipoPrecio || 'precioBase',
-        categoria: p.categoria || productoInfo?.categoria || 'bebida',
-        tipo: p.tipo || productoInfo?.tipo || 'bebida',
+        tipoPrecio: p.tipoPrecio || info?.tipoPrecio || "precioBase",
+        categoria: info?.categoria || "bebida",
+        tipo: "bebida",
       };
     });
 
-    let pedidoModificado;
-    const pedidoExistente = mesa.pedidosBebidas.find((p) => p.estado === 'pendiente');
+    // Buscar pedido pendiente (SIN populate)
+    let pedidoExistenteId = mesa.pedidosBebidas.find((id) => id); // solo IDs
+    let pedidoExistente = pedidoExistenteId
+      ? await PedidoBebida.findById(pedidoExistenteId)
+      : null;
+
+    if (pedidoExistente && pedidoExistente.estado !== "pendiente") {
+      pedidoExistente = null;
+    }
+
+    let pedidoFinal;
+
+    // Si existe pedido pendiente → añadir productos
     if (pedidoExistente) {
       productosCompletos.forEach((p) => {
         pedidoExistente.productos.push({ ...p });
         pedidoExistente.total = Number((pedidoExistente.total + p.total).toFixed(2));
       });
-      pedidoModificado = await pedidoExistente.save();
+
+      pedidoFinal = await pedidoExistente.save();
     } else {
-      const nuevoPedidoBebida = new PedidoBebida({
+      // Crear nuevo pedido
+      const nuevoPedido = new PedidoBebida({
         mesa: mesa._id,
-        sesionId: sesionActiva._id,
+        sesionId: mesa.sesionActiva,
         productos: productosCompletos,
-        estado: 'pendiente',
-        total: productosCompletos.reduce((sum, p) => sum + p.total, 0),
+        estado: "pendiente",
+        total: Number(productosCompletos.reduce((sum, p) => sum + p.total, 0)),
       });
-      pedidoModificado = await nuevoPedidoBebida.save();
-      mesa.pedidosBebidas.push(pedidoModificado._id);
-      await mesa.save();
+
+      pedidoFinal = await nuevoPedido.save();
+
+      // Agregar referencia a mesa (evitar duplicados)
+      if (!mesa.pedidosBebidas.includes(pedidoFinal._id)) {
+        mesa.pedidosBebidas.push(pedidoFinal._id);
+        await mesa.save();
+      }
     }
 
-    // ✅ Agregar este bloque inmediatamente después
-    if (!mesa.pedidosBebidas.includes(pedidoModificado._id)) {
-      mesa.pedidosBebidas.push(pedidoModificado._id);
-      await mesa.save();
-    }
-
+    // Recalcular total real de la mesa (consulta limpia)
     await recalcularTotalMesa(mesa._id);
 
-    // Registrar cada producto como venta
-    for (const producto of productos) {
+    // Registrar ventas de cada producto
+    for (const p of productosCompletos) {
       const venta = new Venta({
-        producto: producto.producto,
-        pedidoId: pedidoModificado._id,
-        cantidad: producto.cantidad,
-        total: producto.total,
-        tipo: producto.tipo || 'bebida'
+        producto: p.producto,
+        pedidoId: pedidoFinal._id,
+        cantidad: p.cantidad,
+        total: p.total,
+        tipo: "bebida",
       });
 
       await venta.save();
 
-      const productoEnDB = await Producto.findById(producto.producto);
+      const productoEnDB = await Producto.findById(p.producto);
       if (productoEnDB) {
         productoEnDB.ventas.push(venta._id);
-        productoEnDB.stock -= producto.cantidad;
+        productoEnDB.stock -= p.cantidad;
         await productoEnDB.save();
-      } else {
-        logger.error(
-          'Producto no encontrado en la base de datos:',
-          producto.producto
-        );
-        return res
-          .status(400)
-          .json({ error: 'Producto no encontrado en la base de datos' });
       }
     }
 
-    req.io.emit('nuevoPedido', {
-      ...pedidoModificado.toObject(),
-      mesaId: mesa._id,
+    // Emitir evento en socket
+    req.io.emit("nuevoPedido", {
+      tipo: "crear-bebida",
+      mesaId: mesa._id.toString(),
+      pedido: pedidoFinal.toObject(),
     });
 
+    // Construir respuesta
     const datosRespuesta = {
       mesaNumero: mesa.numero,
       comensales: mesa.comensales || 0,
       productos: productosCompletos.map((p) => {
-        const productoInfo = productosDB.find((prod) => prod._id.toString() === p.producto);
+        const info = productosDB.find((x) => x._id.toString() === p.producto);
         return {
-          nombre: productoInfo?.nombre || 'Producto desconocido',
+          nombre: info?.nombre || "Producto",
           cantidad: p.cantidad,
           tipoPrecio: p.tipoPrecio,
-          opcionesPersonalizables: p.opcionesPersonalizables || [],
-          alergiasComensal: p.alergiasComensal || '',
-          mensaje: p.mensaje || '',
           acompanante: p.acompanante || null,
+          mensaje: p.mensaje || "",
+          alergiasComensal: p.alergiasComensal || "",
         };
       }),
-      total: productosCompletos.reduce((sum, p) => sum + p.total, 0),
+      total: Number(productosCompletos.reduce((sum, p) => sum + p.total, 0)),
     };
 
+    // Intentar imprimir SIN BLOQUEAR EL FLUJO
     try {
-      const PRINT_SECRET = process.env.PRINT_SECRET || "clave-secreta-demo";
+      const secret = process.env.PRINT_SECRET || "clave-demo";
       const baseURL = process.env.IMPRESION_SERVER || "http://127.0.0.1:4000";
 
       await axios.post(`${baseURL}/imprimir-bebidas`, datosRespuesta, {
         headers: {
-          "x-tpv-apikey": PRINT_SECRET,
+          "x-tpv-apikey": secret,
           "Content-Type": "application/json",
         },
       });
 
-      logger.info(`🖨️ Pedido de bebidas enviado correctamente a la impresora (${baseURL})`);
-    } catch (error) {
-      logger.error("❌ Error al enviar pedido de bebidas a la impresora:", error.message);
+      logger.info("🖨️ Pedido de bebidas enviado a impresora");
+    } catch (err) {
+      logger.error("❌ Error al imprimir, pero NO se rompe el flujo:", err.message);
     }
-    res.json(datosRespuesta);
+
+    return res.json(datosRespuesta);
+
   } catch (error) {
-    logger.error('Error al agregar bebida:', error);
-    res.status(500).json({ error: 'Error al agregar bebida' });
+    logger.error("❌ Error al agregar bebida:", error);
+    res.status(500).json({ error: "Error al agregar bebida" });
   }
 };

@@ -25,10 +25,19 @@ const useAccionesMesa = (mesa, setMensajeAlerta, navigate, datosFactura) => {
         const { datosImpresion } = response.data;
 
         if (datosImpresion) {
-          await enviarAFacturaPrinter(datosImpresion);
+          try {
+            await enviarAFacturaPrinter(datosImpresion);
+          } catch (error) {
+            logger.error("⚠️ La mesa fue cerrada PERO la impresión falló:", error);
+            setMensajeAlerta({
+              tipo: "warning",
+              mensaje: "La mesa se cerró correctamente pero la impresora no respondió.",
+            });
+          }
         }
 
-        navigate("/");
+        navigate("/tpv");   // <--- FIX REAL
+
       } catch (error) {
         logger.error(error);
         setMensajeAlerta({

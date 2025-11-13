@@ -1,14 +1,11 @@
 import express from 'express';
 import { config } from 'dotenv';
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+dotenv.config({ path: "./.env" });  // 👈 IMPORTANTE
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// 🔥 Cargar el .env explícitamente
-dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 import compression from 'compression';
 import logger from './utils/logger.js';
@@ -62,8 +59,6 @@ import verifactuRoutes from './src/routes/verifactuRoutes.js'; // Importar las r
 import remisionRoutes from './src/routes/remisionRoutes.js';    // (Fichero de remisión Bloques 1+2)
 import eventosRoutes from './src/routes/eventosRoutes.js';      // (Eventos art. 9)
 import adminVerifactuRoutes from './src/routes/adminVerifactuRoutes.js'; // Importar las rutas de administración de VeriFactu
-// Configurar dotenv
-config();
 
 // Inicializar Express y servidor HTTP
 const app = express();

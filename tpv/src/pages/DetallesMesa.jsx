@@ -49,6 +49,7 @@ const DetalleMesa = () => {
       <p className="cargando--mesadetalles">Cargando detalles de la mesa...</p>
     );
   }
+  
   const solicitarProducto = async (pedidoId, itemId, estacion) => {
     try {
       // ✅ 1. Actualización optimista local
