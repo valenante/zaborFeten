@@ -107,29 +107,6 @@
   /* Naranja vibrante */
   border-radius: 4px;
 }
-
-/* Botones */
-.boton-eliminar--mesadetalles,
-.boton-cerrar--mesadetalles {
-  background-color: white;
-  /* Naranja vibrante */
-  border: none;
-  font-size: 20px;
-  border-radius: 5px;
-  padding: 3px 5px;
-  margin: 10px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.boton-eliminar--mesadetalles:hover,
-.boton-cerrar--mesadetalles:hover {
-  background-color: var(--color-principal);
-  /* Morado profundo */
-  transform: scale(1.05);
-}
-
 /* RightBar (40%) */
 .rightbar--mesadetalles {
   width: 40%;
@@ -156,11 +133,55 @@
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-/* Contenedor con 2 columnas */
+/* 🎯 CONTENEDOR DE BOTONES */
 .contenedor-botones--mesadetalles {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr); /* 3 columnas iguales */
+  gap: 10px;
+  margin-top: 15px;
 }
+
+/* 🔵 Botón Cerrar Mesa ocupa TODAS las columnas */
+.contenedor-botones--mesadetalles .boton-cerrar--mesadetalles {
+  grid-column: span 3; /* Ocupa el ancho completo */
+}
+
+/* Ajustes de tamaño uniformes */
+.contenedor-botones--mesadetalles button,
+.contenedor-botones--mesadetalles select {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.boton-imprimir--mesadetalles,
+.boton-factura--mesadetalles,
+.selector-acciones-mesa {
+  background-color: var(--color-principal);
+  color: white;
+}
+
+.boton-cerrar--mesadetalles {
+  background-color: var(--color-secundario); /* naranja */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease;
+  width: 100%;
+}
+
+.boton-cerrar--mesadetalles:hover {
+  background-color: var(--color-principal); /* morado */
+  transform: scale(1.03);
+}
+
 
 /* Botones ya definidos previamente */
 .boton-imprimir--mesadetalles,
@@ -320,7 +341,7 @@
 }
 
 .selector-acciones-mesa {
-  background-color: var(--color-secundario);
+  background-color: var(--color-principal);
   color: var(--blanco);
   border: none;
   font-size: 1rem;
@@ -364,11 +385,7 @@
   }
 
   .contenedor-botones--mesadetalles {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 1rem;
+    grid-template-columns: 1fr 1fr; /* mantiene orden perfecto */
   }
 
   .boton-imprimir--mesadetalles,
@@ -381,20 +398,5 @@
   .rightbar--mesadetalles {
     margin: 0;
     padding: 0;
-  }
-
-  /* Botones */
-  .boton-eliminar--mesadetalles,
-  .boton-cerrar--mesadetalles {
-    background-color: var(--blanco);
-    /* Naranja vibrante */
-    color: #FFFFFF;
-    border: none;
-    margin: 0;
-    height: auto;
-    width: 5vh;
-    font-size: 1rem;
-    border-radius: 5px;
-    transition: background-color 0.3s ease, transform 0.2s ease;
   }
 }

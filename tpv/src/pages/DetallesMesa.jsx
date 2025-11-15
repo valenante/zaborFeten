@@ -95,6 +95,7 @@ const ContenidoMesa = ({ mesa, setMesa, productosDetalles, fetchMesa }) => {
     mostrarModalAccion,
     setMostrarModalAccion,
     accionModal,
+    setAccionModal,
     handleSelect,
   } = mesaActions;
 
@@ -168,21 +169,76 @@ const ContenidoMesa = ({ mesa, setMesa, productosDetalles, fetchMesa }) => {
         {/* ------------------------------ */}
 
         {mesa.estado === "abierta" && (
-          <div className="contenedor-botones--mesadetalles">
-            <button onClick={() => imprimirCuenta()} className="boton-imprimir--mesadetalles">
-              Cuenta
-            </button>
+          <>
 
-            <button onClick={() => setShowModal("factura")} className="boton-factura--mesadetalles">
-              Factura
-            </button>
 
-            <select className="selector-acciones-mesa" value="" onChange={(e) => handleSelect(e.target.value)}>
-              <option value="">Acciones…</option>
-              <option value="transferir">Transferir artículos</option>
-              <option value="comensales">Modificar comensales</option>
-            </select>
-          </div>
+            <div className="contenedor-botones--mesadetalles">
+              
+              <button onClick={() => imprimirCuenta()} className="boton-imprimir--mesadetalles">
+                Cuenta
+              </button>
+
+              <button onClick={() => setShowModal("factura")} className="boton-factura--mesadetalles">
+                Factura
+              </button>
+
+              <select
+                className="selector-acciones-mesa"
+                value=""
+                onChange={(e) => handleSelect(e.target.value)}
+              >
+                <option value="">Acciones…</option>
+                <option value="transferir">Transferir artículos</option>
+                <option value="comensales">Modificar comensales</option>
+              </select>
+
+              <button
+                className="boton-cerrar--mesadetalles"
+                onClick={() => {
+                  // Si la mesa no tiene pedidos → cerrar sin consumo
+                  if ((mesa.pedidos?.length ?? 0) === 0 && (mesa.pedidosBebidas?.length ?? 0) === 0) {
+                    setMostrarModalAccion(true);
+                    setMostrarModalAccion(true);
+                    setMostrarModalAccion(true);
+                    setMostrarModalAccion(true);
+                  }
+
+                  if ((mesa.pedidos?.length ?? 0) === 0 && (mesa.pedidosBebidas?.length ?? 0) === 0) {
+                    setMostrarModalAccion(true);
+                    setMostrarModalAccion(true);
+
+                    setMostrarModalAccion(true);
+                  }
+
+                  // → versión FINAL
+                  if ((mesa.pedidos?.length ?? 0) === 0 && (mesa.pedidosBebidas?.length ?? 0) === 0) {
+                    setMostrarModalAccion(true);
+                    setAccionModal({
+                      titulo: "Cerrar mesa sin consumo",
+                      mensaje: "La mesa está vacía. ¿Deseas cerrarla igualmente?",
+                      onConfirm: () => cerrarMesa({ tipo: "sinConsumo" }, "simplificada", {}, user?.name),
+                    });
+                    return;
+                  }
+
+                  // Si sí tiene pedidos → abre modal de selección de método de pago
+                  setShowModal("cierre");
+                }}
+              >
+                Cerrar Mesa
+              </button>
+            </div>
+
+            {(showModal === "cierre") && (
+              <MetodoPago
+                total={mesa.total}
+                onClose={() => setShowModal(false)}
+                onConfirm={(metodoPago) => {
+                  cerrarMesa(metodoPago, "simplificada", {}, user?.name);
+                }}
+              />
+            )}
+          </>
         )}
       </div>
 

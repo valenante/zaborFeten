@@ -17,7 +17,7 @@
         <sum1:IDVersion>1.0</sum1:IDVersion>
         <sum1:IDFactura>
           <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-          <sum1:NumSerieFactura>2025-0310</sum1:NumSerieFactura>
+          <sum1:NumSerieFactura>2025-0311</sum1:NumSerieFactura>
           <sum1:FechaExpedicionFactura>15-11-2025</sum1:FechaExpedicionFactura>
         </sum1:IDFactura>
         <sum1:NombreRazonEmisor>ANTENUCCI AGUILAR VALENTINO NAHUEL</sum1:NombreRazonEmisor>
@@ -37,15 +37,15 @@
         <sum1:BaseImponibleOimporteNoSujeto>0.00</sum1:BaseImponibleOimporteNoSujeto>
         <sum1:CuotaRepercutida>0.00</sum1:CuotaRepercutida>
       </sum1:DetalleDesglose></sum1:Desglose>
-        <sum1:CuotaTotal>10.23</sum1:CuotaTotal>
-        <sum1:ImporteTotal>112.55</sum1:ImporteTotal>
+        <sum1:CuotaTotal>11.45</sum1:CuotaTotal>
+        <sum1:ImporteTotal>126.10</sum1:ImporteTotal>
         
   <sum1:Encadenamiento>
     <sum1:RegistroAnterior>
       <sum1:IDEmisorFactura>X6063327K</sum1:IDEmisorFactura>
-      <sum1:NumSerieFactura>2025-0309</sum1:NumSerieFactura>
+      <sum1:NumSerieFactura>2025-0310</sum1:NumSerieFactura>
       <sum1:FechaExpedicionFactura>15-11-2025</sum1:FechaExpedicionFactura>
-      <sum1:Huella>BA0F8D0739B64C672A4ABEC246D70E0CA455145F488ED25F905CF7699D8524FC</sum1:Huella>
+      <sum1:Huella>2257EE739D273B5B962BF899A840C42CC06974EEDDE6003878F89BAECC013EBD</sum1:Huella>
     </sum1:RegistroAnterior>
   </sum1:Encadenamiento>
         
@@ -60,9 +60,9 @@
       <sum1:TipoUsoPosibleMultiOT>N</sum1:TipoUsoPosibleMultiOT>
       <sum1:IndicadorMultiplesOT>N</sum1:IndicadorMultiplesOT>
     </sum1:SistemaInformatico>
-        <sum1:FechaHoraHusoGenRegistro>2025-11-15T14:14:34+01:00</sum1:FechaHoraHusoGenRegistro>
+        <sum1:FechaHoraHusoGenRegistro>2025-11-15T17:10:05+01:00</sum1:FechaHoraHusoGenRegistro>
         <sum1:TipoHuella>01</sum1:TipoHuella>
-        <sum1:Huella>2257EE739D273B5B962BF899A840C42CC06974EEDDE6003878F89BAECC013EBD</sum1:Huella>
+        <sum1:Huella>67654128316CE142051F883F2D44096D86EA46ACBEE61A9DB7A33281266A4207</sum1:Huella>
       </sum1:RegistroAlta>
     </sum:RegistroFactura>
     </sum:RegFactuSistemaFacturacion>
