@@ -173,10 +173,24 @@ const ProductoDetalle = ({
         <h2 className="titulo-modal--productoDetalle">
           {producto.nombre}
         </h2>
-        <div>
-          <button onClick={() => manejarCantidad(-1)}>-</button>
-          <span>{cantidad}</span>
-          <button onClick={() => manejarCantidad(1)}>+</button>
+        <div className="cantidad--productoDetalle">
+          <button
+            className="boton-cantidad--productoDetalle"
+            onClick={() => manejarCantidad(-1)}
+          >
+            –
+          </button>
+
+          <span className="cantidad-valor--productoDetalle">
+            {cantidad}
+          </span>
+
+          <button
+            className="boton-cantidad--productoDetalle"
+            onClick={() => manejarCantidad(1)}
+          >
+            +
+          </button>
         </div>
 
         {producto.categoria.toLowerCase().includes("vino") ? (

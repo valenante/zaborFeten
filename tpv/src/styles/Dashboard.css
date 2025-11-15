@@ -74,6 +74,7 @@
   height: 10vh;
   border-radius: 20%;
   display: flex;
+  flex-direction: column;      /* 🔥 ESTO ES LO CLAVE */
   align-items: center;
   justify-content: center;
   font-size: 1rem;
@@ -84,8 +85,16 @@
   transition: all 0.25s ease;
   border: 2px solid transparent;
   box-shadow: var(--sombra-suave);
-  gap: 4px;
   text-align: center;
+}
+
+.mesa-total--dashboard {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  opacity: 0.9;
+  text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* CERRADA */
@@ -139,18 +148,22 @@
 }
 
 .mesa-sidebar {
-  width: 65px;
-  height: 65px;
   border-radius: 50%;
   background: var(--color-secundario);
   color: var(--blanco);
   font-weight: 700;
   display: flex;
+  flex-direction: column;   /* ✅ CLAVE */
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.25s ease, background 0.25s ease;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.mesa-sidebar .mesa-total--dashboard {
+  font-size: 0.75rem;
+  margin-top: -1vh;
 }
 
 .mesa-sidebar:hover {
@@ -273,6 +286,16 @@
 
 
 @media (max-width: 600px) {
+    /* Barra de búsqueda */
+  .search-container--dashboard {
+    width: 80%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10vh;
+    padding: 0 10px;
+  }
+
   .btn-editar,
   .selector-zona {
     font-size: 0.9rem;

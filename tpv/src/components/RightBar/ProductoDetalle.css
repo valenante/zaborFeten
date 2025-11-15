@@ -254,6 +254,42 @@
   border-radius: 4px;
 }
 
+/* Contenedor */
+.cantidad--productoDetalle {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+}
+
+/* Botones + y - */
+.boton-cantidad--productoDetalle {
+  width: 3vh;
+  height: 3vh;
+  background: var(--color-secundario);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.boton-cantidad--productoDetalle:hover {
+  background: var(--color-principal);
+  transform: scale(1.1);
+}
+
+/* Valor de cantidad */
+.cantidad-valor--productoDetalle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+}
+
 /* Animación del modal */
 @keyframes slideDown {
   from {
@@ -314,9 +350,7 @@
 
   .cantidad--productoDetalle {
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 12px;
   }
 
   .modal-botones--productoDetalle {

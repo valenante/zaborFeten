@@ -238,6 +238,29 @@
   transform: scale(1.03);
 }
 
+.carrito-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.carrito-toggle button {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 2px solid var(--color-principal);
+  background: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.carrito-toggle button.activo {
+  background: var(--color-principal);
+  color: white;
+}
+
+
 /* ======= RESPONSIVE MODAL ======= */
 @media (max-width: 500px) {
   .modal-content {

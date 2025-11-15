@@ -69,9 +69,19 @@ const usePedidosMesa = (mesa, setMesa) => {
           pedido._id === pedidoId
             ? {
               ...pedido,
-              productos: pedido.productos.filter(
-                (prod) => prod._id !== productoId
-              ),
+              productos: pedido.productos
+                .map((prod) =>
+                  prod._id === productoId
+                    ? prod.cantidad > 1
+                      ? {
+                        ...prod,
+                        cantidad: prod.cantidad - 1,
+                        total: +(prod.total - prod.total / prod.cantidad).toFixed(2)
+                      }
+                      : null // se eliminará
+                    : prod
+                )
+                .filter(Boolean),
             }
             : pedido
         ),
@@ -79,9 +89,19 @@ const usePedidosMesa = (mesa, setMesa) => {
           pedido._id === pedidoId
             ? {
               ...pedido,
-              productos: pedido.productos.filter(
-                (prod) => prod._id !== productoId
-              ),
+              productos: pedido.productos
+                .map((prod) =>
+                  prod._id === productoId
+                    ? prod.cantidad > 1
+                      ? {
+                        ...prod,
+                        cantidad: prod.cantidad - 1,
+                        total: +(prod.total - prod.total / prod.cantidad).toFixed(2)
+                      }
+                      : null // se eliminará
+                    : prod
+                )
+                .filter(Boolean),
             }
             : pedido
         ),

@@ -1,25 +1,40 @@
 import ProductoDetalle from "./ProductoDetalle.jsx";
-import { useRightBar } from "../../hooks/useRightBar";
-import AlertaMensaje from "../AlertaMensaje/AlertaMensaje"; // ✅ Asegúrate de tenerlo creado
+import { useRightBarContext } from "../../context/RightBarContext";
+import AlertaMensaje from "../AlertaMensaje/AlertaMensaje";
 import ModalProductosCategoria from "../ModalProductosCategoria/ModalProductosCategoria";
 import CarritoOrganizable from "../CarritoOrganizable/CarritoOrganizable";
 import "./RightBar.css";
 
-const RightBar = ({ mesaId }) => {
+const RightBar = () => {
+
   const {
-    tipo, setTipo, categoriaSeleccionada, setCategoriaSeleccionada,
-    productoSeleccionado, preciosSeleccionados, setPreciosSeleccionados,
-    showModal, abrirModal, cerrarModal, agregarAlCarrito,
-    carrito, setCarrito, carritoBebidas, setCarritoBebidas,
-    enviarPedido, mensajeAlerta, setMensajeAlerta, isLoading,
-    mostrarResumen, setMostrarResumen, categories,
-    handleClickCategoria, mostrarModalCategoria,
-    productosCategoriaActual, productosYaPedidos, setMostrarModalCategoria,
+    tipo, setTipo,
+    categoriaSeleccionada, setCategoriaSeleccionada,
+    productoSeleccionado, showModal,
+    abrirModal, cerrarModal,
+    agregarAlCarrito,
+
+    carrito, setCarrito,
+    carritoBebidas, setCarritoBebidas,
+
+    enviarPedido,
+    mensajeAlerta, setMensajeAlerta,
+    isLoading,
+
+    mostrarResumen, setMostrarResumen,
+
+    categories, handleClickCategoria,
+    mostrarModalCategoria, setMostrarModalCategoria,
+    productosCategoriaActual,
+    productosYaPedidos,
+
     mensajesSeccion, setMensajesSeccion,
-  } = useRightBar(mesaId);
+  } = useRightBarContext();
 
   return (
     <div className="right-bar--rightbar">
+
+      {/* Selección Plato/Bebida */}
       <div className="filtros-tipo--rightbar">
         <button
           onClick={() => setTipo("plato")}
@@ -35,6 +50,7 @@ const RightBar = ({ mesaId }) => {
         </button>
       </div>
 
+      {/* Categorías */}
       <div className="categorias--rightbar">
         <ul className="lista-categorias--rightbar">
           {categories.map((categoria) => (
@@ -49,6 +65,7 @@ const RightBar = ({ mesaId }) => {
         </ul>
       </div>
 
+      {/* botón para abrir resumen */}
       <button
         className="boton-toggle-resumen"
         onClick={() => setMostrarResumen(!mostrarResumen)}
@@ -56,6 +73,7 @@ const RightBar = ({ mesaId }) => {
         📋
       </button>
 
+      {/* Modal detalle producto */}
       {showModal && productoSeleccionado && (
         <ProductoDetalle
           producto={productoSeleccionado}
@@ -65,6 +83,7 @@ const RightBar = ({ mesaId }) => {
         />
       )}
 
+      {/* Modal productos categoría */}
       {mostrarModalCategoria && (
         <ModalProductosCategoria
           categoria={categoriaSeleccionada}
@@ -78,6 +97,7 @@ const RightBar = ({ mesaId }) => {
         />
       )}
 
+      {/* RESUMEN DEL CARRITO */}
       {mostrarResumen && (
         <div className="resumen-overlay">
           <div className="resumen-pedido-panel">
@@ -89,7 +109,7 @@ const RightBar = ({ mesaId }) => {
               </button>
             </div>
 
-            {/* Contenido scrolleable */}
+            {/* Contenido */}
             <div className="resumen-contenido">
               <CarritoOrganizable
                 carrito={[
@@ -97,15 +117,18 @@ const RightBar = ({ mesaId }) => {
                   ...carritoBebidas.map(b => ({ ...b, tipo: "bebida", seccion: "bebidas" }))
                 ]}
                 setCarrito={(update) => {
-                  const aplicarActualizacion = (prevCarrito, prevBebidas) => {
+                  const aplicarActualizacion = (prevPlatos, prevBebidas) => {
                     const combinado = Array.isArray(update)
                       ? update
-                      : update([...prevCarrito, ...prevBebidas]);
+                      : update([...prevPlatos, ...prevBebidas]);
+
                     const soloPlatos = combinado.filter(i => i.tipo !== "bebida");
                     const soloBebidas = combinado.filter(i => i.tipo === "bebida");
+
                     setCarrito(soloPlatos);
                     setCarritoBebidas(soloBebidas);
                   };
+
                   aplicarActualizacion(carrito, carritoBebidas);
                 }}
                 enviarPedido={enviarPedido}
@@ -115,12 +138,12 @@ const RightBar = ({ mesaId }) => {
               />
             </div>
 
-            {/* Footer fijo */}
+            {/* Footer */}
             <div className="resumen-footer">
               <button
                 onClick={async () => {
                   const exito = await enviarPedido();
-                  if (exito) setMostrarResumen(false); 
+                  if (exito) setMostrarResumen(false);
                 }}
                 disabled={isLoading}
                 className="carrito-enviar-button"
@@ -140,7 +163,9 @@ const RightBar = ({ mesaId }) => {
           onClose={() => setMensajeAlerta(null)}
         />
       )}
+
     </div>
   );
-}
+};
+
 export default RightBar;

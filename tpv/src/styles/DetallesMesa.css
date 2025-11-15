@@ -111,9 +111,8 @@
 /* Botones */
 .boton-eliminar--mesadetalles,
 .boton-cerrar--mesadetalles {
-  background-color: var(--color-secundario);
+  background-color: white;
   /* Naranja vibrante */
-  color: #FFFFFF;
   border: none;
   font-size: 20px;
   border-radius: 5px;
@@ -197,7 +196,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Asegura que esté por encima */
+  z-index: 1000;
+  /* Asegura que esté por encima */
 }
 
 /* 🔹 Contenido del modal */
@@ -280,6 +280,58 @@
   gap: 6px;
 }
 
+.titulo-seccion--mesadetalles {
+  background: #8b0000;
+  color: white;
+  padding: 8px 12px;
+  margin: 12px 0 8px;
+  font-weight: bold;
+  border-radius: 4px;
+  font-size: 18px;
+}
+
+/* Toggle Platos / Bebidas */
+.toggle-vista--mesadetalles {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0 20px;
+}
+
+.boton-toggle {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: none;
+  background: white;
+  color: var(--color-principal);
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.boton-toggle:hover {
+  color: var(--color-secundario);
+}
+
+.boton-toggle.activo {
+  background: var(--color-secundario);
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.selector-acciones-mesa {
+  background-color: var(--color-secundario);
+  color: var(--blanco);
+  border: none;
+  font-size: 1rem;
+  border-radius: var(--borde-redondeado);
+  padding: 0.5rem 1rem;
+  margin: 0.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
 /* 🔹 Responsive */
 @media (max-width: 500px) {
   .modal-contenido {
@@ -287,7 +339,7 @@
     padding: 15px;
   }
 
-  .contenido-mesa--mesadetalles{
+  .contenido-mesa--mesadetalles {
     width: 100px;
   }
 
@@ -318,6 +370,7 @@
     gap: 10px;
     margin-top: 1rem;
   }
+
   .boton-imprimir--mesadetalles,
   .boton-factura--mesadetalles {
     width: 100%;
@@ -325,7 +378,7 @@
     padding: 8px 15px;
   }
 
-  .rightbar--mesadetalles{
+  .rightbar--mesadetalles {
     margin: 0;
     padding: 0;
   }
@@ -333,7 +386,7 @@
   /* Botones */
   .boton-eliminar--mesadetalles,
   .boton-cerrar--mesadetalles {
-    background-color: var(--color-secundario);
+    background-color: var(--blanco);
     /* Naranja vibrante */
     color: #FFFFFF;
     border: none;

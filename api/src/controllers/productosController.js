@@ -147,7 +147,13 @@ export const eliminarProducto = async (req, res) => {
 
 export const eliminarProductoPedido = async (req, res) => {
   const { pedidoId, id: productoId } = req.params;
-  const user = req.user?.id || req.user?._id;
+  let user = req.user?._id;
+
+  // En DEV MODE asignamos un ObjectId ficticio válido
+  if (!user && process.env.NODE_ENV !== "production") {
+    user = "64b000000000000000000001"; // cualquier ObjectId válido
+  }
+
 
   try {
     if (!user) {
@@ -178,10 +184,30 @@ export const eliminarProductoPedido = async (req, res) => {
       return res.status(404).json({ error: "Producto no encontrado en el pedido." });
     }
 
-    // Eliminar producto del array
-    pedido.productos = pedido.productos.filter(
-      (producto) => producto._id.toString() !== productoEliminado._id.toString()
-    );
+    // === NUEVA LÓGICA: restar 1 unidad ===
+
+    const cantidadActual = productoEliminado.cantidad;
+    const precioUnitario = (productoEliminado.total || 0) / cantidadActual;
+
+    console.log("🟩 BACK: Producto después de restar:", {
+      cantidad: productoEliminado.cantidad,
+      total: productoEliminado.total
+    });
+
+    if (pedido.productos.length === 0) {
+      console.warn("⚠️ BACK: Pedido quedó vacío → se eliminará completo");
+    }
+
+    // Si solo hay una unidad → eliminar producto entero
+    if (cantidadActual <= 1) {
+      pedido.productos = pedido.productos.filter(
+        (producto) => producto._id.toString() !== productoEliminado._id.toString()
+      );
+    } else {
+      // Restar una unidad
+      productoEliminado.cantidad -= 1;
+      productoEliminado.total = +(productoEliminado.total - precioUnitario).toFixed(2);
+    }
 
     // Recalcular total del pedido
     pedido.total = pedido.productos.reduce(

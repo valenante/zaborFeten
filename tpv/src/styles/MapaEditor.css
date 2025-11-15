@@ -95,8 +95,8 @@
   gap: 12px;
 }
 .mesa-sidebar {
-  width: 60px;
-  height: 60px;
+  width: 8vh;
+  height: 8vh;
   border-radius: 20%;
   background: var(--color-secundario);
   display: flex;

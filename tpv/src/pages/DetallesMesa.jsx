@@ -1,310 +1,224 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MetodoPago from "../components/DetallesMesa/MetodoPago";
 import RightBar from "../components/RightBar/RightBar";
 import { SocketContext } from "../utils/socket";
 import useMesa from "../hooks/useMesa";
 import usePedidos from "../hooks/usePedidos";
+import { RightBarProvider, useRightBarContext } from "../context/RightBarContext";
+import { useLeaveProtection } from "../hooks/useLeaveProtection";
 import useAccionesMesa from "../hooks/useAccionesMesa";
+import { useMesaActions } from "../hooks/useMesaActions";
 import { useAuth } from "../context/AuthContext";
 import "../styles/DetallesMesa.css";
 import AlertaMensaje from "../components/AlertaMensaje/AlertaMensaje";
 import ModalTransferencia from "../components/Modal/ModalTransferencia";
 import ModalConfirmacion from "../components/Modal/ModalConfirmacion";
+import ModalSalirCarrito from "../components/Modal/ModalSalirCarrito";
 import ListaPedidos from "../components/DetallesMesa/ListaPedidos";
 import ListaBebidas from "../components/DetallesMesa/ListaBebidas";
 import api from "../utils/api";
-import { error, info, warn } from "../utils/logger";
+import { error } from "../utils/logger";
+
+// ======================================================
+//  WRAPPER PRINCIPAL
+// ======================================================
 
 const DetalleMesa = () => {
-  const { id } = useParams(); // Obtener el `id` de la mesa desde la URL  
-  const { user } = useAuth()
-  const navigate = useNavigate();
+  const { id } = useParams();
   const { socket } = useContext(SocketContext);
   const { mesa, setMesa, productosDetalles, fetchMesa } = useMesa(id, socket);
-  const {
-    agregarProducto,
-    eliminarProducto,
-    mensajeAlerta,
+
+
+  if (!mesa) return <p className="cargando--mesadetalles">Cargando...</p>;
+
+  return (
+    <RightBarProvider mesaId={mesa._id}>
+      <ContenidoMesa
+        mesa={mesa}
+        setMesa={setMesa}
+        productosDetalles={productosDetalles}
+        fetchMesa={fetchMesa}
+      />
+    </RightBarProvider>
+  );
+};
+
+// ======================================================
+//  CONTENIDO PRINCIPAL
+// ======================================================
+
+const ContenidoMesa = ({ mesa, setMesa, productosDetalles, fetchMesa }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const { carrito, carritoBebidas, mostrarResumen } = useRightBarContext();
+
+  // ---------------------
+  // BLOQUEO SALIDA
+  // ---------------------
+  const hayCarrito =
+    carrito.length > 0 || carritoBebidas.length > 0 || mostrarResumen;
+
+  const [modalSalir, setModalSalir] = useState(false);
+  const [accionARealizar, setAccionARealizar] = useState(null);
+
+  const onTryLeave = useCallback((cb) => {
+    setAccionARealizar(() => cb);
+    setModalSalir(true);
+  }, []);
+
+  useLeaveProtection(hayCarrito, onTryLeave);
+
+  // ---------------------
+  // PEDIDOS
+  // ---------------------
+  const { agregarProducto, eliminarProducto, mensajeAlerta, setMensajeAlerta } =
+    usePedidos(mesa, setMesa);
+
+  const { cerrarMesa, emitirFactura, imprimirCuenta } =
+    useAccionesMesa(mesa, setMensajeAlerta, navigate);
+
+  // ---------------------
+  // ACCIONES DE MESA
+  // ---------------------
+  const mesaActions = useMesaActions({
+    mesa,
+    setMesa,
     setMensajeAlerta,
-  } = usePedidos(mesa, setMesa);
-  const [datosFactura, setDatosFactura] = useState({ nombre: "", nif: "" });
+    fetchMesa,
+  });
+
   const {
-    cerrarMesa,
-    emitirFactura,
-    imprimirCuenta,
-  } = useAccionesMesa(mesa, setMensajeAlerta, navigate, /*datosFactura*/);
+    mostrarTransferir,
+    setMostrarTransferir,
+    mostrarModalAccion,
+    setMostrarModalAccion,
+    accionModal,
+    handleSelect,
+  } = mesaActions;
+
+  // ---------------------
+  // OTROS ESTADOS
+  // ---------------------
+  const [vista, setVista] = useState("platos");
   const [showModal, setShowModal] = useState(false);
   const [mostrarFacturaModal, setMostrarFacturaModal] = useState(false);
   const [metodoPagoFactura, setMetodoPagoFactura] = useState(null);
-  useState(false);
-  const [mostrarModalTransferir, setMostrarModalTransferir] = useState(false);
-  const [mostrarModalConfirmacion, setMostrarModalConfirmacion] = useState(false);
-  const [accionModal, setAccionModal] = useState(null);
-  const [isProcessingFactura, setIsProcessingFactura] = useState(false);
-
-  // ⛔ AÑADE ESTO AQUÍ ANTES DEL RETURN
-  if (!mesa) {
-    return (
-      <p className="cargando--mesadetalles">Cargando detalles de la mesa...</p>
-    );
-  }
-  
-  const solicitarProducto = async (pedidoId, itemId, estacion) => {
-    try {
-      // ✅ 1. Actualización optimista local
-      setMesa((prevMesa) => ({
-        ...prevMesa,
-        pedidos: prevMesa.pedidos.map((p) =>
-          p._id === pedidoId
-            ? {
-              ...p,
-              productos: p.productos.map((prod) =>
-                prod._id === itemId
-                  ? {
-                    ...prod,
-                    workflow: { ...(prod.workflow || {}), estado: "solicitado" },
-                  }
-                  : prod
-              ),
-            }
-            : p
-        ),
-      }));
-
-      // ✅ 2. Enviar al backend
-      await api.post(`/cocina/${pedidoId}/items/${itemId}/solicitar`, {
-        solicitadoA: estacion,
-        solicitadoPor: 'caja',
-      });
-
-      // ✅ 3. Mostrar mensaje de éxito
-      setMensajeAlerta({
-        tipo: "exito",
-        mensaje: "Producto solicitado correctamente.",
-      });
-    } catch (err) {
-      // ❌ 4. Si falla, revertimos cambio local
-      setMesa((prevMesa) => ({
-        ...prevMesa,
-        pedidos: prevMesa.pedidos.map((p) =>
-          p._id === pedidoId
-            ? {
-              ...p,
-              productos: p.productos.map((prod) =>
-                prod._id === itemId
-                  ? {
-                    ...prod,
-                    workflow: { ...(prod.workflow || {}), estado: "pendiente" },
-                  }
-                  : prod
-              ),
-            }
-            : p
-        ),
-      }));
-
-      error("Error al solicitar producto:", err);
-      setMensajeAlerta({
-        tipo: "error",
-        mensaje: "Error al solicitar producto.",
-      });
-    }
-  };
 
   return (
     <div className="detalle-mesa--mesadetalles">
-      <div className="rightbar--mesadetalles">
-        <RightBar mesaId={mesa._id} agregarProducto={agregarProducto} />
-      </div>
-      <div className="contenido-mesa--mesadetalles">
-
-        {mostrarFacturaModal && (
-          <div className="modal-factura">
-            <div className="modal-contenido">
-              <h2>Datos de la Factura</h2>
-              <input
-                type="text"
-                placeholder="Nombre o Razón Social"
-                value={datosFactura.nombre}
-                onChange={(e) =>
-                  setDatosFactura({ ...datosFactura, nombre: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="NIF o CIF"
-                value={datosFactura.nif}
-                onChange={(e) =>
-                  setDatosFactura({ ...datosFactura, nif: e.target.value })
-                }
-              />
-              {/* === BOTÓN BLOQUEADO PROFESIONALMENTE === */}
-              <button
-                disabled={isProcessingFactura} // 🔒 evita doble clic
-                onClick={async () => {
-                  if (isProcessingFactura) return; // seguridad extra
-                  setIsProcessingFactura(true); // activa bloqueo
-                  try {
-                    const idempotencyKey =
-                      typeof crypto !== "undefined" && crypto.randomUUID
-                        ? crypto.randomUUID()
-                        : `idem_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-                    await emitirFactura(
-                      metodoPagoFactura,
-                      {
-                        nombre: datosFactura.nombre,
-                        nif: datosFactura.nif,
-                        idempotencyKey, // 🔐 pásalo al backend
-                      },
-                      user?.name
-                    );
-
-                    // 🔚 al terminar correctamente, cierra modal
-                    setMostrarFacturaModal(false);
-                  } catch (err) {
-                    console.error("❌ Error al emitir factura:", err);
-                    // 🔁 si falla, permite reintentar
-                    setIsProcessingFactura(false);
-                  }
-                }}
-                style={{
-                  opacity: isProcessingFactura ? 0.6 : 1,
-                  cursor: isProcessingFactura ? "not-allowed" : "pointer",
-                }}
-              >
-                {isProcessingFactura ? "Procesando..." : "Emitir Factura"}
-              </button>
-              <button onClick={() => setMostrarFacturaModal(false)}>
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-        <h1 className="titulo-mesa--mesadetalles">Mesa {mesa.numero}</h1>
-        <p className="total-mesa--mesadetalles">Total: {mesa.total} €</p>
-        <ListaPedidos
-          pedidos={mesa.pedidos || []}
-          productosDetalles={productosDetalles}
-          eliminarProducto={eliminarProducto}
-          setAccionModal={setAccionModal}
-          setMostrarModalConfirmacion={setMostrarModalConfirmacion}
-          solicitarProducto={solicitarProducto}
-          setMesa={setMesa}
-        />
-
-        <ListaBebidas
-          pedidosBebidas={mesa.pedidosBebidas || []}
-          eliminarProducto={eliminarProducto}
-          setAccionModal={setAccionModal}
-          setMostrarModalConfirmacion={setMostrarModalConfirmacion}
-          solicitarProducto={solicitarProducto}
-          productosDetalles={productosDetalles}
-          setMesa={setMesa}
-        />
-
-        {mesa.estado === "abierta" && (
-          <>
-            <button
-              onClick={() => {
-                if ((mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)) {
-                  // 🟣 Mostrar modal personalizado en lugar de window.confirm
-                  setAccionModal({
-                    titulo: "Cerrar mesa sin consumo",
-                    mensaje: "Esta mesa no tiene pedidos ni bebidas. ¿Deseas cerrarla igualmente?",
-                    onConfirm: () => {
-                      cerrarMesa({ tipo: "sinConsumo" }, "simplificada", {}, user?.name || "");
-                      setMostrarModalConfirmacion(false);
-                    },
-                  });
-                  setMostrarModalConfirmacion(true);
-                } else {
-                  setShowModal("cierre");
-                }
-              }}
-              className="boton-cerrar--mesadetalles"
-            >
-              Cerrar Mesa
-            </button>
-            <div className="contenedor-botones--mesadetalles">
-              <button
-                onClick={imprimirCuenta}
-                className="boton-imprimir--mesadetalles"
-                disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
-              >
-                Cuenta
-              </button>
-              <button
-                onClick={() => setShowModal("factura")}
-                className="boton-factura--mesadetalles"
-                disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
-              >
-                Factura
-              </button>
-              <button
-                onClick={() => setMostrarModalTransferir(true)}
-                className="boton-factura--mesadetalles"
-                disabled={(mesa.pedidos?.length === 0) && (mesa.pedidosBebidas?.length === 0)}
-              >
-                Transferir Artículos
-              </button>
-            </div>
-          </>
-        )}
-
-        {(showModal === "cierre" || showModal === "factura") && (
-          <MetodoPago
-            total={mesa.total}
-            onClose={() => setShowModal(false)}
-            onConfirm={(metodoPago) => {
-              if (showModal === "factura") {
-                setMetodoPagoFactura(metodoPago);
-                setShowModal(false);
-                setMostrarFacturaModal(true); // Abre el modal de datos fiscales
-              } else {
-                cerrarMesa(metodoPago, "simplificada", {}, user?.name || user?.email || "");
-              }
-            }}
-          />
-        )}
-      </div>
-      {
-        mensajeAlerta && (
-          <AlertaMensaje
-            tipo={mensajeAlerta.tipo}
-            mensaje={mensajeAlerta.mensaje}
-            onClose={() => setMensajeAlerta(null)}
-          />
-        )
-      }
-
-      {
-        mostrarModalTransferir && (
-          <ModalTransferencia
-            mesaOrigen={mesa}
-            onClose={() => setMostrarModalTransferir(false)}
-            onTransferSuccess={() => {
-              setMostrarModalTransferir(false);
-              fetchMesa(); // Refresca la mesa después de transferir
-            }}
-          />
-        )
-      }
-
-      {mostrarModalConfirmacion && (
-        <ModalConfirmacion
-          titulo={accionModal?.titulo}
-          mensaje={accionModal?.mensaje}
-          onConfirm={() => {
-            accionModal?.onConfirm();
-            setMostrarModalConfirmacion(false);
-          }}
-          onClose={() => setMostrarModalConfirmacion(false)}
+      {/* MODAL SALIR */}
+      {modalSalir && (
+        <ModalSalirCarrito
+          onCancel={() => setModalSalir(false)}
+          onConfirm={() => (accionARealizar ? accionARealizar() : window.history.back())}
         />
       )}
 
-    </div >
+      {/* RIGHTBAR */}
+      <div className="rightbar--mesadetalles">
+        <RightBar mesaId={mesa._id} agregarProducto={agregarProducto} />
+      </div>
+
+      {/* CONTENIDO */}
+      <div className="contenido-mesa--mesadetalles">
+        <h1 className="titulo-mesa--mesadetalles">Mesa {mesa.numero}</h1>
+        <p className="total-mesa--mesadetalles">Total: {mesa.total} €</p>
+
+        <div className="toggle-vista--mesadetalles">
+          <button
+            className={vista === "platos" ? "boton-toggle activo" : "boton-toggle"}
+            onClick={() => setVista("platos")}
+          >
+            Platos
+          </button>
+          <button
+            className={vista === "bebidas" ? "boton-toggle activo" : "boton-toggle"}
+            onClick={() => setVista("bebidas")}
+          >
+            Bebidas
+          </button>
+        </div>
+
+        {vista === "platos" && (
+          <ListaPedidos
+            pedidos={mesa.pedidos}
+            productosDetalles={productosDetalles}
+            eliminarProducto={eliminarProducto}
+            setAccionModal={setMostrarModalAccion}
+            solicitarProducto={() => { }}
+            setMesa={setMesa}
+          />
+        )}
+
+        {vista === "bebidas" && (
+          <ListaBebidas
+            pedidosBebidas={mesa.pedidosBebidas}
+            eliminarProducto={eliminarProducto}
+            setAccionModal={setMostrarModalAccion}
+            solicitarProducto={() => { }}
+            productosDetalles={productosDetalles}
+            setMesa={setMesa}
+          />
+        )}
+
+        {/* ------------------------------ */}
+        {/*       SELECT DE ACCIONES       */}
+        {/* ------------------------------ */}
+
+        {mesa.estado === "abierta" && (
+          <div className="contenedor-botones--mesadetalles">
+            <button onClick={() => imprimirCuenta()} className="boton-imprimir--mesadetalles">
+              Cuenta
+            </button>
+
+            <button onClick={() => setShowModal("factura")} className="boton-factura--mesadetalles">
+              Factura
+            </button>
+
+            <select className="selector-acciones-mesa" value="" onChange={(e) => handleSelect(e.target.value)}>
+              <option value="">Acciones…</option>
+              <option value="transferir">Transferir artículos</option>
+              <option value="comensales">Modificar comensales</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* ------------------------------ */}
+      {/* MODALES REALES */}
+      {/* ------------------------------ */}
+
+      {mostrarTransferir && (
+        <ModalTransferencia
+          mesaOrigen={mesa}
+          onClose={() => setMostrarTransferir(false)}
+          onTransferSuccess={() => {
+            setMostrarTransferir(false);
+            fetchMesa();
+          }}
+        />
+      )}
+
+      {mostrarModalAccion && (
+        <ModalConfirmacion
+          titulo={accionModal?.titulo}
+          mensaje={accionModal?.mensaje}
+          placeholder={accionModal?.placeholder}
+          onConfirm={(valor) => {
+            accionModal?.onConfirm(valor);
+            setMostrarModalAccion(false);
+          }}
+          onClose={() => setMostrarModalAccion(false)}
+        />
+      )}
+
+
+      {mensajeAlerta && (
+        <AlertaMensaje tipo={mensajeAlerta.tipo} mensaje={mensajeAlerta.mensaje} onClose={() => setMensajeAlerta(null)} />
+      )}
+    </div>
   );
 };
 

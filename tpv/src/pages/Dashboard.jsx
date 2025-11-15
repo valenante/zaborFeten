@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMesaActions } from "../hooks/useMesaActions";
 import SubNavbar from "../components/Subnavbar/Subnavbar";
 import ModalConfirmacion from "../components/Modal/ModalConfirmacion";
 import AlertaMensaje from "../components/AlertaMensaje/AlertaMensaje";
@@ -8,7 +9,8 @@ import TPVVoice from "../components/TPVVoiceAssistant/TPVVoice";
 import "../styles/Dashboard.css";
 import { fetchMesas, abrirMesaConModal } from "../utils/mesaHandlers";
 import api from "../utils/api";
-import Draggable from "react-draggable";
+
+let holdTimeout;
 
 const Dashboard = () => {
   const [mesas, setMesas] = useState([]);
@@ -19,14 +21,20 @@ const Dashboard = () => {
   const [valorInput, setValorInput] = useState("");
   const [alerta, setAlerta] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(false);
-  const [zona, setZona] = useState("exterior"); // 🟣 nueva: selector de zona
-  const [valorModal, setValorModal] = useState(""); // 🔹 valor del input del modal activo
+  const [zona, setZona] = useState("exterior");
+  const [valorModal, setValorModal] = useState("");
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(0);
 
-  // === Cargar mesas ===
+  // Hook centralizado SOLO para modificar comensales
+  const mesaActions = useMesaActions({
+    setMesas,
+    setMensajeAlerta: setAlerta,
+    fetchMesa: () => fetchMesas(setMesas),
+    allowedActions: ["comensales"],
+  });
+
+  // === Cargar mesas al inicio ===
   useEffect(() => {
     fetchMesas(setMesas);
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -42,7 +50,9 @@ const Dashboard = () => {
     socket.on("mesaAbierta", actualizarMesas);
     socket.on("cuentaImpresa", ({ mesaId }) => {
       setMesas((prev) =>
-        prev.map((m) => (m._id === mesaId ? { ...m, cuentaImpresa: true } : m))
+        prev.map((m) =>
+          m._id === mesaId ? { ...m, cuentaImpresa: true } : m
+        )
       );
     });
 
@@ -52,11 +62,12 @@ const Dashboard = () => {
     };
   }, [socket]);
 
-  // === Abrir o navegar según estado ===
+  // === Entrada móvil ===
   const manejarEntradaMesa = async () => {
     const numero = parseInt(valorInput, 10);
+
     if (isNaN(numero) || numero <= 0) {
-      setAlerta({ tipo: "error", mensaje: "Introduce un número de mesa válido." });
+      setAlerta({ tipo: "error", mensaje: "Introduce un número válido." });
       return;
     }
 
@@ -72,15 +83,14 @@ const Dashboard = () => {
       if (mesa.estado === "cerrada") {
         setAccionModal({
           titulo: `Abrir mesa ${mesa.numero}`,
-          mensaje: "Introduce la cantidad de comensales antes de abrir la mesa.",
+          mensaje: "Introduce los comensales:",
           placeholder: "Cantidad de comensales",
           onConfirm: (valor) => {
             const comensales = parseInt(valor, 10);
             if (isNaN(comensales) || comensales < 1 || comensales > 25) {
               setAlerta({
                 tipo: "error",
-                mensaje:
-                  "Por favor, introduce un número válido de comensales (mínimo 1, máximo 25).",
+                mensaje: "Número inválido (1–25).",
               });
               return;
             }
@@ -100,27 +110,25 @@ const Dashboard = () => {
         navigate(`/mesas/${mesa._id}`);
       }
     } catch (err) {
-      setAlerta({ tipo: "error", mensaje: "Error al buscar la mesa." });
+      setAlerta({ tipo: "error", mensaje: "Error al buscar mesa." });
     }
   };
 
-  // === Click normal en escritorio ===
+  // === Click en escritorio ===
   const handleMesaClick = (mesa) => {
     if (modoEdicion) return;
 
     if (mesa.estado === "cerrada") {
-      setValorInput("");
       setAccionModal({
         titulo: `Abrir mesa ${mesa.numero}`,
-        mensaje: "Introduce la cantidad de comensales antes de abrir la mesa.",
+        mensaje: "Introduce los comensales:",
         placeholder: "Cantidad de comensales",
         onConfirm: (valor) => {
           const comensales = parseInt(valor, 10);
           if (isNaN(comensales) || comensales < 1 || comensales > 25) {
             setAlerta({
               tipo: "error",
-              mensaje:
-                "Por favor, introduce un número válido de comensales (mínimo 1, máximo 25).",
+              mensaje: "Número inválido (1–25).",
             });
             return;
           }
@@ -141,71 +149,24 @@ const Dashboard = () => {
     }
   };
 
-  let holdTimeout;
-
+  // === Long press → modificar comensales ===
   const handleMouseDown = (mesa) => {
     if (modoEdicion) return;
+
     holdTimeout = setTimeout(() => {
-      setValorModal(""); // 🔹 reiniciar input
-      setAccionModal({
-        titulo: `Editar comensales - Mesa ${mesa.numero}`,
-        mensaje: "Introduce el nuevo número de comensales:",
-        placeholder: "Cantidad de comensales",
-        onConfirm: async (valor) => {
-          const comensales = parseInt(valor, 10);
-          if (isNaN(comensales) || comensales < 1 || comensales > 25) {
-            setAlerta({
-              tipo: "error",
-              mensaje: "Número de comensales inválido (1–25).",
-            });
-            return;
-          }
-
-          try {
-            await api.put(`/mesas/${mesa._id}/comensales`, { comensales });
-            setAlerta({
-              tipo: "exito",
-              mensaje: `Mesa ${mesa.numero}: ${comensales} comensales.`,
-            });
-
-            setMesas((prev) =>
-              prev.map((m) =>
-                m._id === mesa._id ? { ...m, comensales } : m
-              )
-            );
-          } catch (err) {
-            setAlerta({
-              tipo: "error",
-              mensaje: "Error al actualizar comensales.",
-            });
-          }
-        },
-      });
-      setMostrarModalConfirmacion(true);
+      mesaActions.handleSelect("comensales", mesa); // 🔥 abre modal centralizado
     }, 700);
   };
 
   const handleMouseUp = () => clearTimeout(holdTimeout);
 
-  // === Filtrar mesas visibles por zona ===
+  // === Filtrar mesas por zona ===
   const mesasFiltradas = mesas.filter((m) => m.zona === zona);
 
   const esValido =
-    String(valorInput).trim() !== "" &&
+    valorInput.trim() !== "" &&
     !isNaN(valorInput) &&
     parseInt(valorInput, 10) > 0;
-
-  useEffect(() => {
-    const contenedor = document.querySelector(".mapa-restaurante");
-    if (contenedor) {
-      const resizeObserver = new ResizeObserver(() => {
-        setContainerWidth(contenedor.offsetWidth);
-        setContainerHeight(contenedor.offsetHeight);
-      });
-      resizeObserver.observe(contenedor);
-      return () => resizeObserver.disconnect();
-    }
-  }, []);
 
   return (
     <>
@@ -215,7 +176,6 @@ const Dashboard = () => {
 
       <div className="container--dashboard">
         {isMobile ? (
-          // === VERSIÓN MÓVIL ===
           <div className="search-container--dashboard">
             <input
               type="text"
@@ -224,10 +184,9 @@ const Dashboard = () => {
               className="input-mesa--dashboard"
               placeholder="Ej: 5"
               value={valorInput}
-              onChange={(e) => {
-                const soloNumeros = e.target.value.replace(/\D/g, "");
-                setValorInput(soloNumeros);
-              }}
+              onChange={(e) =>
+                setValorInput(e.target.value.replace(/\D/g, ""))
+              }
             />
             <button
               onClick={manejarEntradaMesa}
@@ -238,7 +197,6 @@ const Dashboard = () => {
             </button>
           </div>
         ) : (
-          // === VERSIÓN ESCRITORIO: MODO MAPA ===
           <>
             <div className="mapa-restaurante">
               <div className="mapa-toolbar">
@@ -269,11 +227,16 @@ const Dashboard = () => {
                   onMouseUp={handleMouseUp}
                 >
                   <p className="mesa-number--dashboard">{mesa.numero}</p>
+
+                  {mesa.total > 0 && (
+                    <p className="mesa-total--dashboard">
+                      {mesa.total.toFixed(2)} €
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Sidebar de mesas auxiliares */}
             <div className="sidebar-editor">
               <h3>Mesas Auxiliares</h3>
               <div className="sidebar-mesas-list">
@@ -287,7 +250,13 @@ const Dashboard = () => {
                       onMouseDown={() => handleMouseDown(mesa)}
                       onMouseUp={handleMouseUp}
                     >
-                      {mesa.numero}
+                      <p className="mesa-number--dashboard">{mesa.numero}</p>
+
+                      {mesa.total > 0 && (
+                        <p className="mesa-total--dashboard">
+                          {mesa.total.toFixed(2)} €
+                        </p>
+                      )}
                     </div>
                   ))}
               </div>
@@ -296,19 +265,31 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* === MODALES Y ALERTAS === */}
+      {/* === MODAL ABRIR MESA === */}
       {mostrarModalConfirmacion && (
         <ModalConfirmacion
           titulo={accionModal?.titulo}
           mensaje={accionModal?.mensaje}
           placeholder={accionModal?.placeholder}
-          value={valorModal}
-          onChange={(e) => setValorModal(e.target.value)}  // 🔹 ahora usamos valorModal
-          onConfirm={() => accionModal?.onConfirm(valorModal)} // 🔹 y aquí también
+          onConfirm={(valor) => {
+            accionModal?.onConfirm(valor);
+            setMostrarModalConfirmacion(false);
+          }}
           onClose={() => setMostrarModalConfirmacion(false)}
-          disabledConfirm={
-            valorModal.trim() === "" || isNaN(valorModal) || parseInt(valorModal, 10) < 1
-          }
+        />
+      )}
+
+      {/* === MODAL EDITAR COMENSALES (LONG PRESS) === */}
+      {mesaActions.mostrarModalAccion && (
+        <ModalConfirmacion
+          titulo={mesaActions.accionModal?.titulo}
+          mensaje={mesaActions.accionModal?.mensaje}
+          placeholder={mesaActions.accionModal?.placeholder}
+          onConfirm={(valor) => {
+            mesaActions.accionModal?.onConfirm(valor);
+            mesaActions.setMostrarModalAccion(false);
+          }}
+          onClose={() => mesaActions.setMostrarModalAccion(false)}
         />
       )}
 

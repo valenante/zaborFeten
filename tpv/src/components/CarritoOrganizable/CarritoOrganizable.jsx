@@ -13,6 +13,7 @@ const CarritoOrganizable = ({
 }) => {
   const [productoEditando, setProductoEditando] = useState(null);
   const [edicion, setEdicion] = useState({});
+  const [vista, setVista] = useState("platos"); // "platos" | "bebidas"
 
   const carritoNormalizado = useMemo(
     () =>
@@ -95,109 +96,128 @@ const CarritoOrganizable = ({
   };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="carrito-organizable-container">
-        {SECCIONES.map((seccion) => {
-          // ✅ Nueva versión más clara y estable
-          const productosSeccion = carritoNormalizado.filter((item) => {
-            const tipo = (item.tipo || "").toLowerCase().trim();
-            const seccionItem = (item.seccion || item.productId?.seccion || "medio")
-              .toLowerCase()
-              .trim();
+    <>
 
-            // ✅ Todo lo que NO sea bebida se considera plato
-            const esBebida = tipo === "bebida";
+      <div className="carrito-toggle">
+        <button
+          className={vista === "platos" ? "activo" : ""}
+          onClick={() => setVista("platos")}
+        >
+          Platos
+        </button>
 
-            if (seccion === "bebidas") {
-              return esBebida;
-            }
-
-            // 🧩 Todo lo que no sea bebida, va a las secciones de cocina (entrante, medio, final)
-            return !esBebida && (seccionItem === seccion || (!seccionItem && seccion === "medio"));
-          });
-
-
-          return (
-            <Droppable key={seccion} droppableId={seccion}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`carrito-section ${snapshot.isDraggingOver ? "drag-over" : ""
-                    }`}
-                >
-                  <h5 className="carrito-section-title">
-                    {seccion === "bebidas"
-                      ? "Bebidas"
-                      : seccion.charAt(0).toUpperCase() + seccion.slice(1)}
-                  </h5>
-
-                  {seccion !== "bebidas" && (
-                    <textarea
-                      className="mensaje-seccion"
-                      placeholder="Mensaje para cocina (opcional)..."
-                      value={mensajesSeccion[seccion] || ""}
-                      onChange={(e) =>
-                        handleMensajeChange(seccion, e.target.value)
-                      }
-                    />
-                  )}
-
-                  {productosSeccion.map((item, index) => (
-                    <Draggable key={item.uid} draggableId={item.uid} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`carrito-item ${snapshot.isDragging ? "dragging" : ""
-                            }`}
-                          onClick={() => abrirEdicion(item)}
-                        >
-                          <div className="carrito-item-nombre">
-                            {item.nombre} x{item.cantidad}
-                            {item.mensaje && <small> — {item.mensaje}</small>}
-                          </div>
-                          <div className="carrito-item-eliminar">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                eliminarProducto(item.uid);
-                              }}
-                              className="carrito-eliminar-button"
-                            >
-                              ❌
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          );
-        })}
-
-        {productoEditando && (
-          <ProductoDetalle
-            producto={edicion}
-            cerrarModal={() => setProductoEditando(null)}
-            seleccionPrecioInicial={edicion.precioSeleccionado}
-            modoEdicion={true}
-            onConfirm={(productoActualizado) => {
-              const nuevoCarrito = carrito.map((p) =>
-                p.uid === productoEditando ? { ...p, ...productoActualizado } : p
-              );
-              setCarrito(nuevoCarrito);
-              setProductoEditando(null);
-            }}
-          />
-        )}
+        <button
+          className={vista === "bebidas" ? "activo" : ""}
+          onClick={() => setVista("bebidas")}
+        >
+          Bebidas
+        </button>
       </div>
-    </DragDropContext>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="carrito-organizable-container">
+          {SECCIONES.filter(sec =>
+            vista === "platos" ? sec !== "bebidas" : sec === "bebidas"
+          ).map((seccion) => {
+            // ✅ Nueva versión más clara y estable
+            const productosSeccion = carritoNormalizado.filter((item) => {
+              const tipo = (item.tipo || "").toLowerCase().trim();
+              const seccionItem = (item.seccion || item.productId?.seccion || "medio")
+                .toLowerCase()
+                .trim();
+
+              // ✅ Todo lo que NO sea bebida se considera plato
+              const esBebida = tipo === "bebida";
+
+              if (seccion === "bebidas") {
+                return esBebida;
+              }
+
+              // 🧩 Todo lo que no sea bebida, va a las secciones de cocina (entrante, medio, final)
+              return !esBebida && (seccionItem === seccion || (!seccionItem && seccion === "medio"));
+            });
+
+
+            return (
+              <Droppable key={seccion} droppableId={seccion}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`carrito-section ${snapshot.isDraggingOver ? "drag-over" : ""
+                      }`}
+                  >
+                    <h5 className="carrito-section-title">
+                      {seccion === "bebidas"
+                        ? "Bebidas"
+                        : seccion.charAt(0).toUpperCase() + seccion.slice(1)}
+                    </h5>
+
+                    {seccion !== "bebidas" && (
+                      <textarea
+                        className="mensaje-seccion"
+                        placeholder="Mensaje para cocina (opcional)..."
+                        value={mensajesSeccion[seccion] || ""}
+                        onChange={(e) =>
+                          handleMensajeChange(seccion, e.target.value)
+                        }
+                      />
+                    )}
+
+                    {productosSeccion.map((item, index) => (
+                      <Draggable key={item.uid} draggableId={item.uid} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`carrito-item ${snapshot.isDragging ? "dragging" : ""
+                              }`}
+                            onClick={() => abrirEdicion(item)}
+                          >
+                            <div className="carrito-item-nombre">
+                              {item.nombre} x{item.cantidad}
+                              {item.mensaje && <small> — {item.mensaje}</small>}
+                            </div>
+                            <div className="carrito-item-eliminar">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  eliminarProducto(item.uid);
+                                }}
+                                className="carrito-eliminar-button"
+                              >
+                                ❌
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            );
+          })}
+
+          {productoEditando && (
+            <ProductoDetalle
+              producto={edicion}
+              cerrarModal={() => setProductoEditando(null)}
+              seleccionPrecioInicial={edicion.precioSeleccionado}
+              modoEdicion={true}
+              onConfirm={(productoActualizado) => {
+                const nuevoCarrito = carrito.map((p) =>
+                  p.uid === productoEditando ? { ...p, ...productoActualizado } : p
+                );
+                setCarrito(nuevoCarrito);
+                setProductoEditando(null);
+              }}
+            />
+          )}
+        </div>
+      </DragDropContext></>
   );
 };
 

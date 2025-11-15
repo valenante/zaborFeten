@@ -3,6 +3,7 @@ import { useContext } from "react";
 import api from '../../utils/api';
 import { SocketContext } from "../../utils/socket";
 import PedidosFinalizados from './PedidosFinalizados';
+import ResumenSolicitado from './ResumenSolicitado';
 import * as logger from '../../utils/logger';
 import { useAuth } from "../../context/AuthContext";
 import { useLecturaVoz } from '../../hooks/useLecturaVoz';
@@ -131,12 +132,11 @@ const Cocina = () => {
   const [mesas, setMesas] = useState([]);
   const { logout } = useAuth();
   const [resumenProductos, setResumenProductos] = useState([]);
-  const [mostrarResumen, setMostrarResumen] = useState(false);
   const { habilitado, activar, encolarLectura, silenciar } = useLecturaVoz(1, 8000);
   const { activo, iniciarContinua, detenerContinua, onResultado, onFin, onError, soportado } = useReconocimientoVoz({ idioma: "es-ES" });
   const [estacion, setEstacion] = useState(() => localStorage.getItem('cocina_estacion') || 'frito');
   const [resumenProductosListos, setResumenProductosListos] = useState([]);
-  const [mostrarResumenListos, setMostrarResumenListos] = useState(false);
+  const [modalActivo, setModalActivo] = useState(null);
 
   const cerrarSeccion = async (pedidoId) => {
     try {
@@ -274,9 +274,11 @@ const Cocina = () => {
           if (estacion !== 'frito' && p.estacion !== estacion) return;
 
           const nombre = p.producto?.nombre || 'Producto';
-          const tipo = p.tipoPrecio || 'base';
-          const key = `${nombre} (${tipo})`;
-
+          const tipo = p.tipoPrecio;
+          const key =
+            tipo && tipo !== "precioBase"
+              ? `${nombre} (${tipo})`
+              : nombre;
           resumen[key] = (resumen[key] || 0) + p.cantidad;
         });
     });
@@ -698,6 +700,11 @@ const Cocina = () => {
     return agrupados;
   };
 
+  const mostrarTipoPrecio = (tp) => {
+    if (!tp || tp === "precioBase") return "";
+    return tp + " ";
+  };
+
   return (
     <>
       <div className="cocina--cocina">
@@ -805,8 +812,7 @@ const Cocina = () => {
                                 }}
                               >
                                 {producto.cantidad}x{" "}
-                                {producto.tipoPrecio !== "precioBase" &&
-                                  `${producto.tipoPrecio} `}
+                                {mostrarTipoPrecio(producto.tipoPrecio)}
                                 {producto.producto?.nombre ||
                                   producto.nombre ||
                                   "Producto no disponible"}
@@ -882,8 +888,7 @@ const Cocina = () => {
                                           }}
                                         >
                                           {producto.cantidad}x{" "}
-                                          {producto.tipoPrecio !== "precioBase" &&
-                                            `${producto.tipoPrecio} `}
+                                          {mostrarTipoPrecio(producto.tipoPrecio)}
                                           {producto.producto?.nombre ||
                                             producto.nombre ||
                                             "Producto no disponible"}
@@ -960,8 +965,7 @@ const Cocina = () => {
                                   }}
                                 >
                                   {producto.cantidad}x{" "}
-                                  {producto.tipoPrecio !== "precioBase" &&
-                                    `${producto.tipoPrecio} `}
+                                  {mostrarTipoPrecio(producto.tipoPrecio)}
                                   {producto.producto?.nombre ||
                                     producto.nombre ||
                                     "Producto"}
@@ -1003,9 +1007,8 @@ const Cocina = () => {
 
       {/* Botón flotante del resumen */}
       <button
-        onClick={() => setMostrarResumen(true)}
+        onClick={() => setModalActivo("pendientes")}
         className="boton-resumen--cocina"
-        title="Ver resumen de productos pendientes"
       >
         📋
       </button>
@@ -1013,17 +1016,24 @@ const Cocina = () => {
       <button
         onClick={() => {
           cargarResumenListos();
-          setMostrarResumenListos(true);
+          setModalActivo("listos");
         }}
         className="boton-resumen--cocina boton-resumen-listos"
-        title="Ver productos listos en los últimos 30 minutos"
         style={{ right: '70px', backgroundColor: 'var(--color-secundario)' }}
       >
         ✅
       </button>
 
-      {/* Panel lateral del resumen */}
-      {mostrarResumen && (
+      <button
+        onClick={() => setModalActivo("solicitados")}
+        className="boton-resumen--cocina"
+        style={{ right: "140px", backgroundColor: "#6A0DAD" }}
+      >
+        🍽️
+      </button>
+
+
+      {modalActivo === "pendientes" && (
         <div className="resumen-panel--cocina">
           <div className="resumen-header--cocina">
             <h3>
@@ -1031,8 +1041,9 @@ const Cocina = () => {
                 ? 'Resumen de Productos Pendientes (TODOS)'
                 : `Resumen de ${estacion.toUpperCase()}`}
             </h3>
-            <button onClick={() => setMostrarResumen(false)}>✕</button>
+            <button onClick={() => setModalActivo(null)}>✕</button>
           </div>
+
           <ul>
             {resumenProductos.length > 0 ? (
               resumenProductos.map((item, i) => (
@@ -1047,11 +1058,12 @@ const Cocina = () => {
         </div>
       )}
 
-      {mostrarResumenListos && (
+
+      {modalActivo === "listos" && (
         <div className="resumen-panel--cocina">
           <div className="resumen-header--cocina">
             <h3>Resumen de Productos Listos</h3>
-            <button onClick={() => setMostrarResumenListos(false)}>✕</button>
+            <button onClick={() => setModalActivo(null)}>✕</button>
           </div>
           <ul>
             {resumenProductosListos.length > 0 ? (
@@ -1064,6 +1076,15 @@ const Cocina = () => {
           </ul>
         </div>
       )}
+
+
+      {modalActivo === "solicitados" && (
+        <ResumenSolicitado
+          pedidos={pedidos}
+          onClose={() => setModalActivo(null)}
+        />
+      )}
+
 
     </>
   );

@@ -1,0 +1,48 @@
+.overlay-resumen-solicitado {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.modal-resumen-solicitado {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  color: #333;
+}
+
+.modal-resumen-solicitado h2 {
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+.modal-resumen-solicitado ul {
+  list-style: none;
+  padding: 0;
+}
+
+.modal-resumen-solicitado li {
+  padding: 8px 0;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.btn-cerrar-resumen {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: var(--color-secundario);
+  color: white;
+  font-weight: bold;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}

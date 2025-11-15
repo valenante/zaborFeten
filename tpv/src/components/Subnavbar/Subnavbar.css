@@ -142,3 +142,11 @@
     display: flex !important; /* Fuerza visibilidad en escritorio */
   }
 }
+
+/* 🔥 OCULTAR el botón “Realizado” SOLO en pantallas pequeñas */
+@media (max-width: 768px) {
+  .subnavbar-button--subnavbar.realizado-button {
+    display: none !important;
+  }
+}
+

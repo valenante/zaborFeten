@@ -244,7 +244,9 @@ export const crearPedido = async (req, res) => {
     logger.error('Error al procesar el pedido:', error);
     res.status(400).json({ error: error.message });
   }
-}; export const agregarProductoAlPedido = async (req, res) => {
+}; 
+
+export const agregarProductoAlPedido = async (req, res) => {
   const { mesaId } = req.params;
   const { productos, mensajesSeccion = {}, servirTodoJunto } = req.body;
 
@@ -561,16 +563,17 @@ export const obtenerPedidoPorMesaId = async (req, res) => {
 // Obtener pedidos pendientes
 export const obtenerPedidosPendientes = async (req, res) => {
   try {
-    const { tipo } = req.query; // Obtener el tipo de la consulta (plato o bebida)
+    const { tipo } = req.query;
 
     const filter = { estado: 'pendiente' };
     if (tipo) {
-      filter['productos.tipo'] = tipo; // Filtrar productos por tipo si se especifica
+      filter['productos.tipo'] = tipo; 
     }
 
     const pedidos = await Pedido.find(filter)
       .populate('mesa')
-      .populate('productos.producto'); // Expande los detalles del producto
+      .populate('productos.producto')
+      .sort({ fecha: -1 }); // 🟣 NUEVO → más recientes primero
 
     res.status(200).json(pedidos);
   } catch (error) {

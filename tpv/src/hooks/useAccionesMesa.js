@@ -36,7 +36,7 @@ const useAccionesMesa = (mesa, setMensajeAlerta, navigate, datosFactura) => {
           }
         }
 
-        navigate("/tpv");   // <--- FIX REAL
+        navigate("/");   // <--- FIX REAL
 
       } catch (error) {
         logger.error(error);

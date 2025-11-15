@@ -1,0 +1,55 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999 !important; /* 👑 por encima de todo */
+}
+
+.salir-modal {
+  max-width: 380px;
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  text-align: center;
+    z-index: 1000000 !important;
+}
+
+.salir-modal h2 {
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+
+.salir-modal p {
+  margin-bottom: 25px;
+  color: #555;
+}
+
+.salir-botones {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.salir-botones button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+}
+
+.salir-botones .cancelar {
+  background: #ddd;
+}
+
+.salir-botones .confirmar {
+  background: #ff4d4d;
+  color: white;
+}

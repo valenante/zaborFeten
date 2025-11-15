@@ -84,7 +84,6 @@
 .boton-imprimir--mesadetalles,
 .boton-factura--mesadetalles,
 .boton-abrir--mesadetalles {
-  background-color: var(--color-secundario);
   color: var(--blanco);
   border: none;
   font-size: 1rem;
